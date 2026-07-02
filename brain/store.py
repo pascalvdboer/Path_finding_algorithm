@@ -1,0 +1,229 @@
+"""The cortex: a persistent knowledge graph backed by SQLite.
+
+Nodes are memories/concepts (neurons). Edges are synapses. Agents are
+the minds that connect in. Everything is stored so the brain survives
+restarts — a real place of storage, not a demo buffer.
+"""
+
+import json
+import sqlite3
+import threading
+import time
+import hashlib
+
+from . import linking
+
+
+def _now():
+    return time.time()
+
+
+def _color_for(name):
+    """Deterministic bright colour per agent so the map stays legible."""
+    h = int(hashlib.sha1(name.encode("utf-8")).hexdigest(), 16)
+    hue = h % 360
+    return f"hsl({hue}, 85%, 62%)"
+
+
+class Brain:
+    def __init__(self, path="brain.db"):
+        self._lock = threading.RLock()
+        self._db = sqlite3.connect(path, check_same_thread=False)
+        self._db.row_factory = sqlite3.Row
+        self._init_schema()
+        # keyword cache: node_id -> set(keywords), for fast auto-linking
+        self._kw = {}
+        self._warm_cache()
+
+    # -- schema ---------------------------------------------------------
+    def _init_schema(self):
+        with self._lock:
+            self._db.executescript(
+                """
+                CREATE TABLE IF NOT EXISTS agents (
+                    id      INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name    TEXT UNIQUE NOT NULL,
+                    color   TEXT NOT NULL,
+                    joined  REAL NOT NULL,
+                    seen    REAL NOT NULL
+                );
+                CREATE TABLE IF NOT EXISTS nodes (
+                    id       INTEGER PRIMARY KEY AUTOINCREMENT,
+                    agent    TEXT,
+                    content  TEXT NOT NULL,
+                    tags     TEXT NOT NULL,
+                    kind     TEXT NOT NULL DEFAULT 'memory',
+                    created  REAL NOT NULL
+                );
+                CREATE TABLE IF NOT EXISTS edges (
+                    id       INTEGER PRIMARY KEY AUTOINCREMENT,
+                    src      INTEGER NOT NULL,
+                    dst      INTEGER NOT NULL,
+                    weight   REAL NOT NULL DEFAULT 1.0,
+                    kind     TEXT NOT NULL DEFAULT 'assoc',
+                    created  REAL NOT NULL
+                );
+                """
+            )
+            self._db.commit()
+
+    def _warm_cache(self):
+        with self._lock:
+            for row in self._db.execute("SELECT id, content, tags FROM nodes"):
+                tags = json.loads(row["tags"])
+                self._kw[row["id"]] = linking.keywords(row["content"], tags)
+
+    # -- agents ---------------------------------------------------------
+    def register(self, name):
+        with self._lock:
+            row = self._db.execute(
+                "SELECT * FROM agents WHERE name = ?", (name,)
+            ).fetchone()
+            if row:
+                self._db.execute(
+                    "UPDATE agents SET seen = ? WHERE id = ?", (_now(), row["id"])
+                )
+                self._db.commit()
+                return dict(row)
+            color = _color_for(name)
+            now = _now()
+            cur = self._db.execute(
+                "INSERT INTO agents (name, color, joined, seen) VALUES (?,?,?,?)",
+                (name, color, now, now),
+            )
+            self._db.commit()
+            return {
+                "id": cur.lastrowid,
+                "name": name,
+                "color": color,
+                "joined": now,
+                "seen": now,
+            }
+
+    def agent_color(self, name):
+        with self._lock:
+            row = self._db.execute(
+                "SELECT color FROM agents WHERE name = ?", (name,)
+            ).fetchone()
+            return row["color"] if row else _color_for(name or "anon")
+
+    # -- writing knowledge (teach) --------------------------------------
+    def remember(self, agent, content, tags=None, kind="memory"):
+        """Store a memory and auto-wire it to related memories.
+
+        Returns (node_dict, [new_edge_dicts]).
+        """
+        tags = tags or []
+        with self._lock:
+            now = _now()
+            cur = self._db.execute(
+                "INSERT INTO nodes (agent, content, tags, kind, created)"
+                " VALUES (?,?,?,?,?)",
+                (agent, content, json.dumps(tags), kind, now),
+            )
+            node_id = cur.lastrowid
+            kw = linking.keywords(content, tags)
+            # auto-link against everything already known
+            existing = [(nid, k) for nid, k in self._kw.items()]
+            self._kw[node_id] = kw
+            links = linking.strongest_links(kw, existing)
+
+            new_edges = []
+            for other_id, weight in links:
+                ec = self._db.execute(
+                    "INSERT INTO edges (src, dst, weight, kind, created)"
+                    " VALUES (?,?,?,?,?)",
+                    (node_id, other_id, weight, "assoc", now),
+                )
+                new_edges.append(
+                    {
+                        "id": ec.lastrowid,
+                        "src": node_id,
+                        "dst": other_id,
+                        "weight": weight,
+                        "kind": "assoc",
+                    }
+                )
+            self._db.commit()
+            node = {
+                "id": node_id,
+                "agent": agent,
+                "content": content,
+                "tags": tags,
+                "kind": kind,
+                "created": now,
+            }
+            return node, new_edges
+
+    # -- reading knowledge (learn) --------------------------------------
+    def recall(self, query, k=5):
+        """Return the top-k memories most related to a query.
+
+        Returns a list of {node, score} ranked by similarity.
+        """
+        qkw = linking.keywords(query)
+        with self._lock:
+            scored = []
+            for nid, kw in self._kw.items():
+                s = linking.similarity(qkw, kw)
+                if s > 0:
+                    scored.append((nid, s))
+            scored.sort(key=lambda x: x[1], reverse=True)
+            top = scored[:k]
+            results = []
+            for nid, s in top:
+                row = self._db.execute(
+                    "SELECT * FROM nodes WHERE id = ?", (nid,)
+                ).fetchone()
+                if row:
+                    node = dict(row)
+                    node["tags"] = json.loads(node["tags"])
+                    results.append({"node": node, "score": round(s, 4)})
+            return results
+
+    # -- direct handoff (teach a specific agent) ------------------------
+    def handoff(self, src_agent, dst_agent, content, tags=None):
+        """One agent hands knowledge directly to another.
+
+        Stored as a memory authored by src, plus a 'handoff' synapse from
+        the new node toward the most relevant thing dst already knows (or
+        standing alone if dst is new). Returns (node, edges).
+        """
+        node, edges = self.remember(src_agent, content, tags, kind="handoff")
+        return node, edges
+
+    def link(self, src, dst, weight=1.0, kind="taught"):
+        """Manually assert a synapse between two nodes (explicit teaching)."""
+        with self._lock:
+            cur = self._db.execute(
+                "INSERT INTO edges (src, dst, weight, kind, created)"
+                " VALUES (?,?,?,?,?)",
+                (src, dst, weight, kind, _now()),
+            )
+            self._db.commit()
+            return {
+                "id": cur.lastrowid,
+                "src": src,
+                "dst": dst,
+                "weight": weight,
+                "kind": kind,
+            }
+
+    # -- snapshot for the visualiser ------------------------------------
+    def snapshot(self):
+        with self._lock:
+            agents = [dict(r) for r in self._db.execute("SELECT * FROM agents")]
+            nodes = []
+            for r in self._db.execute("SELECT * FROM nodes"):
+                n = dict(r)
+                n["tags"] = json.loads(n["tags"])
+                nodes.append(n)
+            edges = [dict(r) for r in self._db.execute("SELECT * FROM edges")]
+            return {"agents": agents, "nodes": nodes, "edges": edges}
+
+    def stats(self):
+        with self._lock:
+            a = self._db.execute("SELECT COUNT(*) c FROM agents").fetchone()["c"]
+            n = self._db.execute("SELECT COUNT(*) c FROM nodes").fetchone()["c"]
+            e = self._db.execute("SELECT COUNT(*) c FROM edges").fetchone()["c"]
+            return {"agents": a, "neurons": n, "synapses": e}

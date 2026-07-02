@@ -1,0 +1,287 @@
+<meta charset="utf-8">
+<title>The Agent Brain</title>
+<style>
+  :root { color-scheme: dark; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden;
+    background: radial-gradient(circle at 50% 40%, #0a1030 0%, #05070f 70%);
+    font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; }
+  #brain { position: fixed; inset: 0; display: block; }
+  #hud {
+    position: fixed; top: 16px; left: 18px; z-index: 5;
+    color: #cfe3ff; pointer-events: none; user-select: none; }
+  #hud h1 { font-size: 15px; font-weight: 650; letter-spacing: .12em;
+    text-transform: uppercase; color: #7fd0ff;
+    text-shadow: 0 0 18px rgba(80,180,255,.55); }
+  #hud .sub { font-size: 12px; color: #6b83b0; margin-top: 3px; }
+  #stats { position: fixed; top: 16px; right: 18px; z-index: 5;
+    display: flex; gap: 18px; color: #9fb6e0; font-variant-numeric: tabular-nums; }
+  #stats b { display: block; font-size: 22px; color: #eaf3ff; font-weight: 650; }
+  #stats span { font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
+    color: #5f77a8; }
+  #feed { position: fixed; left: 18px; bottom: 16px; z-index: 5;
+    width: min(420px, 60vw); max-height: 34vh; overflow: hidden;
+    font-size: 12px; line-height: 1.5; color: #b7c7e6;
+    -webkit-mask-image: linear-gradient(to top, #000 60%, transparent);
+            mask-image: linear-gradient(to top, #000 60%, transparent); }
+  #feed .row { opacity: 0; animation: rise .5s forwards; padding: 1px 0; }
+  #feed .who { font-weight: 650; }
+  #feed .verb { color: #6b83b0; }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px);} to {opacity:1;} }
+  #tip { position: fixed; z-index: 6; pointer-events: none;
+    background: rgba(8,14,32,.92); border: 1px solid rgba(110,160,255,.35);
+    color: #dce8ff; font-size: 12px; padding: 7px 10px; border-radius: 8px;
+    max-width: 300px; opacity: 0; transition: opacity .12s;
+    box-shadow: 0 8px 30px rgba(0,0,0,.5); }
+  #hint { position: fixed; right: 18px; bottom: 16px; z-index: 5;
+    font-size: 11px; color: #4c6294; text-align: right; }
+</style>
+
+<canvas id="brain"></canvas>
+<div id="hud">
+  <h1>🧠 The Agent Brain</h1>
+  <div class="sub">shared cortex · live synaptic activity</div>
+</div>
+<div id="stats">
+  <div><b id="s-agents">0</b><span>minds</span></div>
+  <div><b id="s-nodes">0</b><span>neurons</span></div>
+  <div><b id="s-edges">0</b><span>synapses</span></div>
+</div>
+<div id="feed"></div>
+<div id="hint">drag to pan · scroll to zoom · hover a neuron</div>
+<div id="tip"></div>
+
+<script>
+const cv = document.getElementById('brain');
+const ctx = cv.getContext('2d');
+let W, H, DPR;
+function resize() {
+  DPR = window.devicePixelRatio || 1;
+  W = cv.width = innerWidth * DPR; H = cv.height = innerHeight * DPR;
+  cv.style.width = innerWidth + 'px'; cv.style.height = innerHeight + 'px';
+}
+addEventListener('resize', resize); resize();
+
+// ---- world state ----------------------------------------------------
+const nodes = new Map();   // id -> {id, x,y,vx,vy, color, content, tags, agent, deg, act}
+const edges = [];          // {src, dst, weight, kind}
+const edgeKey = new Set(); // "src-dst"
+const pulses = [];         // travelling packets of information
+const agentColors = new Map();
+
+// view transform (pan/zoom)
+let view = { x: 0, y: 0, k: 1 };
+
+function rand(n){ return (Math.sin(n*12.9898)*43758.5453 % 1 + 1) % 1; }
+
+function addNode(n) {
+  if (nodes.has(n.id)) return;
+  // seed position near centre, deterministic spread by id
+  const a = rand(n.id) * Math.PI * 2, r = 60 + rand(n.id+7) * 220;
+  nodes.set(n.id, {
+    id: n.id, x: Math.cos(a)*r, y: Math.sin(a)*r, vx: 0, vy: 0,
+    color: n.color || agentColors.get(n.agent) || '#7fd0ff',
+    content: n.content || '', tags: n.tags || [], agent: n.agent || '',
+    deg: 0, act: 1.4,
+  });
+}
+function addEdge(e) {
+  const k = e.src + '-' + e.dst;
+  if (edgeKey.has(k)) return; edgeKey.add(k);
+  edges.push(e);
+  const a = nodes.get(e.src), b = nodes.get(e.dst);
+  if (a) a.deg++; if (b) b.deg++;
+}
+function firePulse(src, dst, color, strong) {
+  if (!nodes.has(src) || !nodes.has(dst)) return;
+  pulses.push({ src, dst, t: 0, color: color || '#8fe0ff',
+                speed: strong ? .018 : .03, strong: !!strong });
+}
+
+// ---- physics: spring-electrical layout -------------------------------
+function simulate() {
+  const arr = [...nodes.values()];
+  const N = arr.length;
+  for (let i = 0; i < N; i++) {
+    const p = arr[i];
+    // gentle pull to centre
+    p.vx += -p.x * 0.0009; p.vy += -p.y * 0.0009;
+    for (let j = i + 1; j < N; j++) {
+      const q = arr[j];
+      let dx = p.x - q.x, dy = p.y - q.y;
+      let d2 = dx*dx + dy*dy || 0.01;
+      if (d2 > 90000) continue;               // ignore far pairs (cheap)
+      const f = 900 / d2;
+      const d = Math.sqrt(d2);
+      dx /= d; dy /= d;
+      p.vx += dx*f; p.vy += dy*f;
+      q.vx -= dx*f; q.vy -= dy*f;
+    }
+  }
+  for (const e of edges) {
+    const a = nodes.get(e.src), b = nodes.get(e.dst);
+    if (!a || !b) continue;
+    let dx = b.x - a.x, dy = b.y - a.y;
+    const d = Math.sqrt(dx*dx + dy*dy) || 0.01;
+    const rest = 70 + (1 - (e.weight||0.3)) * 90;
+    const f = (d - rest) * 0.012 * (0.5 + (e.weight||0.3));
+    dx /= d; dy /= d;
+    a.vx += dx*f; a.vy += dy*f;
+    b.vx -= dx*f; b.vy -= dy*f;
+  }
+  for (const p of arr) {
+    p.vx *= 0.86; p.vy *= 0.86;
+    p.x += p.vx; p.y += p.vy;
+    if (p.act > 0) p.act = Math.max(0, p.act - 0.012);
+  }
+}
+
+// ---- render ----------------------------------------------------------
+let t = 0;
+function draw() {
+  t++;
+  simulate();
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.clearRect(0,0,W,H);
+  ctx.save();
+  ctx.translate(W/2 + view.x*DPR, H/2 + view.y*DPR);
+  ctx.scale(view.k*DPR, view.k*DPR);
+
+  // synapses
+  ctx.lineCap = 'round';
+  for (const e of edges) {
+    const a = nodes.get(e.src), b = nodes.get(e.dst);
+    if (!a || !b) continue;
+    const w = 0.4 + (e.weight||0.3) * 1.6;
+    ctx.strokeStyle = e.kind === 'handoff'
+      ? 'rgba(255,180,90,0.28)' : 'rgba(90,150,255,0.14)';
+    ctx.lineWidth = w;
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+  }
+
+  // pulses (information travelling down the wire)
+  for (let i = pulses.length - 1; i >= 0; i--) {
+    const p = pulses[i];
+    p.t += p.speed;
+    const a = nodes.get(p.src), b = nodes.get(p.dst);
+    if (!a || !b || p.t >= 1) {
+      if (b) b.act = 1.6;               // arrival lights up the target
+      pulses.splice(i, 1); continue;
+    }
+    const x = a.x + (b.x - a.x) * p.t, y = a.y + (b.y - a.y) * p.t;
+    const rad = p.strong ? 4.5 : 3;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, rad*3);
+    g.addColorStop(0, p.color); g.addColorStop(1, 'transparent');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(x, y, rad*3, 0, 7); ctx.fill();
+    ctx.fillStyle = '#eaffff';
+    ctx.beginPath(); ctx.arc(x, y, rad*0.6, 0, 7); ctx.fill();
+  }
+
+  // neurons
+  for (const p of nodes.values()) {
+    const base = 3 + Math.min(9, p.deg * 0.9);
+    const r = base + p.act * 4;
+    const glow = 0.25 + p.act * 0.6;
+    const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r*3.4);
+    g.addColorStop(0, p.color); g.addColorStop(1, 'transparent');
+    ctx.globalAlpha = glow; ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(p.x, p.y, r*3.4, 0, 7); ctx.fill();
+    ctx.globalAlpha = 1; ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, 7); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.beginPath(); ctx.arc(p.x, p.y, r*0.4, 0, 7); ctx.fill();
+  }
+  ctx.restore();
+  requestAnimationFrame(draw);
+}
+requestAnimationFrame(draw);
+
+// ---- feed & stats ----------------------------------------------------
+const feed = document.getElementById('feed');
+function logFeed(html) {
+  const row = document.createElement('div');
+  row.className = 'row'; row.innerHTML = html;
+  feed.prepend(row);
+  while (feed.children.length > 14) feed.lastChild.remove();
+}
+function setStats() {
+  document.getElementById('s-agents').textContent = agentColors.size;
+  document.getElementById('s-nodes').textContent = nodes.size;
+  document.getElementById('s-edges').textContent = edges.length;
+}
+function esc(s){ return (s||'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+// ---- live stream -----------------------------------------------------
+function ingestSnapshot(state) {
+  for (const a of state.agents) agentColors.set(a.name, a.color);
+  for (const n of state.nodes) { n.color = agentColors.get(n.agent); addNode(n); }
+  for (const e of state.edges) addEdge(e);
+  setStats();
+}
+function connect() {
+  const es = new EventSource('/events');
+  es.onmessage = (m) => {
+    let ev; try { ev = JSON.parse(m.data); } catch { return; }
+    if (ev.type === 'snapshot') { ingestSnapshot(ev.state); return; }
+    if (ev.type === 'node_added') {
+      if (ev.node.agent) agentColors.set(ev.node.agent, ev.color);
+      ev.node.color = ev.color; addNode(ev.node);
+      logFeed(`<span class="who" style="color:${ev.color}">${esc(ev.node.agent)}</span> <span class="verb">learned</span> ${esc(ev.node.content).slice(0,70)}`);
+      setStats();
+    } else if (ev.type === 'edge_added') {
+      addEdge(ev.edge); setStats();
+    } else if (ev.type === 'fire') {
+      const src = nodes.get(ev.node); if (src) src.act = 1.8;
+      for (const dst of ev.targets)
+        firePulse(ev.node, dst, src ? src.color : '#8fe0ff');
+    } else if (ev.type === 'recall') {
+      logFeed(`<span class="verb">recall</span> “${esc(ev.query)}” → ${ev.hits.length} memories`);
+      // chain a pulse through the recalled memories
+      for (let i = 0; i < ev.hits.length - 1; i++)
+        firePulse(ev.hits[i], ev.hits[i+1], '#8affc8');
+      for (const id of ev.hits){ const n = nodes.get(id); if (n) n.act = 1.6; }
+    } else if (ev.type === 'handoff') {
+      const c = agentColors.get(ev.from) || '#ffb45a';
+      logFeed(`<span class="who" style="color:${c}">${esc(ev.from)}</span> <span class="verb">→ handed off to</span> <span class="who">${esc(ev.to)}</span>`);
+    }
+  };
+  es.onerror = () => { es.close(); setTimeout(connect, 1500); };
+}
+connect();
+
+// ---- interaction: pan, zoom, hover ----------------------------------
+let drag = null;
+cv.addEventListener('mousedown', e => drag = { x: e.clientX, y: e.clientY });
+addEventListener('mouseup', () => drag = null);
+addEventListener('mousemove', e => {
+  if (drag) {
+    view.x += e.clientX - drag.x; view.y += e.clientY - drag.y;
+    drag = { x: e.clientX, y: e.clientY };
+  }
+  hover(e);
+});
+cv.addEventListener('wheel', e => {
+  e.preventDefault();
+  const f = e.deltaY < 0 ? 1.1 : 0.9;
+  view.k = Math.max(0.2, Math.min(4, view.k * f));
+}, { passive: false });
+
+const tip = document.getElementById('tip');
+function hover(e) {
+  const mx = (e.clientX - innerWidth/2 - view.x) / view.k;
+  const my = (e.clientY - innerHeight/2 - view.y) / view.k;
+  let best = null, bd = 14*14;
+  for (const p of nodes.values()) {
+    const dx = p.x - mx, dy = p.y - my, d = dx*dx + dy*dy;
+    if (d < bd) { bd = d; best = p; }
+  }
+  if (best) {
+    tip.style.opacity = 1;
+    tip.style.left = (e.clientX + 14) + 'px';
+    tip.style.top = (e.clientY + 14) + 'px';
+    tip.innerHTML = `<b style="color:${best.color}">${esc(best.agent)||'brain'}</b> · ${best.deg} synapses<br>${esc(best.content)}` +
+      (best.tags.length ? `<br><span style="color:#6b83b0">#${best.tags.map(esc).join(' #')}</span>` : '');
+  } else tip.style.opacity = 0;
+}
+</script>

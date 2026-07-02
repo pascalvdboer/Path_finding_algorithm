@@ -1,0 +1,16 @@
+# virtual environments
+venv/
+.venv/
+env/
+
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# the brain's memory (local runtime state)
+brain.db
+*.db
+
+# os / editor
+.DS_Store
