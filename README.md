@@ -27,18 +27,35 @@ step. Clone it and run it.
 ## Run it
 
 ```bash
-python main.py                 # starts the brain + visualiser on :8000
+python main.py                 # starts the brain + the living dashboard on :8000
 ```
 
 Open the URL it prints (`http://127.0.0.1:8000`) in a browser — that's the
-live map. Then, in another terminal, bring some agents to life:
+**live brain dashboard**: a glowing anatomical brain where the Feeder feeds
+from the stem and each agent lights its own region as it works.
+
+## Run the team, watch it live
+
+Four terminals (or run them in the background) — the brain, the roster, the
+Feeder brain-stem, and a request stream:
 
 ```bash
-python examples/two_agents_demo.py
+python main.py                 # 1) the brain + dashboard   (open the URL)
+python agents/roster.py        # 2) load every agent's role
+python agents/feeder.py        # 3) the Feeder — constant inflow from the stem
+python examples/live_demo.py   # 4) requests flowing through the whole team
 ```
 
-Watch neurons appear, synapses form between related ideas, and handoffs
-pulse across the cortex.
+Watch the dashboard: warm signals rise from the brain stem, the Keeper's
+region lights and arcs out to the specialists, and finished work flows through
+Soul and Literate — your team, thinking together inside the brain.
+
+Steer any agent while it runs, no restart:
+
+```bash
+python agents/roster.py --add ads "Ads Scripts" specialist sea "Own ad scripts."
+curl -s localhost:8000/steer -d '{"agent":"feeder","focus":["technical"]}'
+```
 
 ## Plug your own agent in
 
