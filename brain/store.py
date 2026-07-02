@@ -227,3 +227,55 @@ class Brain:
             n = self._db.execute("SELECT COUNT(*) c FROM nodes").fetchone()["c"]
             e = self._db.execute("SELECT COUNT(*) c FROM edges").fetchone()["c"]
             return {"agents": a, "neurons": n, "synapses": e}
+
+    # -- collaboration analytics ----------------------------------------
+    def metrics(self):
+        """How well the swarm works with each other's data.
+
+        The headline is the *collaboration index*: the share of synapses
+        that bridge two different agents' memories — i.e. how much the
+        agents build on each other's knowledge rather than their own.
+        Also returns per-agent contribution/reach and the strongest
+        agent-to-agent pairings.
+        """
+        with self._lock:
+            author = {}
+            per_agent = {}
+            for r in self._db.execute("SELECT id, agent FROM nodes"):
+                author[r["id"]] = r["agent"]
+                per_agent.setdefault(
+                    r["agent"], {"agent": r["agent"], "neurons": 0,
+                                 "reach": 0, "handoffs": 0})
+                per_agent[r["agent"]]["neurons"] += 1
+
+            cross = 0
+            total = 0
+            pairs = {}
+            for r in self._db.execute("SELECT src, dst, kind FROM edges"):
+                sa, da = author.get(r["src"]), author.get(r["dst"])
+                if sa is None or da is None:
+                    continue
+                total += 1
+                if sa != da:
+                    cross += 1
+                    if sa in per_agent:
+                        per_agent[sa]["reach"] += 1
+                    if da in per_agent:
+                        per_agent[da]["reach"] += 1
+                    key = " ↔ ".join(sorted([sa, da]))
+                    pairs[key] = pairs.get(key, 0) + 1
+                    if r["kind"] == "handoff" and sa in per_agent:
+                        per_agent[sa]["handoffs"] += 1
+
+            index = round(cross / total, 3) if total else 0.0
+            top_pairs = sorted(pairs.items(), key=lambda x: x[1], reverse=True)
+            minds = sorted(per_agent.values(),
+                           key=lambda m: (m["reach"], m["neurons"]),
+                           reverse=True)
+            return {
+                "collaboration_index": index,
+                "cross_links": cross,
+                "total_links": total,
+                "minds": minds,
+                "pairs": [{"pair": k, "links": v} for k, v in top_pairs],
+            }

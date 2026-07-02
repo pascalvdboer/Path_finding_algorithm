@@ -35,10 +35,13 @@ class BrainApp:
                           "targets": [e["dst"] for e in edges]})
         return {"node": node, "linked": [e["dst"] for e in edges]}
 
-    def recall(self, query, k):
+    def recall(self, query, k, by=None):
         results = self.brain.recall(query, k)
         ids = [r["node"]["id"] for r in results]
-        self.bus.publish({"type": "recall", "query": query, "hits": ids})
+        # whose knowledge did the asker just learn from?
+        sources = [r["node"].get("agent") for r in results]
+        self.bus.publish({"type": "recall", "query": query, "hits": ids,
+                          "by": by, "sources": sources})
         return {"results": results}
 
     def handoff(self, src, dst, content, tags):
@@ -92,10 +95,13 @@ def make_handler(app):
                 return self._json(app.brain.snapshot())
             if u.path == "/stats":
                 return self._json(app.brain.stats())
+            if u.path == "/metrics":
+                return self._json(app.brain.metrics())
             if u.path == "/recall":
                 query = (q.get("q") or [""])[0]
                 k = int((q.get("k") or ["5"])[0])
-                return self._json(app.recall(query, k))
+                by = (q.get("by") or [None])[0]
+                return self._json(app.recall(query, k, by))
             return self._json({"error": "not found"}, 404)
 
         def do_POST(self):

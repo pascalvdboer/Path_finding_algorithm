@@ -34,7 +34,8 @@ class BrainClient:
 
     def recall(self, query, k=5):
         """Learn: pull the memories most related to a query."""
-        return self._get(f"/recall?q={urllib.parse.quote(query)}&k={k}")
+        q = urllib.parse.quote(query)
+        return self._get(f"/recall?q={q}&k={k}&by={urllib.parse.quote(self.name)}")
 
     def handoff(self, to, content, tags=None):
         """Hand knowledge directly to another agent, pushed instantly."""

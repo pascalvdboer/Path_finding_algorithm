@@ -1,287 +1,350 @@
 <meta charset="utf-8">
-<title>The Agent Brain</title>
+<title>The Agent Brain — Live Operations</title>
 <style>
-  :root { color-scheme: dark; }
+  :root {
+    color-scheme: dark;
+    --void: #04060e; --deep: #0a1230; --synapse: #7fd0ff;
+    --ink: #d6e6ff; --dim: #748fb0; --dim: #708bb8; --dimmer: #43567c;
+    --good: #5ff0c0; --warn: #ffcf6b; --hot: #ff9ec4;
+    --panel: rgba(8, 13, 30, .55); --line: rgba(120, 165, 255, .14);
+  }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body { height: 100%; overflow: hidden;
-    background: radial-gradient(circle at 50% 40%, #0a1030 0%, #05070f 70%);
-    font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; }
-  #brain { position: fixed; inset: 0; display: block; }
-  #hud {
-    position: fixed; top: 16px; left: 18px; z-index: 5;
-    color: #cfe3ff; pointer-events: none; user-select: none; }
-  #hud h1 { font-size: 15px; font-weight: 650; letter-spacing: .12em;
-    text-transform: uppercase; color: #7fd0ff;
-    text-shadow: 0 0 18px rgba(80,180,255,.55); }
-  #hud .sub { font-size: 12px; color: #6b83b0; margin-top: 3px; }
-  #stats { position: fixed; top: 16px; right: 18px; z-index: 5;
-    display: flex; gap: 18px; color: #9fb6e0; font-variant-numeric: tabular-nums; }
-  #stats b { display: block; font-size: 22px; color: #eaf3ff; font-weight: 650; }
-  #stats span { font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
-    color: #5f77a8; }
-  #feed { position: fixed; left: 18px; bottom: 16px; z-index: 5;
-    width: min(420px, 60vw); max-height: 34vh; overflow: hidden;
-    font-size: 12px; line-height: 1.5; color: #b7c7e6;
-    -webkit-mask-image: linear-gradient(to top, #000 60%, transparent);
-            mask-image: linear-gradient(to top, #000 60%, transparent); }
-  #feed .row { opacity: 0; animation: rise .5s forwards; padding: 1px 0; }
-  #feed .who { font-weight: 650; }
-  #feed .verb { color: #6b83b0; }
-  @keyframes rise { from { opacity: 0; transform: translateY(6px);} to {opacity:1;} }
-  #tip { position: fixed; z-index: 6; pointer-events: none;
-    background: rgba(8,14,32,.92); border: 1px solid rgba(110,160,255,.35);
-    color: #dce8ff; font-size: 12px; padding: 7px 10px; border-radius: 8px;
-    max-width: 300px; opacity: 0; transition: opacity .12s;
-    box-shadow: 0 8px 30px rgba(0,0,0,.5); }
-  #hint { position: fixed; right: 18px; bottom: 16px; z-index: 5;
-    font-size: 11px; color: #4c6294; text-align: right; }
+  html, body { height: 100%; }
+  body {
+    overflow: hidden; color: var(--ink);
+    background: radial-gradient(1400px 1000px at 42% 42%, #0e1740 0%, #070c22 42%, var(--void) 80%);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  #brain { position: fixed; inset: 0; display: block; cursor: grab; }
+  #brain:active { cursor: grabbing; }
+  .mono { font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace; }
+
+  #hud { position: fixed; top: 24px; left: 28px; z-index: 5; pointer-events: none; user-select: none; }
+  #hud .mark { font-size: 11px; font-weight: 600; letter-spacing: .36em; text-transform: uppercase;
+    color: var(--synapse); text-shadow: 0 0 24px rgba(90, 180, 255, .7); }
+  #hud h1 { font-size: clamp(24px, 3.6vw, 40px); font-weight: 200; letter-spacing: -.01em; line-height: 1;
+    margin-top: 11px; background: linear-gradient(180deg, #f4f9ff, #9dbdf0);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  #hud h1 b { font-weight: 600; }
+  #hud .live { margin-top: 12px; display: flex; align-items: center; gap: 8px; font-size: 11px;
+    letter-spacing: .16em; text-transform: uppercase; color: var(--dim); }
+  #hud .pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--good);
+    box-shadow: 0 0 12px var(--good); animation: beat 1.8s ease-in-out infinite; }
+  @keyframes beat { 0%,100%{opacity:1} 50%{opacity:.35} }
+
+  #globals { position: fixed; top: 26px; left: 50%; transform: translateX(-50%); z-index: 5;
+    display: flex; gap: 34px; pointer-events: none; user-select: none; }
+  #globals .g b { display: block; font-size: 26px; font-weight: 300; color: #eef5ff;
+    font-variant-numeric: tabular-nums; line-height: 1; text-align: center; }
+  #globals .g span { display: block; margin-top: 6px; font-size: 9px; letter-spacing: .2em;
+    text-transform: uppercase; color: var(--dimmer); text-align: center; }
+
+  /* right-hand operations panel */
+  #ops { position: fixed; top: 0; right: 0; z-index: 5; width: 320px; height: 100%;
+    padding: 26px 24px; display: flex; flex-direction: column; gap: 22px;
+    background: linear-gradient(270deg, rgba(6,10,24,.82) 0%, rgba(6,10,24,.30) 70%, transparent 100%);
+    backdrop-filter: blur(2px); overflow-y: auto; }
+  #ops::-webkit-scrollbar { width: 0; }
+  .card-title { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--dim);
+    display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+
+  .index-big { font-size: 54px; font-weight: 200; line-height: .9; font-variant-numeric: tabular-nums; }
+  .index-big small { font-size: 20px; opacity: .5; }
+  .index-label { margin-top: 6px; font-size: 12px; }
+  .meter { height: 5px; border-radius: 5px; margin-top: 14px; background: rgba(255,255,255,.07); overflow: hidden; }
+  .meter i { display: block; height: 100%; border-radius: 5px; transition: width .6s ease, background .6s; }
+  .index-sub { margin-top: 12px; font-size: 11px; color: var(--dim); line-height: 1.5; }
+
+  .mind { display: grid; grid-template-columns: 12px 1fr auto; align-items: center; gap: 9px;
+    padding: 7px 0; }
+  .mind .dot { width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 9px currentColor; }
+  .mind .name { font-size: 12.5px; color: var(--ink); }
+  .mind .bar { grid-column: 2 / 4; height: 3px; border-radius: 3px; background: rgba(255,255,255,.06);
+    overflow: hidden; margin-top: 3px; }
+  .mind .bar i { display: block; height: 100%; border-radius: 3px; }
+  .mind .reach { font-size: 11px; color: var(--dim); font-variant-numeric: tabular-nums; }
+  .mind .reach b { color: #cfe0ff; font-weight: 600; }
+
+  .pair { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 12px; }
+  .pair .txt { flex: 1; color: var(--ink); }
+  .pair .n { color: var(--dim); font-variant-numeric: tabular-nums; }
+  .pair .pbar { height: 3px; border-radius: 3px; background: var(--synapse); opacity: .5; }
+
+  #feed { position: fixed; left: 28px; bottom: 24px; z-index: 5; width: min(430px, 46vw);
+    max-height: 32vh; overflow: hidden; font-size: 12.5px; line-height: 1.55; color: #adbfe0;
+    -webkit-mask-image: linear-gradient(to top, #000 52%, transparent); mask-image: linear-gradient(to top, #000 52%, transparent); }
+  #feed .row { opacity: 0; animation: rise .5s forwards; padding: 2px 0; }
+  #feed .who { font-weight: 600; } #feed .verb { color: var(--dim); }
+  #feed .arrow { color: var(--warn); } #feed .quote { color: #c7d7f4; }
+  @keyframes rise { from { opacity: 0; transform: translateY(7px);} to {opacity:1;} }
+
+  #tip { position: fixed; z-index: 6; pointer-events: none; max-width: 300px;
+    background: rgba(8,13,30,.92); border: 1px solid rgba(120,170,255,.32); backdrop-filter: blur(9px);
+    color: #dce8ff; font-size: 12px; padding: 9px 12px; border-radius: 10px; opacity: 0;
+    transition: opacity .12s; box-shadow: 0 14px 44px rgba(0,0,0,.6); }
+  #tip .tg { color: var(--dim); font-size: 11px; margin-top: 3px; }
+  #hint { position: fixed; left: 28px; bottom: 6px; z-index: 5; font-size: 10.5px; color: var(--dimmer); letter-spacing: .04em; }
+  @media (prefers-reduced-motion: reduce) { #feed .row { animation: none; opacity: 1; } #hud .pulse { animation: none; } }
 </style>
 
 <canvas id="brain"></canvas>
+
 <div id="hud">
-  <h1>🧠 The Agent Brain</h1>
-  <div class="sub">shared cortex · live synaptic activity</div>
+  <div class="mark">Shared Cortex</div>
+  <h1>Agent <b>Brain</b></h1>
+  <div class="live"><span class="pulse"></span> live · your teams at work</div>
 </div>
-<div id="stats">
-  <div><b id="s-agents">0</b><span>minds</span></div>
-  <div><b id="s-nodes">0</b><span>neurons</span></div>
-  <div><b id="s-edges">0</b><span>synapses</span></div>
+
+<div id="globals">
+  <div class="g"><b id="g-minds">0</b><span>minds</span></div>
+  <div class="g"><b id="g-neurons">0</b><span>neurons</span></div>
+  <div class="g"><b id="g-synapses">0</b><span>synapses</span></div>
+  <div class="g"><b id="g-handoffs">0</b><span>handoffs</span></div>
 </div>
+
+<div id="ops">
+  <section>
+    <div class="card-title"><span>Collaboration Index</span><span class="mono" id="ci-frac">0 / 0</span></div>
+    <div class="index-big" id="ci-num">0<small>%</small></div>
+    <div class="index-label" id="ci-label" style="color:var(--dimmer)">warming up…</div>
+    <div class="meter"><i id="ci-bar" style="width:0%"></i></div>
+    <div class="index-sub">Share of synapses that bridge two different agents — how much your teams build on each other's data instead of their own.</div>
+  </section>
+
+  <section>
+    <div class="card-title"><span>Minds</span><span>neurons · reach</span></div>
+    <div id="minds"></div>
+  </section>
+
+  <section>
+    <div class="card-title"><span>Top Collaborations</span><span>shared links</span></div>
+    <div id="pairs"></div>
+  </section>
+</div>
+
 <div id="feed"></div>
-<div id="hint">drag to pan · scroll to zoom · hover a neuron</div>
+<div id="hint" class="mono">drag to pan · scroll to zoom · hover a neuron</div>
 <div id="tip"></div>
 
 <script>
-const cv = document.getElementById('brain');
-const ctx = cv.getContext('2d');
+"use strict";
+const cv = document.getElementById('brain'), ctx = cv.getContext('2d');
 let W, H, DPR;
 function resize() {
-  DPR = window.devicePixelRatio || 1;
+  DPR = Math.min(2, window.devicePixelRatio || 1);
   W = cv.width = innerWidth * DPR; H = cv.height = innerHeight * DPR;
   cv.style.width = innerWidth + 'px'; cv.style.height = innerHeight + 'px';
 }
 addEventListener('resize', resize); resize();
+function seedRand(s){ return function(){ s=(s*1664525+1013904223)&0x7fffffff; return s/0x7fffffff; }; }
+const rnd = seedRand(20260702);
 
-// ---- world state ----------------------------------------------------
-const nodes = new Map();   // id -> {id, x,y,vx,vy, color, content, tags, agent, deg, act}
-const edges = [];          // {src, dst, weight, kind}
-const edgeKey = new Set(); // "src-dst"
-const pulses = [];         // travelling packets of information
-const agentColors = new Map();
+// ---- graph state -----------------------------------------------------
+const nodes = new Map(), edges = [], edgeKey = new Set(), pulses = [];
+const agentColor = new Map();
+let handoffCount = 0, recallCount = 0;
 
-// view transform (pan/zoom)
-let view = { x: 0, y: 0, k: 1 };
-
-function rand(n){ return (Math.sin(n*12.9898)*43758.5453 % 1 + 1) % 1; }
+// starfield for that deep-space TV feel
+const stars = Array.from({length: 220}, () => ({
+  x: (rnd()*2-1), y: (rnd()*2-1), z: rnd(), tw: rnd()*6.28 }));
 
 function addNode(n) {
-  if (nodes.has(n.id)) return;
-  // seed position near centre, deterministic spread by id
-  const a = rand(n.id) * Math.PI * 2, r = 60 + rand(n.id+7) * 220;
-  nodes.set(n.id, {
-    id: n.id, x: Math.cos(a)*r, y: Math.sin(a)*r, vx: 0, vy: 0,
-    color: n.color || agentColors.get(n.agent) || '#7fd0ff',
-    content: n.content || '', tags: n.tags || [], agent: n.agent || '',
-    deg: 0, act: 1.4,
-  });
+  if (nodes.has(n.id)) return nodes.get(n.id);
+  const a = rnd()*Math.PI*2, r = 60 + rnd()*300;   // spread out — spacious
+  const node = { id:n.id, agent:n.agent||'', content:n.content||'', tags:n.tags||[],
+    color:n.color||agentColor.get(n.agent)||'#7fd0ff',
+    x:Math.cos(a)*r, y:Math.sin(a)*r, vx:0, vy:0, deg:0, act:1.6 };
+  nodes.set(n.id, node); return node;
 }
 function addEdge(e) {
-  const k = e.src + '-' + e.dst;
-  if (edgeKey.has(k)) return; edgeKey.add(k);
-  edges.push(e);
-  const a = nodes.get(e.src), b = nodes.get(e.dst);
+  const k = e.src+'-'+e.dst; if (edgeKey.has(k)) return; edgeKey.add(k);
+  edges.push(e); const a=nodes.get(e.src), b=nodes.get(e.dst);
   if (a) a.deg++; if (b) b.deg++;
 }
 function firePulse(src, dst, color, strong) {
-  if (!nodes.has(src) || !nodes.has(dst)) return;
-  pulses.push({ src, dst, t: 0, color: color || '#8fe0ff',
-                speed: strong ? .018 : .03, strong: !!strong });
+  if (!nodes.has(src)||!nodes.has(dst)) return;
+  pulses.push({ src, dst, t:0, color:color||'#8fe0ff', speed: strong?.016:.028, strong:!!strong });
 }
 
-// ---- physics: spring-electrical layout -------------------------------
+// ---- physics: airy spring-electrical ---------------------------------
 function simulate() {
-  const arr = [...nodes.values()];
-  const N = arr.length;
-  for (let i = 0; i < N; i++) {
-    const p = arr[i];
-    // gentle pull to centre
-    p.vx += -p.x * 0.0009; p.vy += -p.y * 0.0009;
-    for (let j = i + 1; j < N; j++) {
-      const q = arr[j];
-      let dx = p.x - q.x, dy = p.y - q.y;
-      let d2 = dx*dx + dy*dy || 0.01;
-      if (d2 > 90000) continue;               // ignore far pairs (cheap)
-      const f = 900 / d2;
-      const d = Math.sqrt(d2);
-      dx /= d; dy /= d;
-      p.vx += dx*f; p.vy += dy*f;
-      q.vx -= dx*f; q.vy -= dy*f;
-    }
-  }
-  for (const e of edges) {
-    const a = nodes.get(e.src), b = nodes.get(e.dst);
-    if (!a || !b) continue;
-    let dx = b.x - a.x, dy = b.y - a.y;
-    const d = Math.sqrt(dx*dx + dy*dy) || 0.01;
-    const rest = 70 + (1 - (e.weight||0.3)) * 90;
-    const f = (d - rest) * 0.012 * (0.5 + (e.weight||0.3));
-    dx /= d; dy /= d;
-    a.vx += dx*f; a.vy += dy*f;
-    b.vx -= dx*f; b.vy -= dy*f;
-  }
-  for (const p of arr) {
-    p.vx *= 0.86; p.vy *= 0.86;
-    p.x += p.vx; p.y += p.vy;
-    if (p.act > 0) p.act = Math.max(0, p.act - 0.012);
-  }
+  const arr = [...nodes.values()], N = arr.length;
+  for (let i=0;i<N;i++){ const p=arr[i];
+    p.vx += -p.x*0.0008; p.vy += -p.y*0.0008;
+    for (let j=i+1;j<N;j++){ const q=arr[j];
+      let dx=p.x-q.x, dy=p.y-q.y, d2=dx*dx+dy*dy||.01;
+      if (d2>140000) continue;
+      const f=1400/d2, d=Math.sqrt(d2); dx/=d; dy/=d;
+      p.vx+=dx*f; p.vy+=dy*f; q.vx-=dx*f; q.vy-=dy*f; } }
+  for (const e of edges){ const a=nodes.get(e.src), b=nodes.get(e.dst); if(!a||!b)continue;
+    let dx=b.x-a.x, dy=b.y-a.y, d=Math.sqrt(dx*dx+dy*dy)||.01;
+    const rest=95+(1-(e.weight||.3))*120, f=(d-rest)*0.010*(0.5+(e.weight||.3));
+    dx/=d; dy/=d; a.vx+=dx*f; a.vy+=dy*f; b.vx-=dx*f; b.vy-=dy*f; }
+  for (const p of arr){ p.vx*=0.88; p.vy*=0.88; p.x+=p.vx; p.y+=p.vy;
+    if (p.act>0) p.act=Math.max(0, p.act-0.011); }
 }
 
-// ---- render ----------------------------------------------------------
-let t = 0;
+// ---- render: fine strands, small bright neurons, soft bloom ----------
+const view = { x:0, y:0, k:0.85 };
+function centerCss(){ return { cx: innerWidth*0.40, cy: innerHeight*0.52 }; }
+let frame = 0;
 function draw() {
-  t++;
-  simulate();
-  ctx.setTransform(1,0,0,1,0,0);
-  ctx.clearRect(0,0,W,H);
+  frame++; simulate();
+  const { cx, cy } = centerCss();
+  ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,W,H);
+
+  // drifting starfield
+  for (const s of stars){
+    const px=(cx + s.x*innerWidth*0.6)*DPR, py=(cy + s.y*innerHeight*0.6)*DPR;
+    const tw = 0.25 + 0.55*(0.5+0.5*Math.sin(frame*0.02 + s.tw));
+    ctx.fillStyle = 'rgba(150,190,255,'+(tw*(0.25+s.z*0.4))+')';
+    ctx.beginPath(); ctx.arc(px, py, (0.5+s.z*1.2)*DPR, 0, 7); ctx.fill();
+  }
+
   ctx.save();
-  ctx.translate(W/2 + view.x*DPR, H/2 + view.y*DPR);
+  ctx.translate(cx*DPR + view.x*DPR, cy*DPR + view.y*DPR);
   ctx.scale(view.k*DPR, view.k*DPR);
-
-  // synapses
   ctx.lineCap = 'round';
-  for (const e of edges) {
-    const a = nodes.get(e.src), b = nodes.get(e.dst);
-    if (!a || !b) continue;
-    const w = 0.4 + (e.weight||0.3) * 1.6;
-    ctx.strokeStyle = e.kind === 'handoff'
-      ? 'rgba(255,180,90,0.28)' : 'rgba(90,150,255,0.14)';
-    ctx.lineWidth = w;
-    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-  }
 
-  // pulses (information travelling down the wire)
-  for (let i = pulses.length - 1; i >= 0; i--) {
-    const p = pulses[i];
-    p.t += p.speed;
-    const a = nodes.get(p.src), b = nodes.get(p.dst);
-    if (!a || !b || p.t >= 1) {
-      if (b) b.act = 1.6;               // arrival lights up the target
-      pulses.splice(i, 1); continue;
-    }
-    const x = a.x + (b.x - a.x) * p.t, y = a.y + (b.y - a.y) * p.t;
-    const rad = p.strong ? 4.5 : 3;
-    const g = ctx.createRadialGradient(x, y, 0, x, y, rad*3);
-    g.addColorStop(0, p.color); g.addColorStop(1, 'transparent');
-    ctx.fillStyle = g;
-    ctx.beginPath(); ctx.arc(x, y, rad*3, 0, 7); ctx.fill();
-    ctx.fillStyle = '#eaffff';
-    ctx.beginPath(); ctx.arc(x, y, rad*0.6, 0, 7); ctx.fill();
-  }
+  // synapses — very fine, faint, cool
+  for (const e of edges){ const a=nodes.get(e.src), b=nodes.get(e.dst); if(!a||!b)continue;
+    ctx.strokeStyle = e.kind==='handoff' ? 'rgba(255,190,110,'+(0.10+(e.weight||.3)*0.2)+')'
+                                         : 'rgba(110,165,255,'+(0.05+(e.weight||.3)*0.16)+')';
+    ctx.lineWidth = 0.22 + (e.weight||.3)*0.9;
+    ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); }
 
-  // neurons
-  for (const p of nodes.values()) {
-    const base = 3 + Math.min(9, p.deg * 0.9);
-    const r = base + p.act * 4;
-    const glow = 0.25 + p.act * 0.6;
-    const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r*3.4);
+  // pulses — bright sparks with bloom
+  ctx.shadowBlur = 14;
+  for (let i=pulses.length-1;i>=0;i--){ const p=pulses[i]; p.t+=p.speed;
+    const a=nodes.get(p.src), b=nodes.get(p.dst);
+    if(!a||!b||p.t>=1){ if(b)b.act=1.7; pulses.splice(i,1); continue; }
+    const x=a.x+(b.x-a.x)*p.t, y=a.y+(b.y-a.y)*p.t;
+    ctx.shadowColor = p.color; ctx.fillStyle = '#eaffff';
+    ctx.beginPath(); ctx.arc(x, y, p.strong?2.2:1.5, 0, 7); ctx.fill(); }
+  ctx.shadowBlur = 0;
+
+  // neurons — small cores, soft halos (the TV bloom)
+  for (const p of nodes.values()){
+    const base = 1.6 + Math.min(6, p.deg*0.6), r = base + p.act*2.4;
+    const g = ctx.createRadialGradient(p.x,p.y,0, p.x,p.y, r*5);
     g.addColorStop(0, p.color); g.addColorStop(1, 'transparent');
-    ctx.globalAlpha = glow; ctx.fillStyle = g;
-    ctx.beginPath(); ctx.arc(p.x, p.y, r*3.4, 0, 7); ctx.fill();
-    ctx.globalAlpha = 1; ctx.fillStyle = p.color;
-    ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, 7); ctx.fill();
-    ctx.fillStyle = 'rgba(255,255,255,0.9)';
-    ctx.beginPath(); ctx.arc(p.x, p.y, r*0.4, 0, 7); ctx.fill();
-  }
+    ctx.globalAlpha = 0.14 + p.act*0.4; ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(p.x, p.y, r*5, 0, 7); ctx.fill();
+    ctx.globalAlpha = 1; ctx.shadowBlur = 8; ctx.shadowColor = p.color;
+    ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, 7); ctx.fill();
+    ctx.shadowBlur = 0; ctx.fillStyle = 'rgba(255,255,255,.95)';
+    ctx.beginPath(); ctx.arc(p.x, p.y, r*0.34, 0, 7); ctx.fill(); }
+
   ctx.restore();
   requestAnimationFrame(draw);
 }
 requestAnimationFrame(draw);
 
-// ---- feed & stats ----------------------------------------------------
+// ---- feed ------------------------------------------------------------
 const feed = document.getElementById('feed');
-function logFeed(html) {
-  const row = document.createElement('div');
-  row.className = 'row'; row.innerHTML = html;
-  feed.prepend(row);
-  while (feed.children.length > 14) feed.lastChild.remove();
+function esc(s){ return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function logFeed(html){ const r=document.createElement('div'); r.className='row'; r.innerHTML=html;
+  feed.prepend(r); while(feed.children.length>16) feed.lastChild.remove(); }
+
+// ---- collaboration metrics (computed live) ---------------------------
+function healthOf(pct){
+  if (pct >= 45) return { c:'var(--good)', t:'Highly collaborative — teams are deeply building on each other.' };
+  if (pct >= 20) return { c:'var(--synapse)', t:'Linking up — knowledge is starting to cross between agents.' };
+  return { c:'var(--warn)', t:'Siloed — agents are mostly working from their own data.' };
 }
-function setStats() {
-  document.getElementById('s-agents').textContent = agentColors.size;
-  document.getElementById('s-nodes').textContent = nodes.size;
-  document.getElementById('s-edges').textContent = edges.length;
+function renderMetrics(){
+  const per = new Map();
+  for (const n of nodes.values()){
+    if(!per.has(n.agent)) per.set(n.agent, {agent:n.agent, color:n.color, neurons:0, reach:0});
+    per.get(n.agent).neurons++;
+  }
+  let cross=0, total=0; const pairs=new Map();
+  for (const e of edges){ const a=nodes.get(e.src), b=nodes.get(e.dst); if(!a||!b)continue; total++;
+    if (a.agent!==b.agent){ cross++;
+      per.get(a.agent) && per.get(a.agent).reach++; per.get(b.agent) && per.get(b.agent).reach++;
+      const key=[a.agent,b.agent].sort().join(' ↔ '); pairs.set(key,(pairs.get(key)||0)+1); } }
+  const pct = total ? Math.round(cross/total*100) : 0;
+
+  document.getElementById('g-minds').textContent = per.size;
+  document.getElementById('g-neurons').textContent = nodes.size;
+  document.getElementById('g-synapses').textContent = edges.length;
+  document.getElementById('g-handoffs').textContent = handoffCount;
+
+  const h = healthOf(pct);
+  document.getElementById('ci-num').innerHTML = pct + '<small>%</small>';
+  document.getElementById('ci-frac').textContent = cross + ' / ' + total;
+  const bar = document.getElementById('ci-bar'); bar.style.width = pct + '%'; bar.style.background = h.c;
+  const lab = document.getElementById('ci-label'); lab.textContent = h.t; lab.style.color = h.c;
+
+  const minds = [...per.values()].sort((a,b)=> b.reach-a.reach || b.neurons-a.neurons);
+  const maxN = Math.max(1, ...minds.map(m=>m.neurons));
+  document.getElementById('minds').innerHTML = minds.map(m=>`
+    <div class="mind">
+      <span class="dot" style="color:${m.color}"></span>
+      <span class="name">${esc(m.agent)}</span>
+      <span class="reach">${m.neurons} · <b>${m.reach}</b></span>
+      <span class="bar"><i style="width:${Math.round(m.neurons/maxN*100)}%;background:${m.color}"></i></span>
+    </div>`).join('') || '<div class="index-sub">waiting for the first minds to connect…</div>';
+
+  const top = [...pairs.entries()].sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const maxP = Math.max(1, ...top.map(p=>p[1]));
+  document.getElementById('pairs').innerHTML = top.map(([k,v])=>`
+    <div class="pair"><span class="txt">${esc(k)}</span>
+      <span class="pbar" style="width:${18+Math.round(v/maxP*60)}px"></span>
+      <span class="n">${v}</span></div>`).join('')
+    || '<div class="index-sub">no cross-agent links yet — they haven\'t touched each other\'s data.</div>';
 }
-function esc(s){ return (s||'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+setInterval(renderMetrics, 700);
 
 // ---- live stream -----------------------------------------------------
-function ingestSnapshot(state) {
-  for (const a of state.agents) agentColors.set(a.name, a.color);
-  for (const n of state.nodes) { n.color = agentColors.get(n.agent); addNode(n); }
-  for (const e of state.edges) addEdge(e);
-  setStats();
+function ingest(state){
+  for (const a of state.agents) agentColor.set(a.name, a.color);
+  for (const n of state.nodes){ n.color = agentColor.get(n.agent); addNode(n); }
+  for (const e of state.edges){ addEdge(e); if(e.kind==='handoff') handoffCount++; }
+  renderMetrics();
 }
-function connect() {
+function connect(){
   const es = new EventSource('/events');
-  es.onmessage = (m) => {
-    let ev; try { ev = JSON.parse(m.data); } catch { return; }
-    if (ev.type === 'snapshot') { ingestSnapshot(ev.state); return; }
-    if (ev.type === 'node_added') {
-      if (ev.node.agent) agentColors.set(ev.node.agent, ev.color);
+  es.onmessage = (m)=>{ let ev; try{ ev=JSON.parse(m.data); }catch{ return; }
+    if (ev.type==='snapshot'){ ingest(ev.state); return; }
+    if (ev.type==='node_added'){
+      if (ev.node.agent) agentColor.set(ev.node.agent, ev.color);
       ev.node.color = ev.color; addNode(ev.node);
-      logFeed(`<span class="who" style="color:${ev.color}">${esc(ev.node.agent)}</span> <span class="verb">learned</span> ${esc(ev.node.content).slice(0,70)}`);
-      setStats();
-    } else if (ev.type === 'edge_added') {
-      addEdge(ev.edge); setStats();
-    } else if (ev.type === 'fire') {
-      const src = nodes.get(ev.node); if (src) src.act = 1.8;
-      for (const dst of ev.targets)
-        firePulse(ev.node, dst, src ? src.color : '#8fe0ff');
-    } else if (ev.type === 'recall') {
-      logFeed(`<span class="verb">recall</span> “${esc(ev.query)}” → ${ev.hits.length} memories`);
-      // chain a pulse through the recalled memories
-      for (let i = 0; i < ev.hits.length - 1; i++)
-        firePulse(ev.hits[i], ev.hits[i+1], '#8affc8');
-      for (const id of ev.hits){ const n = nodes.get(id); if (n) n.act = 1.6; }
-    } else if (ev.type === 'handoff') {
-      const c = agentColors.get(ev.from) || '#ffb45a';
-      logFeed(`<span class="who" style="color:${c}">${esc(ev.from)}</span> <span class="verb">→ handed off to</span> <span class="who">${esc(ev.to)}</span>`);
+      logFeed(`<span class="who" style="color:${ev.color}">${esc(ev.node.agent)}</span> <span class="verb">taught</span> <span class="quote">${esc(ev.node.content).slice(0,72)}</span>`);
+    } else if (ev.type==='edge_added'){ addEdge(ev.edge);
+    } else if (ev.type==='fire'){ const s=nodes.get(ev.node); if(s)s.act=1.9;
+      for (const d of ev.targets) firePulse(ev.node, d, s?s.color:'#8fe0ff');
+    } else if (ev.type==='recall'){ recallCount++;
+      const src = ev.sources && ev.sources.filter(x=>x && x!==ev.by);
+      const learned = src && src.length ? ` <span class="verb">from</span> ${esc([...new Set(src)].join(', '))}` : '';
+      logFeed(`<span class="who">${esc(ev.by||'someone')}</span> <span class="verb">recalled</span> “${esc(ev.query)}”${learned}`);
+      for (let i=0;i<ev.hits.length-1;i++) firePulse(ev.hits[i], ev.hits[i+1], '#8affc8');
+      for (const id of ev.hits){ const n=nodes.get(id); if(n)n.act=1.7; }
+    } else if (ev.type==='handoff'){ handoffCount++;
+      const c = agentColor.get(ev.from)||'#ffb45a';
+      logFeed(`<span class="who" style="color:${c}">${esc(ev.from)}</span> <span class="arrow">→ handed off to</span> <span class="who">${esc(ev.to)}</span>`);
     }
   };
-  es.onerror = () => { es.close(); setTimeout(connect, 1500); };
+  es.onerror = ()=>{ es.close(); setTimeout(connect, 1500); };
 }
 connect();
 
-// ---- interaction: pan, zoom, hover ----------------------------------
-let drag = null;
-cv.addEventListener('mousedown', e => drag = { x: e.clientX, y: e.clientY });
-addEventListener('mouseup', () => drag = null);
-addEventListener('mousemove', e => {
-  if (drag) {
-    view.x += e.clientX - drag.x; view.y += e.clientY - drag.y;
-    drag = { x: e.clientX, y: e.clientY };
-  }
-  hover(e);
-});
-cv.addEventListener('wheel', e => {
-  e.preventDefault();
-  const f = e.deltaY < 0 ? 1.1 : 0.9;
-  view.k = Math.max(0.2, Math.min(4, view.k * f));
-}, { passive: false });
-
+// ---- interaction -----------------------------------------------------
+let drag=null;
+cv.addEventListener('mousedown', e=> drag={x:e.clientX,y:e.clientY});
+addEventListener('mouseup', ()=> drag=null);
+addEventListener('mousemove', e=>{ if(drag){ view.x+=e.clientX-drag.x; view.y+=e.clientY-drag.y; drag={x:e.clientX,y:e.clientY}; } hover(e); });
+cv.addEventListener('wheel', e=>{ e.preventDefault(); view.k=Math.max(0.25,Math.min(3,view.k*(e.deltaY<0?1.1:0.9))); }, {passive:false});
 const tip = document.getElementById('tip');
-function hover(e) {
-  const mx = (e.clientX - innerWidth/2 - view.x) / view.k;
-  const my = (e.clientY - innerHeight/2 - view.y) / view.k;
-  let best = null, bd = 14*14;
-  for (const p of nodes.values()) {
-    const dx = p.x - mx, dy = p.y - my, d = dx*dx + dy*dy;
-    if (d < bd) { bd = d; best = p; }
-  }
-  if (best) {
-    tip.style.opacity = 1;
-    tip.style.left = (e.clientX + 14) + 'px';
-    tip.style.top = (e.clientY + 14) + 'px';
-    tip.innerHTML = `<b style="color:${best.color}">${esc(best.agent)||'brain'}</b> · ${best.deg} synapses<br>${esc(best.content)}` +
-      (best.tags.length ? `<br><span style="color:#6b83b0">#${best.tags.map(esc).join(' #')}</span>` : '');
-  } else tip.style.opacity = 0;
+function hover(e){
+  const { cx, cy } = centerCss();
+  const mx=(e.clientX-cx-view.x)/view.k, my=(e.clientY-cy-view.y)/view.k;
+  let best=null, bd=16*16;
+  for (const p of nodes.values()){ const dx=p.x-mx, dy=p.y-my, d=dx*dx+dy*dy; if(d<bd){bd=d;best=p;} }
+  if (best){ tip.style.opacity=1; tip.style.left=(e.clientX+15)+'px'; tip.style.top=(e.clientY+15)+'px';
+    tip.innerHTML=`<b style="color:${best.color}">${esc(best.agent)||'brain'}</b> · ${best.deg} synapses<br>${esc(best.content)}`
+      + (best.tags.length?`<div class="tg">#${best.tags.map(esc).join(' #')}</div>`:''); }
+  else tip.style.opacity=0;
 }
 </script>
