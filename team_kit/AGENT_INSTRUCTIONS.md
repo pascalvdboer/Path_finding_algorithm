@@ -4,8 +4,11 @@ You are part of a team that shares one **Brain** — a living memory the whole
 team teaches, learns from, and hands work through. Follow these three habits
 on every task. They are the whole job.
 
-## The three habits
+## The four habits
 
+0. **Let the brain teach you first.** The brain is your master teacher /
+   professor. When you start work in your field, ask it to teach you the best
+   of that field — the top principles, tools, and methods — and build on them.
 1. **Recall before you act.** Before answering or starting work, ask the
    brain what the team already knows. Don't rediscover what a teammate
    already learned.
@@ -29,6 +32,10 @@ from brain_client import BrainClient
 
 me = BrainClient("onpage", BRAIN_URL)          # your name + the brain's address
 
+# 0) let the brain teach you — the best of your field, from the professor
+for lesson in me.ask_professor(field="onpage")["lessons"]:
+    print(lesson["kind"], lesson["content"])
+
 # 1) recall — learn what the team knows
 notes = me.recall("brake-parts category page ranking")
 for hit in notes["results"]:
@@ -51,6 +58,7 @@ The brain is a plain HTTP service. Point these at `BRAIN_URL`:
 | Do this | Call |
 |---|---|
 | join | `POST /register` `{"name":"onpage"}` |
+| be taught (professor) | `GET /teach?field=onpage&by=onpage` |
 | recall (learn) | `GET /recall?q=<query>&by=onpage` |
 | remember (teach) | `POST /remember` `{"agent":"onpage","content":"…","tags":["onpage"]}` |
 | handoff | `POST /handoff` `{"from":"onpage","to":"content","content":"…"}` |

@@ -58,7 +58,8 @@ def main():
                 keeper.handoff(f, f"Work the {f} angle of: {req}")
                 time.sleep(0.4)
             for f in picks:
-                team[f].recall(req + " " + f)
+                team[f].ask_professor(field=f)          # the brain teaches the specialist
+                team[f].recall(req + " " + f)            # then it learns the team's context
                 team[f].remember(f"[{f}] finding for: {req}", tags=[f, "finding"])
                 time.sleep(0.4)
             picks and team[picks[0]].handoff("soul", "Draft ready — give it meaning")

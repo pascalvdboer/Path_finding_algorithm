@@ -5,7 +5,11 @@ A shared **cortex** your agents plug into — a living place where they
 information instantly. Every memory becomes a neuron; related memories wire
 themselves together into synapses; and the whole thing is drawn as a
 **living neural map** where pulses of information travel down the wires in
-real time as agents think together.
+real time as agents think together. The brain is also their **master teacher /
+professor** — it actively teaches each agent the best of its field.
+
+> **New here? Read [`START_HERE.md`](START_HERE.md)** — run it in 2 minutes,
+> connect your team, and deploy it always-on.
 
 Built on the Python **standard library only** — no pip installs, no build
 step. Clone it and run it.
@@ -20,6 +24,7 @@ step. Clone it and run it.
 |------|-----------------------|
 | **A place of connection & storage** | A persistent knowledge graph in SQLite. Nothing is lost between runs. |
 | **Teach** | `remember(content, tags)` — the memory auto-wires to every related memory already in the brain. |
+| **Be taught** | `ask_professor(field)` — the brain teaches you the best knowledge, tools and trainings of your field. |
 | **Learn** | `recall(query)` — pulls back the most related memories, ranked. |
 | **Work together / fast handoffs** | `handoff(to, content)` is pushed to the target agent **instantly** over a live stream — no polling. |
 | **Fast, visual output** | A browser neural map lights up the moment anything happens: new neurons, forming synapses, recalls chaining through memory, handoffs pulsing agent-to-agent. |

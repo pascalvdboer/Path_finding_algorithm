@@ -4,11 +4,11 @@
   "agents": [
     {
       "name": "feeder",
-      "title": "Feeder — the brain stem",
+      "title": "Feeder / Professor — the brain stem & master teacher",
       "group": "core",
       "field": null,
-      "instruction": "Continuously source the most valuable knowledge, tools and trainings for every field and teach them into the brain. Never stop — keep the base fresh and ranked by value.",
-      "pace": 0.8
+      "instruction": "Continuously source the most valuable knowledge, tools and trainings for every field and teach them into the brain. You are the master teacher: keep the base fresh, ranked by value, and ready to teach any agent the best of its field on demand.",
+      "pace": 1.5
     },
     {
       "name": "keeper",

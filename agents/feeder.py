@@ -51,6 +51,16 @@ def main():
     print(f"      corpus: {stats()}")
     print("      steer it live, e.g.:  curl -s $URL/steer -d '{\"agent\":\"feeder\",\"focus\":[\"technical\"]}'\n")
 
+    # Fast initial pass — teach the whole curriculum in so the Professor is
+    # fully knowledgeable within seconds, then settle to a steady inflow.
+    print("      seeding the curriculum …")
+    for field, kind, text, tags in CORPUS:
+        if (feeder.directive or {}).get("paused"):
+            break
+        feeder.remember(text, tags=list(tags) + [field, kind])
+        time.sleep(0.06)
+    print("      curriculum seeded — now keeping the base fresh.\n")
+
     idx = 0
     while True:
         d = feeder.directive or {}
@@ -72,7 +82,7 @@ def main():
         feeder.remember(text, tags=list(tags) + [field, kind])
 
         # pace: seconds between pulses of knowledge (the "rush" speed)
-        pace = float(d.get("pace", 0.8))
+        pace = float(d.get("pace", 1.5))
         time.sleep(max(0.05, pace))
 
 

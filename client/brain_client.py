@@ -45,6 +45,19 @@ class BrainClient:
             "from": self.name, "to": to,
             "content": content, "tags": tags or []})
 
+    def ask_professor(self, topic=None, field=None, k=6):
+        """Ask the brain to teach you the best of a field/topic.
+
+        The brain is the master teacher: this returns the most valuable
+        curated knowledge, tools and trainings for your craft, ranked.
+        """
+        parts = [f"k={k}", f"by={urllib.parse.quote(self.name)}"]
+        if field:
+            parts.append(f"field={urllib.parse.quote(field)}")
+        if topic:
+            parts.append(f"q={urllib.parse.quote(topic)}")
+        return self._get("/teach?" + "&".join(parts))
+
     def listen(self, callback, only_handoffs_to_me=True, background=True):
         """Subscribe to the live stream. Calls `callback(event)` per event.
 

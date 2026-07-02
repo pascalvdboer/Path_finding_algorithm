@@ -186,6 +186,41 @@ class Brain:
                     results.append({"node": node, "score": round(s, 4)})
             return results
 
+    # -- the Professor: teach the best of a field -----------------------
+    def teach(self, field=None, query=None, k=6):
+        """The brain as master teacher.
+
+        Returns the most valuable *authoritative* knowledge for an agent —
+        the curated material the Feeder taught in (facts, tools, trainings),
+        ranked for a field and/or a topic. This is how the brain actively
+        teaches its agents the best of their craft.
+        """
+        qkw = linking.keywords(query or field or "")
+        KINDS = {"fact", "tool", "training"}
+        with self._lock:
+            scored = []
+            for r in self._db.execute("SELECT * FROM nodes"):
+                tags = json.loads(r["tags"])
+                tagset = set(tags)
+                # authoritative = taught by the Feeder or carrying a kind tag
+                if r["agent"] != "feeder" and not (tagset & KINDS):
+                    continue
+                score = linking.similarity(qkw, linking.keywords(r["content"], tags)) if qkw else 0.0
+                if field and field in tagset:
+                    score += 0.6
+                # a gentle preference: principles first, then trainings, then tools
+                score += 0.15 if "fact" in tagset else 0.08 if "training" in tagset else 0.0
+                if score <= 0 and not (field or query):
+                    score = 0.01
+                if score > 0:
+                    kind = next((t for t in tags if t in KINDS), "fact")
+                    scored.append((score, {
+                        "content": r["content"], "tags": tags,
+                        "kind": kind, "field": field,
+                    }))
+            scored.sort(key=lambda x: x[0], reverse=True)
+            return [item for _s, item in scored[:k]]
+
     # -- direct handoff (teach a specific agent) ------------------------
     def handoff(self, src_agent, dst_agent, content, tags=None):
         """One agent hands knowledge directly to another.

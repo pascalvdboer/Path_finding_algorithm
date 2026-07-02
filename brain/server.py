@@ -55,6 +55,14 @@ class BrainApp:
                           "node": node["id"], "content": content})
         return {"node": node, "to": dst}
 
+    def professor(self, field, query, k, by=None):
+        """The brain teaches an agent the best of its field, and lights the
+        cortex where the teaching came from."""
+        lessons = self.brain.teach(field, query, k)
+        self.bus.publish({"type": "recall", "query": query or field or "teach me",
+                          "by": by, "hits": [], "sources": ["feeder"]})
+        return {"field": field, "lessons": lessons}
+
     def steer(self, agent, patch):
         """Change an agent's directive while it runs and push it live."""
         directive = self.brain.set_directive(agent, patch)
@@ -104,6 +112,12 @@ def make_handler(app):
                 return self._json(app.brain.stats())
             if u.path == "/metrics":
                 return self._json(app.brain.metrics())
+            if u.path == "/teach":
+                field = (q.get("field") or [None])[0]
+                query = (q.get("q") or [None])[0]
+                k = int((q.get("k") or ["6"])[0])
+                by = (q.get("by") or [None])[0]
+                return self._json(app.professor(field, query, k, by))
             if u.path == "/directive":
                 who = (q.get("agent") or ["anon"])[0]
                 return self._json(app.brain.get_directive(who))

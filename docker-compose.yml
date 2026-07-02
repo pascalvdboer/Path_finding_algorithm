@@ -1,0 +1,12 @@
+services:
+  brain:
+    build: .
+    container_name: agent-brain
+    ports:
+      - "8000:8000"          # dashboard + API — open http://<host>:8000
+    volumes:
+      - brain-data:/data     # the brain's memory (brain.db) persists here
+    restart: unless-stopped  # always-on: comes back after reboots
+
+volumes:
+  brain-data:
