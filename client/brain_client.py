@@ -25,6 +25,8 @@ class BrainClient:
         self.name = name
         self.url = url.rstrip("/")
         self.info = self._post("/register", {"name": name})
+        # a live, always-current view of how this agent is being steered
+        self.directive = self._get(f"/directive?agent={urllib.parse.quote(name)}")
 
     # -- core verbs -----------------------------------------------------
     def remember(self, content, tags=None):
@@ -71,6 +73,28 @@ class BrainClient:
             t.start()
             return t
         run()
+
+    # -- steering (change agents while they run) ------------------------
+    def steer(self, agent, **patch):
+        """Steer another agent (or '*' for all) live: focus, pace, pause,
+        instruction — any keys you like. Pushed instantly to that agent."""
+        return self._post("/steer", {"agent": agent, **patch})
+
+    def refresh_directive(self):
+        """Pull this agent's current directive on demand."""
+        self.directive = self._get(
+            f"/directive?agent={urllib.parse.quote(self.name)}")
+        return self.directive
+
+    def follow_steering(self, on_change=None):
+        """Keep self.directive live: subscribe to steer events aimed at this
+        agent (or '*') and update in the background. Optional on_change(d)."""
+        def handle(ev):
+            if ev.get("type") == "steer" and ev.get("agent") in (self.name, "*"):
+                self.refresh_directive()
+                if on_change:
+                    on_change(self.directive)
+        return self.listen(handle, only_handoffs_to_me=False)
 
     def stats(self):
         return self._get("/stats")

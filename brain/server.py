@@ -55,6 +55,13 @@ class BrainApp:
                           "node": node["id"], "content": content})
         return {"node": node, "to": dst}
 
+    def steer(self, agent, patch):
+        """Change an agent's directive while it runs and push it live."""
+        directive = self.brain.set_directive(agent, patch)
+        self.bus.publish({"type": "steer", "agent": agent,
+                          "directive": directive})
+        return {"agent": agent, "directive": directive}
+
 
 def make_handler(app):
     class Handler(BaseHTTPRequestHandler):
@@ -97,6 +104,11 @@ def make_handler(app):
                 return self._json(app.brain.stats())
             if u.path == "/metrics":
                 return self._json(app.brain.metrics())
+            if u.path == "/directive":
+                who = (q.get("agent") or ["anon"])[0]
+                return self._json(app.brain.get_directive(who))
+            if u.path == "/directives":
+                return self._json(app.brain.all_directives())
             if u.path == "/recall":
                 query = (q.get("q") or [""])[0]
                 k = int((q.get("k") or ["5"])[0])
@@ -121,6 +133,11 @@ def make_handler(app):
                     data.get("to", "anon"),
                     data.get("content", ""),
                     data.get("tags", []),
+                ))
+            if u.path == "/steer":
+                return self._json(app.steer(
+                    data.get("agent", "*"),
+                    {k: v for k, v in data.items() if k != "agent"},
                 ))
             return self._json({"error": "not found"}, 404)
 

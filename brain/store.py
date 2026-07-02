@@ -63,6 +63,11 @@ class Brain:
                     kind     TEXT NOT NULL DEFAULT 'assoc',
                     created  REAL NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS directives (
+                    agent    TEXT PRIMARY KEY,
+                    data     TEXT NOT NULL,
+                    updated  REAL NOT NULL
+                );
                 """
             )
             self._db.commit()
@@ -227,6 +232,48 @@ class Brain:
             n = self._db.execute("SELECT COUNT(*) c FROM nodes").fetchone()["c"]
             e = self._db.execute("SELECT COUNT(*) c FROM edges").fetchone()["c"]
             return {"agents": a, "neurons": n, "synapses": e}
+
+    # -- live steering (change agents while they run) -------------------
+    def set_directive(self, agent, patch):
+        """Merge a steering patch into an agent's directive and persist it.
+
+        `agent` may be a specific name or '*' for the global default that
+        applies to every agent. Returns the merged directive.
+        """
+        with self._lock:
+            row = self._db.execute(
+                "SELECT data FROM directives WHERE agent = ?", (agent,)
+            ).fetchone()
+            current = json.loads(row["data"]) if row else {}
+            current.update(patch or {})
+            self._db.execute(
+                "INSERT INTO directives (agent, data, updated) VALUES (?,?,?)"
+                " ON CONFLICT(agent) DO UPDATE SET data=excluded.data,"
+                " updated=excluded.updated",
+                (agent, json.dumps(current), _now()),
+            )
+            self._db.commit()
+            return current
+
+    def get_directive(self, agent):
+        """Effective directive for an agent: global defaults ('*') overlaid
+        with the agent's own directive."""
+        with self._lock:
+            merged = {}
+            for key in ("*", agent):
+                row = self._db.execute(
+                    "SELECT data FROM directives WHERE agent = ?", (key,)
+                ).fetchone()
+                if row:
+                    merged.update(json.loads(row["data"]))
+            return merged
+
+    def all_directives(self):
+        with self._lock:
+            out = {}
+            for r in self._db.execute("SELECT agent, data FROM directives"):
+                out[r["agent"]] = json.loads(r["data"])
+            return out
 
     # -- collaboration analytics ----------------------------------------
     def metrics(self):
