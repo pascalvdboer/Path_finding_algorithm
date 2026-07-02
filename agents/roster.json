@@ -1,0 +1,61 @@
+{
+  "_comment": "The agents that work with the brain. Add as many as you like — one entry per agent. Reload with `python agents/roster.py` (safe to re-run; it merges). New agents can also be added while the brain runs.",
+
+  "agents": [
+    {
+      "name": "feeder",
+      "title": "Feeder — the brain stem",
+      "group": "core",
+      "field": null,
+      "instruction": "Continuously source the most valuable knowledge, tools and trainings for every field and teach them into the brain. Never stop — keep the base fresh and ranked by value.",
+      "pace": 0.8
+    },
+    {
+      "name": "keeper",
+      "title": "Brain Keeper",
+      "group": "core",
+      "field": null,
+      "instruction": "Oversee all incoming work. For each request, assign the right specialist agents to collaborate, then route their combined output onward to soul and literate before it leaves."
+    },
+    {
+      "name": "filer",
+      "title": "Filer — the organiser",
+      "group": "core",
+      "field": null,
+      "instruction": "Classify, deduplicate and organise every new memory into its field so any agent can find it instantly by meaning, not by path."
+    },
+    {
+      "name": "soul",
+      "title": "Soul",
+      "group": "core",
+      "field": null,
+      "instruction": "Before an answer leaves the brain, give it soul and meaning — make it purposeful, human, and on-brand."
+    },
+    {
+      "name": "literate",
+      "title": "Literate",
+      "group": "core",
+      "field": null,
+      "instruction": "Set every answer in perfect context: clear, correct, well-structured language with nothing missing and nothing wasted."
+    },
+
+    { "name": "onpage",       "title": "On-page SEO",        "group": "specialist", "field": "onpage",
+      "instruction": "Own on-page SEO. Recall what the brain knows first, contribute every finding back tagged 'onpage', and hand off when your part is done." },
+    { "name": "technical",    "title": "Technical SEO",      "group": "specialist", "field": "technical",
+      "instruction": "Own technical SEO (crawl, indexation, Core Web Vitals, schema). Recall first, contribute findings tagged 'technical', hand off when done." },
+    { "name": "keyword",      "title": "Keyword Research",   "group": "specialist", "field": "keyword",
+      "instruction": "Own keyword research and intent mapping. Recall first, contribute findings tagged 'keyword', hand off when done." },
+    { "name": "sea",          "title": "Paid Search (SEA)",  "group": "specialist", "field": "sea",
+      "instruction": "Own paid search: campaigns, Quality Score, feeds, bidding. Recall first, contribute findings tagged 'sea', hand off when done." },
+    { "name": "content",      "title": "Content",            "group": "specialist", "field": "content",
+      "instruction": "Own content: E-E-A-T, clusters, product copy, guides. Recall first, contribute findings tagged 'content', hand off when done." },
+    { "name": "linkbuilding", "title": "Link Building",      "group": "specialist", "field": "linkbuilding",
+      "instruction": "Own off-page authority and digital PR. Recall first, contribute findings tagged 'linkbuilding', hand off when done." },
+    { "name": "local",        "title": "Local SEO",          "group": "specialist", "field": "local",
+      "instruction": "Own local SEO: Business Profile, citations, NAP consistency. Recall first, contribute findings tagged 'local', hand off when done." },
+    { "name": "analytics",    "title": "Analytics & Reporting", "group": "specialist", "field": "analytics",
+      "instruction": "Own measurement: GA4, attribution, reporting on organic revenue. Recall first, contribute findings tagged 'analytics', hand off when done." },
+    { "name": "ecommerce",    "title": "E-commerce SEO",     "group": "specialist", "field": "ecommerce",
+      "instruction": "Own shop fundamentals: category pages, product lifecycle, stock/redirect handling. Recall first, contribute findings tagged 'ecommerce', hand off when done." }
+  ]
+}
