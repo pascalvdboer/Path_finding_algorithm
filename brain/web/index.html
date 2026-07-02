@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>The Agent Brain</title>
 <style>
   :root { color-scheme: dark; }
@@ -36,20 +37,34 @@ const bl = document.createElement('canvas'), blx = bl.getContext('2d');
 let W, H, DPR, S, CX, CY;
 let seed = 11; function rnd() { seed = (seed * 1664525 + 1013904223) & 0x7fffffff; return seed / 0x7fffffff; }
 
-// ---- brain silhouette (side profile: cerebrum + cerebellum + stem) ---
-const CEREBRUM = [
-  [-0.86,-0.02,0.40],[-0.58,-0.26,0.48],[-0.26,-0.38,0.50],[0.06,-0.38,0.50],
-  [0.38,-0.30,0.46],[0.66,-0.12,0.42],[0.84,0.08,0.34],
-  [-0.30,0.06,0.50],[0.04,0.06,0.48],[0.38,0.10,0.44],[-0.02,0.20,0.44],
-  [-0.34,0.40,0.30],[-0.04,0.44,0.30],[0.24,0.42,0.28],
+// ---- brain silhouette: an explicit traced side-profile outline -------
+const OUT = [
+  [-1.02, 0.02], [-0.90,-0.28], [-0.62,-0.50], [-0.28,-0.62], [0.08,-0.63],
+  [0.42,-0.55], [0.70,-0.36], [0.90,-0.10], [0.99, 0.14],
+  [0.90, 0.30], [0.82, 0.37],
+  [0.92, 0.47], [0.91, 0.63], [0.75, 0.71], [0.59, 0.65], [0.53, 0.53],
+  [0.49, 0.63], [0.46, 0.87], [0.39, 0.93], [0.33, 0.87], [0.31, 0.63], [0.27, 0.51],
+  [0.12, 0.45], [-0.08, 0.47], [-0.28, 0.53], [-0.50, 0.47], [-0.72, 0.34],
+  [-0.92, 0.21], [-1.02, 0.02],
 ];
-const CEREB = [[0.74,0.60,0.26],[0.92,0.58,0.15]];
-const STEM  = [[0.46,0.66,0.12],[0.44,0.90,0.10],[0.42,1.14,0.075],[0.41,1.34,0.055]];
-function sumBalls(list, x, y) { let f = 0;
-  for (const [lx, ly, r] of list) { const dx = x-lx, dy = y-ly; f += (r*r)/(dx*dx+dy*dy+0.0001); } return f; }
-function field(x, y) { return sumBalls(CEREBRUM, x, y) + sumBalls(CEREB, x, y) + sumBalls(STEM, x, y); }
-const T = 1.05;
-function inside(x, y) { return field(x, y) > T; }
+const CEREB = [[0.74, 0.55, 0.17]];
+const BB = { x0: -1.05, x1: 1.0, y0: -0.65, y1: 0.95 };
+function inside(x, y) {
+  let c = false;
+  for (let i = 0, j = OUT.length-1; i < OUT.length; j = i++) {
+    const xi = OUT[i][0], yi = OUT[i][1], xj = OUT[j][0], yj = OUT[j][1];
+    if (((yi > y) !== (yj > y)) && (x < (xj-xi)*(y-yi)/(yj-yi) + xi)) c = !c;
+  }
+  return c;
+}
+function pathOutline(c) {
+  const n = OUT.length, mid = (a, b) => [(a[0]+b[0])/2, (a[1]+b[1])/2];
+  let m = mid(OUT[n-1], OUT[0]);
+  c.beginPath(); c.moveTo(CX + m[0]*S, CY + m[1]*S);
+  for (let i = 0; i < n; i++) { const cur = OUT[i], nx = OUT[(i+1)%n], mm = mid(cur, nx);
+    c.quadraticCurveTo(CX + cur[0]*S, CY + cur[1]*S, CX + mm[0]*S, CY + mm[1]*S); }
+  c.closePath();
+}
 function fold(x, y) {
   const wx = x + 0.28*Math.sin(y*3.1 + 1.0), wy = y + 0.28*Math.sin(x*3.3);
   let v = Math.sin(wx*7.2) * Math.sin(wy*6.1 + wx*2.0);
@@ -159,41 +174,34 @@ function buildParts() { parts = [];
 function renderBrain() {
   bl.width = W; bl.height = H; blx.clearRect(0, 0, W, H);
   blx.globalCompositeOperation = 'lighter';
-  const BODY = CEREBRUM.concat(CEREB, STEM);
-  for (const [lx, ly, r] of BODY) {
-    const px = CX + lx*S, py = CY + ly*S, rr = r * S * 1.5;
+  // luminous body, clipped to the traced brain shape
+  blx.save(); pathOutline(blx); blx.clip();
+  const glowPts = [[-0.5,-0.2,0.7],[0.1,-0.25,0.8],[0.55,-0.05,0.6],[-0.2,0.15,0.7],
+                   [0.05,0.15,0.9],[-0.75,0.0,0.5],[0.38,0.75,0.34],[0.74,0.55,0.4]];
+  for (const [lx, ly, r] of glowPts) {
+    const px = CX + lx*S, py = CY + ly*S, rr = r * S;
     const g = blx.createRadialGradient(px, py, 0, px, py, rr);
-    g.addColorStop(0, 'rgba(55,120,215,0.36)'); g.addColorStop(0.55, 'rgba(45,95,190,0.16)'); g.addColorStop(1, 'rgba(30,60,150,0)');
+    g.addColorStop(0, 'rgba(50,115,210,0.40)'); g.addColorStop(0.6, 'rgba(40,90,185,0.16)'); g.addColorStop(1, 'rgba(30,60,150,0)');
     blx.fillStyle = g; blx.beginPath(); blx.arc(px, py, rr, 0, 6.2832); blx.fill();
   }
-  const COUNT = Math.round(52000 * (W*H) / (1920*1080));
+  const COUNT = Math.round(46000 * (W*H) / (1920*1080));
   for (let i = 0; i < COUNT; i++) {
-    const x = rnd()*2.6-1.35, y = rnd()*2.7-1.2, f = field(x, y);
-    if (f <= T) continue;
-    const edge = Math.min(1, (f - T) / 0.8), fo = fold(x, y), rim = 1 - edge;
-    const a = (0.05 + fo*0.16) * (0.55 + edge*0.7);
-    const r = 80 + rim*120, g = 155 + rim*75, b = 235 + rim*20;
-    blx.fillStyle = 'rgba(' + (r|0) + ',' + (g|0) + ',' + (b|0) + ',' + a + ')';
-    blx.beginPath(); blx.arc(CX + x*S, CY + y*S, (0.6 + fo*1.0)*DPR, 0, 6.2832); blx.fill();
+    const x = BB.x0 + rnd()*(BB.x1-BB.x0), y = BB.y0 + rnd()*(BB.y1-BB.y0);
+    if (!inside(x, y)) continue;
+    const fo = fold(x, y);
+    blx.fillStyle = 'rgba(' + (90+fo*90|0) + ',' + (160+fo*60|0) + ',245,' + (0.05 + fo*0.14) + ')';
+    blx.beginPath(); blx.arc(CX + x*S, CY + y*S, (0.6 + fo*0.9)*DPR, 0, 6.2832); blx.fill();
   }
-  for (let i = 0; i < 9000; i++) {
-    const x = rnd()*2.6-1.35, y = rnd()*2.7-1.2, f = field(x, y);
-    if (f <= T || f > T + 0.22) continue;
-    blx.fillStyle = 'rgba(160,210,255,' + (0.12 + 0.34*rnd()) + ')';
-    blx.beginPath(); blx.arc(CX + x*S, CY + y*S, 0.9*DPR, 0, 6.2832); blx.fill();
-  }
-  // gyri lines — the cortical folds traced as real contour lines
   for (const lvl of [0.30, 0.42, 0.54, 0.66, 0.78])
-    strokeSegs(blx, isoSegments(fold, lvl, 190, 210, -1.35, 1.0, -1.05, 1.4, true), 'rgba(150,200,255,0.16)', 0.7*DPR);
-  // cerebellum foliation
-  blx.strokeStyle = 'rgba(160,205,255,0.16)'; blx.lineWidth = 0.8*DPR;
+    strokeSegs(blx, isoSegments(fold, lvl, 200, 210, BB.x0, BB.x1, BB.y0, BB.y1, true), 'rgba(155,205,255,0.18)', 0.7*DPR);
+  blx.strokeStyle = 'rgba(165,210,255,0.22)'; blx.lineWidth = 0.8*DPR;
   const [ccx, ccy, ccr] = CEREB[0];
-  for (let k = 1; k <= 16; k++) { const rr = ccr * (0.26 + 0.82 * k / 16) * S;
-    blx.beginPath(); blx.arc(CX + ccx*S, CY + ccy*S, rr, Math.PI*0.06, Math.PI*0.9); blx.stroke(); }
-  // silhouette outline — a crisp glowing contour of the whole form
-  const outline = isoSegments(field, T, 240, 260, -1.35, 1.0, -1.05, 1.4, false);
-  strokeSegs(blx, outline, 'rgba(120,180,255,0.28)', 3.0*DPR);
-  strokeSegs(blx, outline, 'rgba(190,225,255,0.85)', 1.2*DPR);
+  for (let k = 1; k <= 14; k++) { const rr = ccr * (0.24 + 0.86 * k / 14) * S;
+    blx.beginPath(); blx.arc(CX + ccx*S, CY + ccy*S, rr, Math.PI*0.02, Math.PI*0.92); blx.stroke(); }
+  blx.restore();
+  // crisp glowing outline of the whole brain
+  pathOutline(blx); blx.strokeStyle = 'rgba(110,175,255,0.30)'; blx.lineWidth = 3.4*DPR; blx.stroke();
+  pathOutline(blx); blx.strokeStyle = 'rgba(195,228,255,0.9)';  blx.lineWidth = 1.3*DPR; blx.stroke();
   blx.globalCompositeOperation = 'source-over';
 }
 function resize() {
