@@ -20,12 +20,15 @@ from brain_client import BrainClient          # noqa: E402
 from knowledge.seo_corpus import CORPUS        # noqa: E402
 
 URL = os.environ.get("BRAIN_URL", "http://127.0.0.1:8000")
+SHOP = os.environ.get("SHOP", "imta-technics.shop")
 REQUESTS = [
-    "Improve organic revenue for the brake-parts category page",
-    "Recover rankings after the site migration",
-    "Lower cost per click on the hydraulics campaign",
-    "Win featured snippets for installation guides",
-    "Fix indexation bloat from faceted filters",
+    "Rank the brake-parts category page for organic revenue",
+    "Recover rankings after the imta-technics.shop migration",
+    "Lower cost per click on the hydraulics Shopping campaign",
+    "Win featured snippets for the parts installation guides",
+    "Fix indexation bloat from faceted product filters",
+    "Optimise product pages for high-intent part-number searches",
+    "Build topical authority around the machine-parts category",
 ]
 
 
@@ -37,7 +40,7 @@ def main():
     soul = BrainClient("soul", URL)
     literate = BrainClient("literate", URL)
 
-    print("live demo running — watch the dashboard. Ctrl+C to stop.\n")
+    print(f"live demo — the {SHOP} team working in the brain. Ctrl+C to stop.\n")
     fi = ri = 0
     while True:
         # the Feeder keeps feeding the base from the stem
