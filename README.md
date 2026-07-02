@@ -24,17 +24,18 @@ step. Clone it and run it.
 | **Work together / fast handoffs** | `handoff(to, content)` is pushed to the target agent **instantly** over a live stream — no polling. |
 | **Fast, visual output** | A browser neural map lights up the moment anything happens: new neurons, forming synapses, recalls chaining through memory, handoffs pulsing agent-to-agent. |
 
-## Run it
+## Run it — one command
 
 ```bash
-python main.py                 # starts the brain + the living dashboard on :8000
+python run.py
 ```
 
-Open the URL it prints (`http://127.0.0.1:8000`) in a browser — that's the
-**live brain dashboard**: a glowing anatomical brain where the Feeder feeds
-from the stem and each agent lights its own region as it works.
+That starts the brain, loads the agent roster, starts the Feeder, opens the
+**live dashboard** in your browser, and streams a team of requests through
+it — so you just watch. Press Ctrl+C to stop everything. No installs needed:
+it uses only the Python standard library.
 
-## Run the team, watch it live
+## Or run the pieces yourself
 
 Four terminals (or run them in the background) — the brain, the roster, the
 Feeder brain-stem, and a request stream:
