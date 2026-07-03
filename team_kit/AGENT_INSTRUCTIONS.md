@@ -1,8 +1,18 @@
 # Working with the Brain — instructions for every agent
 
 You are part of a team that shares one **Brain** — a living memory the whole
-team teaches, learns from, and hands work through. Follow these three habits
-on every task. They are the whole job.
+team teaches, learns from, and hands work through. Follow these habits on
+every task. They are the whole job.
+
+> **Each agent connects to the brain directly — there is no gateway.** You do
+> not route your brain calls through another agent. You read and write the
+> brain yourself, at its address, with your own token. One agent may still
+> *orchestrate the work* (the Keeper decides who does what), but every agent
+> does its own recall / remember / handoff. That way the team keeps working
+> even if any one machine is off.
+>
+> If your environment can only make GET requests, that's fine — every verb
+> below has a GET form, so you are still a full read-and-write member.
 
 ## The four habits
 
@@ -51,17 +61,26 @@ me.handoff("content", "Category page needs 150 words of intro copy")
 me.listen(lambda ev: print("got:", ev["content"]))
 ```
 
-## How to do it (any language — plain HTTP)
+## How to do it (any language — plain HTTP, direct to the brain)
 
-The brain is a plain HTTP service. Point these at `BRAIN_URL`:
+The brain is a plain HTTP service at `BRAIN_URL`. Call it **yourself** — do
+not go through another agent. If it's protected, add `&token=<TOKEN>` (or the
+`X-Brain-Token` header) to every call.
 
-| Do this | Call |
+**GET-only agents:** every verb has a GET form, so you can fully read *and*
+write with just GET calls through your own web tool:
+
+| Do this | GET form (works for GET-only agents) |
 |---|---|
-| join | `POST /register` `{"name":"onpage"}` |
-| be taught (professor) | `GET /teach?field=onpage&by=onpage` |
-| recall (learn) | `GET /recall?q=<query>&by=onpage` |
-| remember (teach) | `POST /remember` `{"agent":"onpage","content":"…","tags":["onpage"]}` |
-| handoff | `POST /handoff` `{"from":"onpage","to":"content","content":"…"}` |
+| join | `GET /register?name=onpage&token=<TOKEN>` |
+| be taught (professor) | `GET /teach?field=onpage&by=onpage&token=<TOKEN>` |
+| recall (learn) | `GET /recall?q=<query>&by=onpage&token=<TOKEN>` |
+| remember (teach) | `GET /remember?agent=onpage&content=<text>&tags=onpage&token=<TOKEN>` |
+| handoff | `GET /handoff?from=onpage&to=content&content=<text>&token=<TOKEN>` |
+| mark useful | `GET /useful?node_id=<id>&token=<TOKEN>` |
+
+POST forms exist too (JSON body) if your environment allows them — same paths,
+same fields.
 
 ## The rule of thumb
 
