@@ -4,57 +4,50 @@
   :root { color-scheme: dark; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { height: 100%; }
-  body {
-    overflow: hidden;
-    background: radial-gradient(1300px 1000px at 52% 50%, #060b18 0%, #04060f 55%, #010206 100%);
-    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased;
-  }
+  body { overflow: hidden; background: #050c26;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
   #brain { position: fixed; inset: 0; display: block; opacity: 0; transition: opacity 2.2s ease; }
   #brain.in { opacity: 1; }
   .label { position: fixed; z-index: 5; user-select: none; pointer-events: none;
-    color: #5c76a4; font-size: 11px; letter-spacing: .34em; text-transform: uppercase; font-weight: 500; }
-  #mark { top: 26px; left: 30px; } #mark b { color: #8fc0f5; font-weight: 600; }
-  #sub { top: 48px; left: 30px; letter-spacing: .16em; font-size: 10px; color: #3f5578; }
-  #count { position: fixed; z-index: 5; top: 26px; right: 30px; text-align: right; user-select: none; pointer-events: none;
-    color: #4d648c; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; font-variant-numeric: tabular-nums; }
-  #count b { color: #86b9ee; font-weight: 600; }
+    color: #7fa0d8; font-size: 11px; letter-spacing: .34em; text-transform: uppercase; font-weight: 500; }
+  #mark { top: 26px; left: 30px; } #mark b { color: #bcd8ff; font-weight: 600; }
+  #sub { top: 48px; left: 30px; letter-spacing: .16em; font-size: 10px; color: #4f6ba6; }
   #conn { position: fixed; z-index: 5; left: 30px; bottom: 22px; font-size: 10px; letter-spacing: .16em;
-    text-transform: uppercase; color: #3f5578; user-select: none; pointer-events: none; display: flex; align-items: center; gap: 7px; }
+    text-transform: uppercase; color: #4f6ba6; display: flex; align-items: center; gap: 7px; pointer-events: none; }
   #conn .d { width: 6px; height: 6px; border-radius: 50%; background: #ffcf6b; box-shadow: 0 0 8px #ffcf6b; }
   #conn.live .d { background: #5ff0c0; box-shadow: 0 0 8px #5ff0c0; }
 
-  /* team value panel — quiet, on the right */
   #panel { position: fixed; top: 0; right: 0; height: 100%; width: 300px; z-index: 6;
     padding: 24px 22px 30px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto;
-    background: linear-gradient(270deg, rgba(6,11,26,.88) 0%, rgba(6,11,26,.42) 76%, transparent 100%);
+    background: linear-gradient(270deg, rgba(6,16,42,.9) 0%, rgba(6,16,42,.5) 76%, transparent 100%);
     backdrop-filter: blur(3px); transition: transform .4s ease; }
   #panel.hidden { transform: translateX(316px); }
   #panel::-webkit-scrollbar { width: 0; }
-  .p-h { font-size: 9.5px; letter-spacing: .2em; text-transform: uppercase; color: #5c76a4;
+  .p-h { font-size: 9.5px; letter-spacing: .2em; text-transform: uppercase; color: #6f8dc4;
     margin-bottom: 11px; display: flex; justify-content: space-between; align-items: baseline; }
-  .p-h span:last-child { color: #4d648c; letter-spacing: .1em; }
+  .p-h span:last-child { color: #536ea6; letter-spacing: .1em; }
   .big { display: flex; gap: 18px; }
   .big .n b { font-size: 24px; font-weight: 300; color: #eaf3ff; font-variant-numeric: tabular-nums; line-height: 1; }
-  .big .n span { display: block; font-size: 8.5px; letter-spacing: .16em; text-transform: uppercase; color: #4d648c; margin-top: 6px; }
-  .bar { height: 4px; border-radius: 4px; background: rgba(255,255,255,.06); overflow: hidden; }
-  .bar i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg,#3f7fd0,#7fd0ff); transition: width .6s; }
+  .big .n span { display: block; font-size: 8.5px; letter-spacing: .16em; text-transform: uppercase; color: #536ea6; margin-top: 6px; }
+  .bar { height: 4px; border-radius: 4px; background: rgba(255,255,255,.07); overflow: hidden; }
+  .bar i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg,#3f7fd0,#9fd6ff); transition: width .6s; }
   .field { margin: 8px 0; }
-  .field .top { display: flex; justify-content: space-between; font-size: 11px; color: #a9bcdd; margin-bottom: 4px; }
-  .field .top b { color: #86b9ee; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .field .top { display: flex; justify-content: space-between; font-size: 11px; color: #b3c6e6; margin-bottom: 4px; }
+  .field .top b { color: #9fd0ff; font-weight: 600; font-variant-numeric: tabular-nums; }
   .mind { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 12px; }
   .mind .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
-  .mind .nm { color: #cfe0ff; } .mind .rl { color: #4d648c; font-size: 10px; }
-  .mind .rx { margin-left: auto; color: #6f88b4; font-variant-numeric: tabular-nums; font-size: 11px; }
-  .need { display: flex; gap: 8px; padding: 5px 0; font-size: 11.5px; color: #b7c7e6; align-items: baseline; }
+  .mind .nm { color: #d3e2ff; } .mind .rl { color: #536ea6; font-size: 10px; }
+  .mind .rx { margin-left: auto; color: #7d97c6; font-variant-numeric: tabular-nums; font-size: 11px; }
+  .need { display: flex; gap: 8px; padding: 5px 0; font-size: 11.5px; color: #b3c6e6; align-items: baseline; }
   .need .p { flex: none; width: 6px; height: 6px; border-radius: 50%; margin-top: 4px; }
   .need .p.gap { background: #ffcf6b; box-shadow: 0 0 7px #ffcf6b; }
-  .need .p.coverage { background: #7fd0ff; box-shadow: 0 0 7px #7fd0ff; }
-  .need .w { color: #5c76a4; font-size: 10px; display: block; }
+  .need .p.coverage { background: #9fd0ff; box-shadow: 0 0 7px #9fd0ff; }
+  .need .w { color: #6f8dc4; font-size: 10px; display: block; }
   #spark { width: 100%; height: 46px; display: block; }
   #toggle { position: fixed; top: 22px; right: 20px; z-index: 7; width: 28px; height: 28px; border-radius: 50%;
-    border: 1px solid rgba(120,165,255,.3); background: rgba(8,13,30,.65); color: #86b9ee; font-size: 12px;
+    border: 1px solid rgba(140,180,255,.3); background: rgba(8,18,44,.7); color: #9fd0ff; font-size: 12px;
     cursor: pointer; display: flex; align-items: center; justify-content: center; }
-  #toggle:hover { border-color: rgba(120,165,255,.6); }
+  #toggle:hover { border-color: rgba(140,180,255,.6); }
 </style>
 
 <canvas id="brain"></canvas>
@@ -95,9 +88,8 @@
 const cv = document.getElementById('brain'), ctx = cv.getContext('2d');
 const bl = document.createElement('canvas'), blx = bl.getContext('2d');
 let W, H, DPR, S, CX, CY;
-let seed = 11; function rnd() { seed = (seed * 1664525 + 1013904223) & 0x7fffffff; return seed / 0x7fffffff; }
+let seed = 9; function rnd() { seed = (seed * 1664525 + 1013904223) & 0x7fffffff; return seed / 0x7fffffff; }
 
-// ---- brain silhouette: an explicit traced side-profile outline -------
 const OUT = [
   [-1.02, 0.02], [-0.90,-0.28], [-0.62,-0.50], [-0.28,-0.62], [0.08,-0.63],
   [0.42,-0.55], [0.70,-0.36], [0.90,-0.10], [0.99, 0.14],
@@ -107,7 +99,7 @@ const OUT = [
   [0.12, 0.45], [-0.08, 0.47], [-0.28, 0.53], [-0.50, 0.47], [-0.72, 0.34],
   [-0.92, 0.21], [-1.02, 0.02],
 ];
-const CEREB = [[0.74, 0.55, 0.17]];
+const CEREB = [0.74, 0.55, 0.17];
 const BB = { x0: -1.05, x1: 1.0, y0: -0.65, y1: 0.95 };
 function inside(x, y) {
   let c = false;
@@ -121,38 +113,36 @@ function pathOutline(c) {
   const n = OUT.length, mid = (a, b) => [(a[0]+b[0])/2, (a[1]+b[1])/2];
   let m = mid(OUT[n-1], OUT[0]);
   c.beginPath(); c.moveTo(CX + m[0]*S, CY + m[1]*S);
-  for (let i = 0; i < n; i++) { const cur = OUT[i], nx = OUT[(i+1)%n], mm = mid(cur, nx);
+  for (let i = 0; i < n; i++) { const cur = OUT[i], nx2 = OUT[(i+1)%n], mm = mid(cur, nx2);
     c.quadraticCurveTo(CX + cur[0]*S, CY + cur[1]*S, CX + mm[0]*S, CY + mm[1]*S); }
   c.closePath();
 }
 function fold(x, y) {
-  const wx = x + 0.28*Math.sin(y*3.1 + 1.0), wy = y + 0.28*Math.sin(x*3.3);
-  let v = Math.sin(wx*7.2) * Math.sin(wy*6.1 + wx*2.0);
-  v += 0.5 * Math.sin(wx*13.0 + 2.0) * Math.sin(wy*11.0);
+  const wx = x + 0.30*Math.sin(y*3.0 + 1.0), wy = y + 0.30*Math.sin(x*3.2);
+  let v = Math.sin(wx*6.6) * Math.sin(wy*5.6 + wx*2.0);
+  v += 0.5 * Math.sin(wx*12.0 + 2.0) * Math.sin(wy*10.0);
   return 0.5 + 0.32*v;
 }
-// marching-squares: trace contour lines of a scalar field
-function isoSegments(fn, level, nx, ny, x0, x1, y0, y1, maskInside) {
-  const segs = [], dx = (x1-x0)/nx, dy = (y1-y0)/ny;
-  let prev = new Float32Array(nx+1), cur = new Float32Array(nx+1);
-  for (let i = 0; i <= nx; i++) prev[i] = fn(x0+i*dx, y0) - level;
-  for (let j = 1; j <= ny; j++) {
+function isoSegments(fn, level, nX, nY, x0, x1, y0, y1, mask) {
+  const segs = [], dx = (x1-x0)/nX, dy = (y1-y0)/nY;
+  let prev = new Float32Array(nX+1), cur = new Float32Array(nX+1);
+  for (let i = 0; i <= nX; i++) prev[i] = fn(x0+i*dx, y0) - level;
+  for (let j = 1; j <= nY; j++) {
     const y = y0 + j*dy;
-    for (let i = 0; i <= nx; i++) cur[i] = fn(x0+i*dx, y) - level;
-    for (let i = 0; i < nx; i++) {
+    for (let i = 0; i <= nX; i++) cur[i] = fn(x0+i*dx, y) - level;
+    for (let i = 0; i < nX; i++) {
       const xL = x0+i*dx, xR = xL+dx, yT = y-dy, yB = y;
-      const tl = prev[i], tr = prev[i+1], br = cur[i+1], bl = cur[i], pts = [];
+      const tl = prev[i], tr = prev[i+1], br = cur[i+1], bl2 = cur[i], pts = [];
       if ((tl>0)!==(tr>0)) pts.push([xL + dx*(tl/(tl-tr)), yT]);
       if ((tr>0)!==(br>0)) pts.push([xR, yT + dy*(tr/(tr-br))]);
-      if ((br>0)!==(bl>0)) pts.push([xL + dx*(bl/(bl-br)), yB]);
-      if ((bl>0)!==(tl>0)) pts.push([xL, yT + dy*(tl/(tl-bl))]);
+      if ((br>0)!==(bl2>0)) pts.push([xL + dx*(bl2/(bl2-br)), yB]);
+      if ((bl2>0)!==(tl>0)) pts.push([xL, yT + dy*(tl/(tl-bl2))]);
       if (pts.length === 2) segs.push([pts[0], pts[1]]);
       else if (pts.length === 4) { segs.push([pts[0], pts[1]]); segs.push([pts[2], pts[3]]); }
     }
     const t = prev; prev = cur; cur = t;
   }
-  if (maskInside) return segs.filter(s => inside((s[0][0]+s[1][0])/2, (s[0][1]+s[1][1])/2));
-  return segs;
+  return mask ? segs.filter(s => inside((s[0][0]+s[1][0])/2, (s[0][1]+s[1][1])/2)) : segs;
 }
 function strokeSegs(c, segs, style, w) {
   c.strokeStyle = style; c.lineWidth = w; c.beginPath();
@@ -160,235 +150,187 @@ function strokeSegs(c, segs, style, w) {
   c.stroke();
 }
 
-// ---- internal wiring the signals travel ------------------------------
-let gnodes = [], adj = [], stemNodes = [], glow = null;
-function buildGraph() {
-  gnodes = []; let g = 0;
-  while (gnodes.length < 150 && g < 24000) {
-    g++; const x = rnd()*2.8-1.4, y = rnd()*2.6-1.1;
+// ---- neurons (bright dots) + signal paths + stem ----------------------
+let neurons = [], adj = [], stemNodes = [], glowN = null;
+function buildNeurons() {
+  neurons = []; let g = 0;
+  while (neurons.length < 130 && g < 26000) {
+    g++; const x = BB.x0 + rnd()*(BB.x1-BB.x0), y = BB.y0 + rnd()*(BB.y1-BB.y0);
     if (!inside(x, y)) continue;
-    let ok = true; for (const n of gnodes) if (Math.hypot(n.bx-x, n.by-y) < 0.085) { ok = false; break; }
-    if (ok) gnodes.push({ bx: x, by: y });
+    let ok = true; for (const n of neurons) if (Math.hypot(n.bx-x, n.by-y) < 0.072) { ok = false; break; }
+    if (ok) neurons.push({ bx: x, by: y, bright: rnd() < 0.5, r: 0.7 + rnd()*1.5, ph: rnd()*6.28, tw: 0.4 + rnd()*0.6 });
   }
-  adj = gnodes.map(() => []);
-  for (let i = 0; i < gnodes.length; i++) {
+  adj = neurons.map(() => []);
+  for (let i = 0; i < neurons.length; i++) {
     const near = [];
-    for (let j = 0; j < gnodes.length; j++) if (i !== j)
-      near.push([j, Math.hypot(gnodes[i].bx-gnodes[j].bx, gnodes[i].by-gnodes[j].by)]);
+    for (let j = 0; j < neurons.length; j++) if (i !== j)
+      near.push([j, Math.hypot(neurons[i].bx-neurons[j].bx, neurons[i].by-neurons[j].by)]);
     near.sort((a, b) => a[1]-b[1]);
     for (let k = 0; k < 3; k++) { const j = near[k][0]; if (!adj[i].includes(j)) { adj[i].push(j); adj[j].push(i); } }
   }
-  stemNodes = gnodes.map((n, i) => [i, n.by]).sort((a, b) => b[1]-a[1]).slice(0, 6).map(p => p[0]);
-  glow = new Float32Array(gnodes.length);
+  stemNodes = neurons.map((n, i) => [i, n.by]).sort((a, b) => b[1]-a[1]).slice(0, 6).map(p => p[0]);
+  glowN = new Float32Array(neurons.length);
 }
-function gx(n){ return CX + n.bx * S; } function gy(n){ return CY + n.by * S; }
-function nearestNode(bx, by) { let bi = 0, bd = 1e9;
-  for (let i = 0; i < gnodes.length; i++) { const d = Math.hypot(gnodes[i].bx-bx, gnodes[i].by-by); if (d < bd) { bd = d; bi = i; } }
+function nX(n){ return CX + n.bx * S; } function nY(n){ return CY + n.by * S; }
+function nearestNeuron(bx, by) { let bi = 0, bd = 1e9;
+  for (let i = 0; i < neurons.length; i++) { const d = Math.hypot(neurons[i].bx-bx, neurons[i].by-by); if (d < bd) { bd = d; bi = i; } }
   return bi; }
 
-// ---- agents mapped to regions of the cortex --------------------------
+// ---- agents mapped to regions -----------------------------------------
 const ANCHORS = {
-  keeper:[0.05,0.03], feeder:[0.44,1.00], filer:[0.28,-0.10],
+  keeper:[0.05,0.03], feeder:[0.40,0.9], filer:[0.28,-0.10],
   onpage:[-0.58,-0.16], technical:[0.54,-0.22], keyword:[-0.80,0.06],
   sea:[0.74,0.12], content:[-0.18,-0.36], linkbuilding:[0.30,-0.42],
   local:[-0.42,0.34], analytics:[0.16,0.34], ecommerce:[0.50,0.30],
   soul:[-0.28,0.18], literate:[-0.60,0.32],
 };
-const POOL = [[-0.45,-0.02],[0.20,-0.24],[-0.10,0.30],[0.40,-0.05],[-0.66,0.14],
-  [0.10,-0.10],[-0.24,-0.14],[0.60,0.00],[-0.05,0.36],[0.30,0.05]];
+const POOL = [[-0.45,-0.02],[0.20,-0.24],[-0.10,0.30],[0.40,-0.05],[-0.66,0.14],[0.10,-0.10]];
 const team = new Map(); let poolI = 0;
 function ensureAgent(name) {
   if (!name) name = 'anon';
   if (team.has(name)) return team.get(name);
-  let pos = ANCHORS[name] || POOL[poolI++ % POOL.length];
-  const a = { name, bx: pos[0], by: pos[1], glow: 0, node: nearestNode(pos[0], pos[1]) };
+  const pos = ANCHORS[name] || POOL[poolI++ % POOL.length];
+  const a = { name, bx: pos[0], by: pos[1], glow: 0, node: nearestNeuron(pos[0], pos[1]) };
   team.set(name, a); return a;
 }
 function activate(name) {
   const a = ensureAgent(name); a.glow = 1;
-  if (name === 'feeder') { spawnFeed(); return; }
-  for (let k = 0; k < 3; k++) { const s0 = a.node;
-    if (adj[s0] && adj[s0].length) { const b = adj[s0][Math.floor(rnd()*adj[s0].length)];
-      signals.push({ a: s0, b, prev: s0, t: 0, speed: 0.005+rnd()*0.004, hops: 4+Math.floor(rnd()*4), life: 0, warm: false }); } }
+  const src = name === 'feeder' ? stemNodes[Math.floor(rnd()*stemNodes.length)] : a.node;
+  for (let k = 0; k < 3; k++) if (adj[src] && adj[src].length) {
+    const b = adj[src][Math.floor(rnd()*adj[src].length)];
+    signals.push({ a: src, b, prev: src, t: 0, speed: 0.005+rnd()*0.004, hops: 4+Math.floor(rnd()*4) });
+  }
 }
 const arcs = [];
-function arc(from, to) { const A = ensureAgent(from), B = ensureAgent(to);
-  arcs.push({ A, B, t: 0, speed: 0.011+rnd()*0.006 }); }
+function arc(from, to) { const A = ensureAgent(from), B = ensureAgent(to); arcs.push({ A, B, t: 0, speed: 0.012+rnd()*0.006 }); }
 
-// ---- filaments & particles -------------------------------------------
-let filaments = [];
-function buildFilaments() { filaments = [];
-  for (let i = 0; i < 26; i++) { const a = rnd()*Math.PI*2, r0 = 0.7 + rnd()*0.3;
-    const sx = Math.cos(a)*r0*1.1, sy = Math.sin(a)*r0*0.9 + 0.1;
-    const ex = Math.cos(a)*(2.2+rnd()*1.4), ey = Math.sin(a)*(1.8+rnd()*1.4) + (rnd()-0.5);
-    const c1x = sx + (rnd()-0.5)*1.2, c1y = sy + (rnd()-0.5)*1.2;
-    const c2x = (sx+ex)/2 + (rnd()-0.5)*1.4, c2y = (sy+ey)/2 + (rnd()-0.5)*1.4;
-    filaments.push({ sx, sy, c1x, c1y, c2x, c2y, ex, ey, warm: rnd()<0.32, off: rnd(), spd: 0.02+rnd()*0.03, w: 0.5+rnd()*0.9 }); } }
-function bez(p, a, c1, c2, b) { const u = 1-p; return u*u*u*a + 3*u*u*p*c1 + 3*u*p*p*c2 + p*p*p*b; }
-let parts = [];
-function buildParts() { parts = [];
-  for (let i = 0; i < 110; i++) parts.push({ x: rnd(), y: rnd(), z: rnd(),
-    vx: (rnd()-0.5)*0.02, vy: (rnd()-0.5)*0.02, warm: rnd()<0.6, big: rnd()<0.16, ph: rnd()*6.28 }); }
-
-// ---- render the static brain body to an offscreen layer --------------
-function renderBrain() {
+// ---- static brain body (translucent x-ray tissue + wispy folds) --------
+function renderBody() {
   bl.width = W; bl.height = H; blx.clearRect(0, 0, W, H);
-  blx.globalCompositeOperation = 'lighter';
-  // luminous body, clipped to the traced brain shape
   blx.save(); pathOutline(blx); blx.clip();
-  const glowPts = [[-0.5,-0.2,0.7],[0.1,-0.25,0.8],[0.55,-0.05,0.6],[-0.2,0.15,0.7],
-                   [0.05,0.15,0.9],[-0.75,0.0,0.5],[0.38,0.75,0.34],[0.74,0.55,0.4]];
-  for (const [lx, ly, r] of glowPts) {
-    const px = CX + lx*S, py = CY + ly*S, rr = r * S;
-    const g = blx.createRadialGradient(px, py, 0, px, py, rr);
-    g.addColorStop(0, 'rgba(50,115,210,0.40)'); g.addColorStop(0.6, 'rgba(40,90,185,0.16)'); g.addColorStop(1, 'rgba(30,60,150,0)');
-    blx.fillStyle = g; blx.beginPath(); blx.arc(px, py, rr, 0, 6.2832); blx.fill();
-  }
-  const COUNT = Math.round(46000 * (W*H) / (1920*1080));
-  for (let i = 0; i < COUNT; i++) {
-    const x = BB.x0 + rnd()*(BB.x1-BB.x0), y = BB.y0 + rnd()*(BB.y1-BB.y0);
-    if (!inside(x, y)) continue;
-    const fo = fold(x, y);
-    blx.fillStyle = 'rgba(' + (90+fo*90|0) + ',' + (160+fo*60|0) + ',245,' + (0.05 + fo*0.14) + ')';
-    blx.beginPath(); blx.arc(CX + x*S, CY + y*S, (0.6 + fo*0.9)*DPR, 0, 6.2832); blx.fill();
-  }
-  for (const lvl of [0.30, 0.42, 0.54, 0.66, 0.78])
-    strokeSegs(blx, isoSegments(fold, lvl, 200, 210, BB.x0, BB.x1, BB.y0, BB.y1, true), 'rgba(155,205,255,0.18)', 0.7*DPR);
-  blx.strokeStyle = 'rgba(165,210,255,0.22)'; blx.lineWidth = 0.8*DPR;
-  const [ccx, ccy, ccr] = CEREB[0];
-  for (let k = 1; k <= 14; k++) { const rr = ccr * (0.24 + 0.86 * k / 14) * S;
-    blx.beginPath(); blx.arc(CX + ccx*S, CY + ccy*S, rr, Math.PI*0.02, Math.PI*0.92); blx.stroke(); }
+  const bx = CX - 0.05*S, by = CY - 0.15*S, br = S * 1.25;
+  const body = blx.createRadialGradient(bx, by, 0, bx, by, br);
+  body.addColorStop(0, 'rgba(150,205,255,0.30)'); body.addColorStop(0.55, 'rgba(110,170,240,0.16)'); body.addColorStop(1, 'rgba(80,130,210,0.04)');
+  blx.fillStyle = body; blx.fillRect(0, 0, W, H);
+  blx.save(); blx.shadowColor = 'rgba(180,220,255,0.5)'; blx.shadowBlur = 3*DPR;
+  for (const lvl of [0.24, 0.32, 0.4, 0.48, 0.56, 0.64, 0.72, 0.8, 0.88])
+    strokeSegs(blx, isoSegments(fold, lvl, 230, 240, BB.x0, BB.x1, BB.y0, BB.y1, true), 'rgba(205,232,255,0.16)', 0.8*DPR);
   blx.restore();
-  // crisp glowing outline of the whole brain
-  pathOutline(blx); blx.strokeStyle = 'rgba(110,175,255,0.30)'; blx.lineWidth = 3.4*DPR; blx.stroke();
-  pathOutline(blx); blx.strokeStyle = 'rgba(195,228,255,0.9)';  blx.lineWidth = 1.3*DPR; blx.stroke();
-  blx.globalCompositeOperation = 'source-over';
+  blx.strokeStyle = 'rgba(200,228,255,0.2)'; blx.lineWidth = 0.8*DPR;
+  for (let k = 1; k <= 16; k++) { const rr = CEREB[2] * (0.22 + 0.9 * k / 16) * S;
+    blx.beginPath(); blx.arc(CX + CEREB[0]*S, CY + CEREB[1]*S, rr, 0, Math.PI*0.95); blx.stroke(); }
+  blx.restore();
+  blx.save(); blx.shadowColor = 'rgba(160,205,255,0.8)'; blx.shadowBlur = 16*DPR;
+  pathOutline(blx); blx.strokeStyle = 'rgba(190,222,255,0.5)'; blx.lineWidth = 1.6*DPR; blx.stroke();
+  blx.restore();
 }
-let panelOpen = innerWidth > 720;   // give the brain room; auto-hide on small screens
+
+let panelOpen = innerWidth > 720;
 function resize() {
   DPR = Math.min(2, window.devicePixelRatio || 1);
   W = cv.width = innerWidth * DPR; H = cv.height = innerHeight * DPR;
   cv.style.width = innerWidth + 'px'; cv.style.height = innerHeight + 'px';
-  const panelPx = panelOpen ? 300 : 0;   // brain centres in the space left of the panel
-  S = Math.min(innerWidth - panelPx*0.5, innerHeight) * 0.34 * DPR;
-  CX = (W - panelPx*DPR) / 2; CY = H * 0.46;
-  for (const a of team.values()) a.node = nearestNode(a.bx, a.by);
-  renderBrain();
+  const panelPx = panelOpen ? 300 : 0;
+  S = Math.min(innerWidth - panelPx*0.5, innerHeight) * 0.42 * DPR;
+  CX = (W - panelPx*DPR) / 2; CY = H * 0.5;
+  for (const a of team.values()) a.node = nearestNeuron(a.bx, a.by);
+  renderBody();
 }
 addEventListener('resize', resize);
-seed = 11; buildGraph(); buildFilaments(); buildParts(); resize();
+seed = 9; buildNeurons(); resize();
 
-// ---- signals ---------------------------------------------------------
+// ---- signals ----------------------------------------------------------
 const signals = [];
-function spawn() { if (signals.length >= 60 || !gnodes.length) return;
-  const a = Math.floor(rnd()*gnodes.length); if (!adj[a].length) return;
+function spawn() { if (signals.length >= 40 || !neurons.length) return;
+  const a = Math.floor(rnd()*neurons.length); if (!adj[a].length) return;
   const b = adj[a][Math.floor(rnd()*adj[a].length)];
-  signals.push({ a, b, prev: a, t: 0, speed: 0.004+rnd()*0.004, hops: 5+Math.floor(rnd()*8), life: 0, warm: false }); }
-function spawnFeed() { if (signals.length >= 60 || !stemNodes.length) return;
+  signals.push({ a, b, prev: a, t: 0, speed: 0.004+rnd()*0.004, hops: 4+Math.floor(rnd()*6) }); }
+function spawnFeed() { if (signals.length >= 40 || !stemNodes.length) return;
   const a = stemNodes[Math.floor(rnd()*stemNodes.length)]; if (!adj[a].length) return;
-  let b = adj[a][0]; for (const n of adj[a]) if (gnodes[n].by < gnodes[b].by) b = n;
-  signals.push({ a, b, prev: a, t: 0, speed: 0.0035+rnd()*0.003, hops: 9+Math.floor(rnd()*8), life: 0, warm: true }); }
+  let b = adj[a][0]; for (const n of adj[a]) if (neurons[n].by < neurons[b].by) b = n;
+  signals.push({ a, b, prev: a, t: 0, speed: 0.0035+rnd()*0.003, hops: 8+Math.floor(rnd()*7) }); }
+
+function bgFill() {
+  const g = ctx.createRadialGradient(CX, H*0.38, 0, CX, H*0.5, Math.max(W, H)*0.75);
+  g.addColorStop(0, '#1c3f8a'); g.addColorStop(0.42, '#122a63'); g.addColorStop(1, '#060f2c');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+}
 
 function draw(ts) {
   const time = ts * 0.001;
-  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, W, H);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  bgFill();
+  ctx.drawImage(bl, 0, 0);
   ctx.globalCompositeOperation = 'lighter';
 
-  for (const fm of filaments) {
-    ctx.strokeStyle = fm.warm ? 'rgba(255,150,70,0.05)' : 'rgba(90,160,255,0.05)';
-    ctx.lineWidth = fm.w * DPR; ctx.beginPath();
-    for (let p = 0; p <= 1.001; p += 0.06) { const x = CX + bez(p, fm.sx, fm.c1x, fm.c2x, fm.ex)*S, y = CY + bez(p, fm.sy, fm.c1y, fm.c2y, fm.ey)*S;
-      p === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
-    ctx.stroke();
-    const bp = (fm.off + time*fm.spd) % 1, bx = CX + bez(bp, fm.sx, fm.c1x, fm.c2x, fm.ex)*S, by = CY + bez(bp, fm.sy, fm.c1y, fm.c2y, fm.ey)*S;
-    const gg = ctx.createRadialGradient(bx, by, 0, bx, by, 6*DPR);
-    gg.addColorStop(0, fm.warm ? 'rgba(255,190,120,0.8)' : 'rgba(190,220,255,0.8)'); gg.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = gg; ctx.beginPath(); ctx.arc(bx, by, 6*DPR, 0, 6.2832); ctx.fill();
-  }
-
-  ctx.drawImage(bl, 0, 0);
-
-  const pulse = 0.62 + 0.14 * Math.sin(time * 0.6);
-  const coreX = CX + 0.12*S, coreY = CY + 0.30*S;
-  const core = ctx.createRadialGradient(coreX, coreY, 0, coreX, coreY, S*0.85);
-  core.addColorStop(0, 'rgba(255,180,90,' + (0.55*pulse) + ')'); core.addColorStop(0.35, 'rgba(255,130,50,' + (0.28*pulse) + ')');
-  core.addColorStop(0.7, 'rgba(210,90,40,' + (0.08*pulse) + ')'); core.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = core; ctx.beginPath(); ctx.arc(coreX, coreY, S*0.85, 0, 6.2832); ctx.fill();
-
-  // agent regions light as they act
+  // agent regions softly light where they work
   for (const ag of team.values()) {
     if (ag.glow < 0.02) { ag.glow *= 0.95; continue; }
-    const n = gnodes[ag.node], px = gx(n), py = gy(n), rad = 46*DPR*(0.55+0.45*ag.glow);
+    const n = neurons[ag.node], px = nX(n), py = nY(n), rad = 42*DPR*(0.55+0.45*ag.glow);
     const gr = ctx.createRadialGradient(px, py, 0, px, py, rad);
-    gr.addColorStop(0, 'rgba(130,190,255,' + (ag.glow*0.18) + ')'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+    gr.addColorStop(0, 'rgba(150,205,255,' + (ag.glow*0.16) + ')'); gr.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(px, py, rad, 0, 6.2832); ctx.fill();
     ag.glow *= 0.985;
   }
+  // handoffs arc between regions
   for (let i = arcs.length - 1; i >= 0; i--) {
     const ar = arcs[i]; ar.t += ar.speed;
-    const A = gnodes[ar.A.node], B = gnodes[ar.B.node];
-    const ax = gx(A), ay = gy(A), bx = gx(B), by = gy(B);
+    const A = neurons[ar.A.node], B = neurons[ar.B.node];
+    const ax = nX(A), ay = nY(A), bx = nX(B), by = nY(B);
     const mx = (ax+bx)/2, my = (ay+by)/2 - Math.hypot(bx-ax, by-ay)*0.28;
-    ctx.strokeStyle = 'rgba(150,205,255,0.12)'; ctx.lineWidth = 1*DPR;
+    ctx.strokeStyle = 'rgba(170,215,255,0.14)'; ctx.lineWidth = 1*DPR;
     ctx.beginPath(); ctx.moveTo(ax, ay); ctx.quadraticCurveTo(mx, my, bx, by); ctx.stroke();
     const t = ar.t, x = (1-t)*(1-t)*ax + 2*(1-t)*t*mx + t*t*bx, y = (1-t)*(1-t)*ay + 2*(1-t)*t*my + t*t*by;
-    const g = ctx.createRadialGradient(x, y, 0, x, y, 6*DPR);
-    g.addColorStop(0, 'rgba(215,238,255,0.95)'); g.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, 6*DPR, 0, 6.2832); ctx.fill();
+    const gg = ctx.createRadialGradient(x, y, 0, x, y, 6*DPR);
+    gg.addColorStop(0, 'rgba(235,245,255,0.95)'); gg.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = gg; ctx.beginPath(); ctx.arc(x, y, 6*DPR, 0, 6.2832); ctx.fill();
     if (ar.t >= 1) { ar.B.glow = Math.max(ar.B.glow, 0.8); arcs.splice(i, 1); }
   }
 
-  for (let i = 0; i < gnodes.length; i++) {
-    const gv = glow[i]; if (gv < 0.02) { glow[i] *= 0.96; continue; }
-    const n = gnodes[i], px = gx(n), py = gy(n), rad = 16*DPR;
-    const gr = ctx.createRadialGradient(px, py, 0, px, py, rad);
-    gr.addColorStop(0, 'rgba(120,180,255,' + (gv*0.14) + ')'); gr.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(px, py, rad, 0, 6.2832); ctx.fill();
-    glow[i] *= 0.965;
-  }
-
-  // a soft ambient feeder drift so the brain always breathes a little
+  // signals gliding between neurons
   if (rnd() < 0.05) spawnFeed();
+  if (rnd() < 0.05) spawn();
   for (let i = signals.length - 1; i >= 0; i--) {
     const s = signals[i]; s.t += s.speed;
-    const a = gnodes[s.a], b = gnodes[s.b];
-    const ax = gx(a), ay = gy(a), bx = gx(b), by = gy(b);
+    const a = neurons[s.a], b = neurons[s.b];
+    const ax = nX(a), ay = nY(a), bx = nX(b), by = nY(b);
     const hx = ax + (bx-ax)*s.t, hy = ay + (by-ay)*s.t;
-    ctx.strokeStyle = s.warm ? 'rgba(255,180,120,0.16)' : 'rgba(140,195,255,0.16)'; ctx.lineWidth = 1*DPR;
+    ctx.strokeStyle = 'rgba(150,205,255,0.12)'; ctx.lineWidth = 1*DPR;
     ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(hx, hy); ctx.stroke();
-    const g = ctx.createRadialGradient(hx, hy, 0, hx, hy, 5*DPR);
-    if (s.warm) { g.addColorStop(0, 'rgba(255,215,170,0.9)'); g.addColorStop(0.4, 'rgba(255,160,90,0.5)'); }
-    else { g.addColorStop(0, 'rgba(210,235,255,0.9)'); g.addColorStop(0.4, 'rgba(130,190,255,0.5)'); }
-    g.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(hx, hy, 5*DPR, 0, 6.2832); ctx.fill();
-    if (s.t >= 1) { glow[s.b] = Math.min(1, glow[s.b] + 0.6);
-      s.life++; if (s.life >= s.hops) { signals.splice(i, 1); continue; }
-      let nb = adj[s.b].filter(n => n !== s.prev);
-      if (s.warm && nb.length > 1 && rnd() < 0.7) nb = [nb.reduce((p, c) => gnodes[c].by < gnodes[p].by ? c : p, nb[0])];
+    const gg = ctx.createRadialGradient(hx, hy, 0, hx, hy, 5*DPR);
+    gg.addColorStop(0, 'rgba(235,245,255,0.95)'); gg.addColorStop(0.4, 'rgba(160,205,255,0.5)'); gg.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = gg; ctx.beginPath(); ctx.arc(hx, hy, 5*DPR, 0, 6.2832); ctx.fill();
+    if (s.t >= 1) { glowN[s.b] = 1; s.hops--; if (s.hops <= 0) { signals.splice(i, 1); continue; }
+      const nb = adj[s.b].filter(n => n !== s.prev);
       s.prev = s.b; s.a = s.b; s.b = nb.length ? nb[Math.floor(rnd()*nb.length)] : s.a; s.t = 0; }
   }
 
-  for (const p of parts) {
-    p.x += p.vx * 0.0016; p.y += p.vy * 0.0016;
-    if (p.x < 0) p.x += 1; if (p.x > 1) p.x -= 1; if (p.y < 0) p.y += 1; if (p.y > 1) p.y -= 1;
-    const tw = 0.4 + 0.6 * (0.5 + 0.5*Math.sin(time*0.8 + p.ph));
-    const px = p.x*W, py = p.y*H, rad = (p.big ? 9 : 1.6) * DPR * (0.6 + p.z), col = p.warm ? '255,150,70' : '200,225,255';
-    const g = ctx.createRadialGradient(px, py, 0, px, py, rad);
-    g.addColorStop(0, 'rgba(' + col + ',' + (tw * (p.big ? 0.10 : 0.5)) + ')'); g.addColorStop(1, 'rgba(' + col + ',0)');
-    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(px, py, rad, 0, 6.2832); ctx.fill();
+  // the neurons — bright white dots, softly twinkling
+  for (let i = 0; i < neurons.length; i++) {
+    const n = neurons[i], px = nX(n), py = nY(n);
+    const hit = glowN[i]; glowN[i] *= 0.94;
+    const tw = n.tw * (0.55 + 0.45 * Math.sin(time * 1.1 + n.ph)) + hit;
+    const base = n.bright ? 1 : 0.4;
+    const r = n.r * DPR * (n.bright ? 1 : 0.7);
+    const glow = ctx.createRadialGradient(px, py, 0, px, py, r*6);
+    glow.addColorStop(0, 'rgba(210,235,255,' + Math.min(0.9, 0.5*base*tw) + ')'); glow.addColorStop(1, 'rgba(150,200,255,0)');
+    ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(px, py, r*6, 0, 6.2832); ctx.fill();
+    ctx.fillStyle = 'rgba(245,250,255,' + Math.min(1, 0.65 + 0.35*base*tw) + ')';
+    ctx.beginPath(); ctx.arc(px, py, r, 0, 6.2832); ctx.fill();
   }
 
+  // agent names, softly, only where active
   ctx.globalCompositeOperation = 'source-over';
   ctx.textAlign = 'center'; ctx.font = '600 ' + (10*DPR) + 'px ui-sans-serif, system-ui, sans-serif';
-  for (const ag of team.values()) { if (ag.glow < 0.08) continue; const n = gnodes[ag.node];
-    ctx.fillStyle = 'rgba(200,226,255,' + Math.min(0.85, ag.glow) + ')';
-    ctx.fillText(ag.name.toUpperCase(), gx(n), gy(n) - 16*DPR); }
+  for (const ag of team.values()) { if (ag.glow < 0.08) continue; const n = neurons[ag.node];
+    ctx.fillStyle = 'rgba(210,232,255,' + Math.min(0.85, ag.glow) + ')';
+    ctx.fillText(ag.name.toUpperCase(), nX(n), nY(n) - 15*DPR); }
   requestAnimationFrame(draw);
 }
 requestAnimationFrame(draw);
 setTimeout(() => cv.classList.add('in'), 80);
 
-// ---- live data from the brain ----------------------------------------
+// ---- live data + panel ------------------------------------------------
 let neu = 0, syn = 0;
 function counts() {
   document.getElementById('c-neu').textContent = neu;
@@ -396,90 +338,66 @@ function counts() {
   document.getElementById('c-min').textContent = team.size;
 }
 function setConn(live) {
-  const el = document.getElementById('conn');
-  el.classList.toggle('live', live);
+  document.getElementById('conn').classList.toggle('live', live);
   document.getElementById('conn-t').textContent = live ? 'connected · live' : 'reconnecting…';
 }
 function connect() {
   const es = new EventSource('/events');
   es.onopen = () => setConn(true);
-  es.onmessage = (m) => {
-    let ev; try { ev = JSON.parse(m.data); } catch { return; }
-    if (ev.type === 'snapshot') {
-      neu = ev.state.nodes.length; syn = ev.state.edges.length;
+  es.onmessage = (m) => { let ev; try { ev = JSON.parse(m.data); } catch { return; }
+    if (ev.type === 'snapshot') { neu = ev.state.nodes.length; syn = ev.state.edges.length;
       for (const a of ev.state.agents) ensureAgent(a.name);
-      for (const n of ev.state.nodes) ensureAgent(n.agent);
-      counts();
-    } else if (ev.type === 'node_added') {
-      neu++; activate(ev.node.agent); counts();
-    } else if (ev.type === 'edge_added') {
-      syn++; counts();
-    } else if (ev.type === 'handoff') {
-      arc(ev.from, ev.to); activate(ev.from); counts();
-    } else if (ev.type === 'recall') {
-      if (ev.by) activate(ev.by);
-    }
+      for (const n of ev.state.nodes) ensureAgent(n.agent); counts();
+    } else if (ev.type === 'node_added') { neu++; activate(ev.node.agent); counts();
+    } else if (ev.type === 'reinforce') { activate('feeder');
+    } else if (ev.type === 'edge_added') { syn++; counts();
+    } else if (ev.type === 'handoff') { arc(ev.from, ev.to); activate(ev.from); counts();
+    } else if (ev.type === 'recall') { if (ev.by) activate(ev.by); }
   };
   es.onerror = () => { setConn(false); es.close(); setTimeout(connect, 1500); };
 }
 connect();
 
-// ---- team value panel -------------------------------------------------
 function esc(s) { return (s || '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }
-function colorFor(n) { let h = 0; for (let i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) & 0xffffff; return 'hsl(' + (h % 360) + ',78%,64%)'; }
-
+function colorFor(n) { let h = 0; for (let i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) & 0xffffff; return 'hsl(' + (h % 360) + ',78%,68%)'; }
 const growth = [];
 function drawSpark() {
-  const c = document.getElementById('spark');
-  const w = c.width = c.clientWidth * DPR, h = c.height = 46 * DPR, x = c.getContext('2d');
-  x.clearRect(0, 0, w, h);
-  if (growth.length < 2) return;
+  const c = document.getElementById('spark'); const w = c.width = c.clientWidth * DPR, h = c.height = 46 * DPR, x = c.getContext('2d');
+  x.clearRect(0, 0, w, h); if (growth.length < 2) return;
   const max = Math.max(...growth), min = Math.min(...growth), span = (max - min) || 1;
   const px = i => i / (growth.length - 1) * w, py = v => h - 7*DPR - (v - min) / span * (h - 14*DPR);
   x.beginPath(); growth.forEach((v, i) => i ? x.lineTo(px(i), py(v)) : x.moveTo(px(i), py(v)));
-  x.strokeStyle = 'rgba(127,208,255,0.85)'; x.lineWidth = 1.6 * DPR; x.stroke();
-  x.lineTo(w, h); x.lineTo(0, h); x.closePath(); x.fillStyle = 'rgba(127,208,255,0.08)'; x.fill();
-  const last = growth.length - 1;
-  x.fillStyle = '#c8ecff'; x.beginPath(); x.arc(px(last), py(growth[last]), 2.6 * DPR, 0, 7); x.fill();
+  x.strokeStyle = 'rgba(159,214,255,0.9)'; x.lineWidth = 1.6 * DPR; x.stroke();
+  x.lineTo(w, h); x.lineTo(0, h); x.closePath(); x.fillStyle = 'rgba(159,214,255,0.08)'; x.fill();
+  const last = growth.length - 1; x.fillStyle = '#e6f4ff'; x.beginPath(); x.arc(px(last), py(growth[last]), 2.6 * DPR, 0, 7); x.fill();
 }
-
-const toggle = document.getElementById('toggle'), panelEl = document.getElementById('panel');
-toggle.onclick = () => { panelOpen = !panelOpen; panelEl.classList.toggle('hidden', !panelOpen); resize(); };
+const panelEl = document.getElementById('panel');
+document.getElementById('toggle').onclick = () => { panelOpen = !panelOpen; panelEl.classList.toggle('hidden', !panelOpen); resize(); };
 if (!panelOpen) panelEl.classList.add('hidden');
 
 async function poll() {
   try {
     const [m, tr, dir, an] = await Promise.all([
-      fetch('/metrics').then(r => r.json()),
-      fetch('/training').then(r => r.json()),
-      fetch('/directives').then(r => r.json()),
-      fetch('/analyze').then(r => r.json()),
+      fetch('/metrics').then(r => r.json()), fetch('/training').then(r => r.json()),
+      fetch('/directives').then(r => r.json()), fetch('/analyze').then(r => r.json()),
     ]);
     document.getElementById('p-collab').textContent = Math.round(m.collaboration_index * 100) + '% samen';
     document.getElementById('c-min').textContent = m.minds.length;
-
     document.getElementById('fields').innerHTML = tr.fields.map(f =>
-      `<div class="field"><div class="top"><span>${esc(f.field)}</span><b>${f.pct}%</b></div>` +
-      `<div class="bar"><i style="width:${f.pct}%"></i></div></div>`).join('');
-
+      `<div class="field"><div class="top"><span>${esc(f.field)}</span><b>${f.pct}%</b></div><div class="bar"><i style="width:${f.pct}%"></i></div></div>`).join('');
     document.getElementById('minds').innerHTML = m.minds.map(x => {
-      const role = ((dir[x.agent] || {}).role || '').split('—')[0].split('/')[0].trim();
-      const col = colorFor(x.agent);
-      return `<div class="mind"><span class="dot" style="background:${col};box-shadow:0 0 7px ${col}"></span>` +
-        `<span><span class="nm">${esc(x.agent)}</span> <span class="rl">${esc(role)}</span></span>` +
-        `<span class="rx">${x.neurons} · ${x.reach}</span></div>`;
+      const role = ((dir[x.agent] || {}).role || '').split('—')[0].split('/')[0].trim(), col = colorFor(x.agent);
+      return `<div class="mind"><span class="dot" style="background:${col};box-shadow:0 0 7px ${col}"></span><span><span class="nm">${esc(x.agent)}</span> <span class="rl">${esc(role)}</span></span><span class="rx">${x.neurons} · ${x.reach}</span></div>`;
     }).join('');
-
     const recs = (an.recommendations || []).slice(0, 5);
     document.getElementById('needs').innerHTML = recs.length ? recs.map(r =>
-      `<div class="need"><span class="p ${r.priority}"></span><span>${esc(r.need)}<span class="w">${esc(r.why)}</span></span></div>`
-    ).join('') : '<div class="need" style="color:#4d648c">alles gedekt — geen openstaande behoeften</div>';
+      `<div class="need"><span class="p ${r.priority}"></span><span>${esc(r.need)}<span class="w">${esc(r.why)}</span></span></div>`).join('')
+      : '<div class="need" style="color:#536ea6">alles gedekt — geen openstaande behoeften</div>';
     document.getElementById('need-src').textContent = (an.gaps || []).length + ' gaten';
-
     growth.push(neu); if (growth.length > 80) growth.shift();
     document.getElementById('growth-n').textContent = growth.length > 1 ? '+' + (growth[growth.length-1] - growth[0]) + ' neurons' : '—';
     drawSpark();
-  } catch (e) { /* brain not reachable yet */ }
+  } catch (e) { /* not reachable yet */ }
   setTimeout(poll, 2000);
 }
 poll();
