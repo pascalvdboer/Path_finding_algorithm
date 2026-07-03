@@ -29,7 +29,17 @@ git checkout claude/build-possibilities-edf9tr
 
 ## 2. Start it (brain + Professor, always-on)
 
+Set the options first (all optional; sensible defaults if omitted), then start:
+
 ```bash
+# a shared secret so only your agents can reach a public/tunnel deployment:
+export BRAIN_TOKEN="choose-a-long-secret"
+# what the team is expert in: seo (default) | stockmarket | your own pack:
+export BRAIN_DOMAIN="seo"
+# (optional) let the Feeder source new knowledge from reliable/primary sources:
+# export BRAIN_SEARCH_URL="https://your-search-bridge?q={topic}"
+# export BRAIN_TRUSTED_SOURCES="developers.google.com,schema.org,web.dev"
+
 docker compose up -d --build
 ```
 
@@ -39,6 +49,9 @@ This builds the image and starts two always-on services:
   keeps teaching the brain toward the team's needs.
 
 Both restart automatically after reboots.
+
+> With a token set, open the dashboard as `http://<host>:8000/?token=<secret>`
+> and give agents the same token (as `?token=...` or the `X-Brain-Token` header).
 
 ## 3. Verify it's healthy
 

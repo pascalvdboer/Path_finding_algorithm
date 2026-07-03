@@ -24,9 +24,11 @@ services:
       - BRAIN_URL=http://brain:8000
       - BRAIN_TOKEN=${BRAIN_TOKEN:-}
       - BRAIN_DOMAIN=${BRAIN_DOMAIN:-seo}
-      # To let the Professor source new knowledge from the web for gaps,
-      # set a search endpoint here (see brain/sourcing.py):
-      # - BRAIN_SEARCH_URL=https://your-search-proxy/seo?q={topic}
+      # Let the Feeder source new knowledge from reliable/primary sources.
+      # Point BRAIN_SEARCH_URL at your search bridge and list the sources it
+      # should trust (manuals, official docs, courses, standards):
+      - BRAIN_SEARCH_URL=${BRAIN_SEARCH_URL:-}
+      - BRAIN_TRUSTED_SOURCES=${BRAIN_TRUSTED_SOURCES:-}
     command: sh -c "sleep 5 && python agents/roster.py && python agents/feeder.py"
     restart: unless-stopped
 
