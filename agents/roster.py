@@ -22,7 +22,11 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "client"))
 from brain_client import BrainClient  # noqa: E402
 
 URL = os.environ.get("BRAIN_URL", "http://127.0.0.1:8000")
-ROSTER = os.path.join(os.path.dirname(__file__), "roster.json")
+# domain-specific roster if present (roster.<domain>.json), else the default
+_DOMAIN = os.environ.get("BRAIN_DOMAIN", "seo")
+_here = os.path.dirname(__file__)
+_domain_roster = os.path.join(_here, f"roster.{_DOMAIN}.json")
+ROSTER = _domain_roster if os.path.exists(_domain_roster) else os.path.join(_here, "roster.json")
 
 
 def load_file():

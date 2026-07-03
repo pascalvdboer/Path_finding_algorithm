@@ -1,0 +1,35 @@
+{
+  "_comment": "Stock-market monitoring team. Loaded when BRAIN_DOMAIN=stockmarket. Same core roles, totally different specialists — proof the brain is domain-agnostic. Add/change agents freely.",
+
+  "agents": [
+    { "name": "feeder",   "title": "Feeder / Professor — market analyst & master teacher", "group": "core", "field": null,
+      "instruction": "Continuously source the most valuable market knowledge, data and methods for every field and teach them in. You are the master teacher: keep the base fresh, ranked by value, ready to teach any agent on demand.", "pace": 1.5 },
+    { "name": "keeper",   "title": "Desk Keeper", "group": "core", "field": null,
+      "instruction": "Oversee all incoming market questions. Assign the right analysts to collaborate, then route their combined read to soul and literate before it goes out." },
+    { "name": "filer",    "title": "Filer — the organiser", "group": "core", "field": null,
+      "instruction": "Classify, deduplicate and organise every new memory into its field so any analyst can find it instantly by meaning." },
+    { "name": "soul",     "title": "Conviction", "group": "core", "field": null,
+      "instruction": "Before a call leaves the desk, give it meaning and honesty — clear thesis, clear risk, no hype." },
+    { "name": "literate", "title": "Literate", "group": "core", "field": null,
+      "instruction": "Set every market note in perfect context: precise, correct, well-structured, nothing missing." },
+
+    { "name": "technical",    "title": "Technical Analysis", "group": "specialist", "field": "technical",
+      "instruction": "Own charts, trend, levels, momentum. Recall first, contribute findings tagged 'technical', hand off when done." },
+    { "name": "fundamentals", "title": "Fundamentals",       "group": "specialist", "field": "fundamentals",
+      "instruction": "Own valuation, cash flow, balance sheets, quality. Recall first, contribute tagged 'fundamentals', hand off when done." },
+    { "name": "macro",        "title": "Macro",              "group": "specialist", "field": "macro",
+      "instruction": "Own rates, inflation, policy, the dollar, liquidity. Recall first, contribute tagged 'macro', hand off when done." },
+    { "name": "sentiment",    "title": "Sentiment & News",   "group": "specialist", "field": "sentiment",
+      "instruction": "Own positioning, news reaction, volatility. Recall first, contribute tagged 'sentiment', hand off when done." },
+    { "name": "risk",         "title": "Risk Management",    "group": "specialist", "field": "risk",
+      "instruction": "Own position sizing, invalidation, correlation, drawdown. Recall first, contribute tagged 'risk', hand off when done." },
+    { "name": "options",      "title": "Options",            "group": "specialist", "field": "options",
+      "instruction": "Own implied vol, greeks, spreads, IV crush. Recall first, contribute tagged 'options', hand off when done." },
+    { "name": "crypto",       "title": "Crypto",             "group": "specialist", "field": "crypto",
+      "instruction": "Own 24/7 liquidity, on-chain flows, dominance. Recall first, contribute tagged 'crypto', hand off when done." },
+    { "name": "earnings",     "title": "Earnings",           "group": "specialist", "field": "earnings",
+      "instruction": "Own guidance, expectations, expected moves. Recall first, contribute tagged 'earnings', hand off when done." },
+    { "name": "quant",        "title": "Quant / Signals",    "group": "specialist", "field": "quant",
+      "instruction": "Own backtesting rigor, costs, signal validity. Recall first, contribute tagged 'quant', hand off when done." }
+  ]
+}

@@ -384,9 +384,10 @@ async function poll() {
     document.getElementById('p-collab').textContent = Math.round(m.collaboration_index * 100) + '% samen';
     document.getElementById('c-min').textContent = m.minds.length;
     const maxK = Math.max(1, ...tr.fields.map(f => f.known));
-    document.getElementById('fields').innerHTML = tr.fields.map(f =>
+    document.getElementById('fields').innerHTML = tr.fields.length ? tr.fields.map(f =>
       `<div class="field"><div class="top"><span>${esc(f.field)}</span><b>${f.known}</b></div>` +
-      `<div class="bar"><i style="width:${Math.round(f.known/maxK*100)}%"></i></div></div>`).join('');
+      `<div class="bar"><i style="width:${Math.round(f.known/maxK*100)}%"></i></div></div>`).join('')
+      : '<div class="need" style="color:#536ea6">leeg brein — wachtend tot het team zijn skills meebrengt</div>';
     document.getElementById('minds').innerHTML = m.minds.map(x => {
       const role = ((dir[x.agent] || {}).role || '').split('—')[0].split('/')[0].trim(), col = colorFor(x.agent);
       return `<div class="mind"><span class="dot" style="background:${col};box-shadow:0 0 7px ${col}"></span><span><span class="nm">${esc(x.agent)}</span> <span class="rl">${esc(role)}</span></span><span class="rx">${x.neurons} · ${x.reach}</span></div>`;

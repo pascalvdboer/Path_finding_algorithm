@@ -25,7 +25,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "client"))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from brain_client import BrainClient          # noqa: E402
-from knowledge.seo_corpus import CORPUS, by_field, stats  # noqa: E402
+from knowledge import CORPUS, by_field, stats  # noqa: E402  (domain pack via BRAIN_DOMAIN)
 from brain import sourcing                     # noqa: E402
 
 URL = os.environ.get("BRAIN_URL", "http://127.0.0.1:8000")
@@ -49,8 +49,7 @@ def main():
     print(f"      curriculum: {stats()}")
     print(f"      web sourcing: {'ON' if sourcing.configured() else 'off (set BRAIN_SEARCH_URL to enable)'}\n")
 
-    # 0) Clean up any duplicates already in the brain (e.g. from an older
-    #    Feeder that re-taught the same text).
+    # Clean up any duplicates already in the brain (e.g. from an older Feeder).
     try:
         cleaned = feeder._get("/dedupe")
         if cleaned.get("removed"):
@@ -58,64 +57,89 @@ def main():
     except Exception:
         pass
 
-    # 1) Fast initial pass — teach the whole curriculum so the Professor is
-    #    fully knowledgeable within seconds.
-    print("      seeding the curriculum …")
-    for field, kind, text, tags in CORPUS:
-        if (feeder.directive or {}).get("paused"):
-            break
-        feeder.remember(text, tags=list(tags) + [field, kind])
-        time.sleep(0.05)
-    print("      curriculum seeded — now teaching to the team's needs.\n")
+    print("      empty brain — waiting for the team to bring their skills.\n")
 
-    # per-field rotation cursors so re-feeding a field cycles its material
+    def needed_fields(d, analysis):
+        """The skills the brain should actually master right now — declared by
+        the agents that have connected, plus anything demand (gaps) surfaced."""
+        need = set()
+        try:
+            for dr in (feeder._get("/directives") or {}).values():
+                if dr.get("field"):
+                    need.add(dr["field"])
+        except Exception:
+            pass
+        for rec in analysis.get("recommendations", []):
+            if rec.get("field"):
+                need.add(rec["field"])
+        if d.get("focus"):
+            focus = set(d["focus"])
+            need = (need & focus) or focus
+        return need
+
+    trained = set()      # fields we've already given a first training pass
     cursors = {}
     tick = 0
+    said_waiting = False
     while True:
         d = feeder.directive or {}
         if d.get("paused"):
-            time.sleep(0.5)
-            continue
+            time.sleep(0.5); continue
 
-        # 2) Ask the brain what the team needs most, right now.
         analysis = feeder.analyze()
-        focus = d.get("focus")
+        need = needed_fields(d, analysis)
 
-        target_field = None
-        gap_topic = None
-        if focus:
-            target_field = focus[0]
-        elif analysis.get("recommendations"):
-            rec = analysis["recommendations"][0]
-            target_field = rec.get("field")
-            if rec.get("priority") == "gap":
-                gap_topic = rec.get("need")
+        # Nothing declared yet → the brain stays empty until the team arrives.
+        if not need:
+            if not said_waiting:
+                print("  [feeder] no skills declared yet — brain stays empty.")
+                said_waiting = True
+            time.sleep(2.0); continue
+        said_waiting = False
 
-        # 3a) A real gap outside the curriculum → try to source it from the web.
-        if gap_topic:
-            found = sourcing.source(gap_topic, target_field)
-            if found:
-                for text, tags in found:
-                    feeder.remember(text, tags=tags)
-                feeder._post("/gap_filled", {"topic": gap_topic})
-                print(f"  [feeder] sourced & taught for gap: {gap_topic!r}")
+        # Register the needed fields so they appear (and can grow from zero).
+        for f in need:
+            feeder.add_field(f)
+
+        # First time we see a needed field: train it. Use the built-in pack if
+        # it happens to have material for that skill; otherwise it will be
+        # filled on demand from gaps / the web / the agents themselves.
+        for f in list(need):
+            if f in trained:
+                continue
+            entries = by_field(f)
+            if entries:
+                for _f, kind, text, tags in entries:
+                    feeder.remember(text, tags=list(tags) + [f, kind])
+                    time.sleep(0.04)
+                print(f"  [feeder] trained '{f}' — {len(entries)} pieces from the pack.")
             else:
-                # can't source it offline — surface the need
-                print(f"  [feeder] gap needs external sourcing: {gap_topic!r}")
+                print(f"  [feeder] '{f}' has no built-in material — will source it on demand.")
+            trained.add(f)
 
-        # 3b) Teach toward the weakest / focused field from the curriculum.
-        field = target_field if (target_field and by_field(target_field)) else None
-        if not field:
-            fields = [c["field"] for c in analysis.get("weakest_fields", [])] or None
-            field = fields[0] if fields else CORPUS[tick % len(CORPUS)][0]
-        entries = by_field(field)
+        # Fill a real demand gap from the web (if a search endpoint is set).
+        for rec in analysis.get("recommendations", []):
+            if rec.get("priority") == "gap":
+                topic = rec["need"]
+                found = sourcing.source(topic, rec.get("field"))
+                if found:
+                    for text, tags in found:
+                        feeder.remember(text, tags=tags)
+                    feeder._post("/gap_filled", {"topic": topic})
+                    print(f"  [feeder] sourced & taught for gap: {topic!r}")
+                elif sourcing.configured():
+                    feeder._post("/gap_filled", {"topic": topic})
+                break
+
+        # Keep a needed field's material fresh (steady, light).
+        f = sorted(need)[tick % len(need)]
+        entries = by_field(f)
         if entries:
-            i = cursors.get(field, 0) % len(entries)
-            cursors[field] = i + 1
+            i = cursors.get(f, 0) % len(entries)
+            cursors[f] = i + 1
             _f, kind, text, tags = entries[i]
-            feeder.remember(text, tags=list(tags) + [field, kind])
+            feeder.remember(text, tags=list(tags) + [f, kind])
 
-        # 4) Filer upkeep — let stale knowledge fade every so often.
         tick += 1
         if tick % 25 == 0:
             feeder._post("/decay", {})

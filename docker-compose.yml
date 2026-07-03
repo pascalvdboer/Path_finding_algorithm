@@ -6,6 +6,12 @@ services:
       - "8000:8000"          # dashboard + API — open http://<host>:8000
     volumes:
       - brain-data:/data     # the brain's memory (brain.db) persists here
+    environment:
+      # Protect a public/tunnel deployment: set a secret and every request
+      # (and the dashboard, via ?token=...) must present it.
+      - BRAIN_TOKEN=${BRAIN_TOKEN:-}
+      # What the team is expert in. seo (default) | stockmarket | your own pack.
+      - BRAIN_DOMAIN=${BRAIN_DOMAIN:-seo}
     restart: unless-stopped  # always-on: comes back after reboots
 
   # The Feeder / Professor — always-on too, so the brain keeps teaching itself.
@@ -16,6 +22,8 @@ services:
       - brain
     environment:
       - BRAIN_URL=http://brain:8000
+      - BRAIN_TOKEN=${BRAIN_TOKEN:-}
+      - BRAIN_DOMAIN=${BRAIN_DOMAIN:-seo}
       # To let the Professor source new knowledge from the web for gaps,
       # set a search endpoint here (see brain/sourcing.py):
       # - BRAIN_SEARCH_URL=https://your-search-proxy/seo?q={topic}

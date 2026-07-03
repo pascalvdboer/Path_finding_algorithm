@@ -16,9 +16,9 @@ from .events import EventBus
 
 WEB_DIR = os.path.join(os.path.dirname(__file__), "web")
 
-# curriculum totals per field — the denominator for "% trained"
+# the active domain pack's fields (BRAIN_DOMAIN selects it)
 try:
-    from knowledge.seo_corpus import FIELDS, by_field
+    from knowledge import FIELDS, by_field
     CURRICULUM_TOTALS = {f: len(by_field(f)) for f in FIELDS}
 except Exception:
     CURRICULUM_TOTALS = {}
@@ -73,15 +73,19 @@ class BrainApp:
         return self.brain.mark_useful(node_id)
 
     def fields(self):
-        """The live set of fields/skill areas — curriculum defaults, plus any
-        field an agent declares (its directive), plus any the director adds.
-        This is how the brain's fields expand: new agents / new skills / on
-        demand, without touching code."""
-        names = set(CURRICULUM_TOTALS)
+        """The live set of skill areas the brain is meant to master. Nothing
+        is baked in: the brain starts empty and its fields emerge entirely
+        from the team — the fields agents declare (their directives), fields
+        the director adds, and fields surfaced by demand (gaps). No agents
+        yet → no fields yet."""
+        names = set()
         for d in self.brain.all_directives().values():
             if d.get("field"):
                 names.add(d["field"])
         names.update(self.brain.added_fields())
+        for g in self.brain.top_gaps(50):
+            if g.get("field"):
+                names.add(g["field"])
         return sorted(names)
 
     def recall(self, query, k, by=None):

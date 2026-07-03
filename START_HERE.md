@@ -8,6 +8,29 @@ glowing brain.
 
 Everything runs on the **Python standard library** — no installs.
 
+## It starts empty and becomes whatever your team needs
+
+The brain is **not** pre-loaded with a fixed subject. It boots **empty**. What
+it should master isn't known in advance — it emerges from the **team that uses
+it**:
+
+- Agents connect and **declare their skills** (their fields).
+- The **Feeder / Professor** then trains *those* fields — the skills the team
+  has and needs — and fills gaps on demand.
+- Fields **expand** as you add agents, as the director adds a field, or as
+  demand surfaces one. Nothing is hard-coded.
+
+So the same engine runs an **SEO team**, a **stock-market desk**, or anything
+else. Pick a ready knowledge pack with an env var, or bring your own:
+
+```bash
+python run.py                       # SEO team (default)
+BRAIN_DOMAIN=stockmarket python run.py   # a stock-market desk — totally different skills
+```
+
+A "domain pack" is just optional teaching material: `knowledge/<name>_corpus.py`
++ `agents/roster.<name>.json`. No engine code changes.
+
 ---
 
 ## 1. See it work (2 minutes, on your PC)
