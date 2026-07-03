@@ -310,6 +310,32 @@ class Brain:
                 out[r["agent"]] = json.loads(r["data"])
             return out
 
+    # -- training coverage per field ------------------------------------
+    def training(self, totals):
+        """How much of each field's curriculum is trained into the brain.
+
+        `totals` maps field -> number of lessons in the curriculum. Returns
+        a per-field breakdown with the count of distinct lessons taught and
+        the percentage trained — the visual measure of the team's knowledge.
+        """
+        KINDS = {"fact", "tool", "training"}
+        taught = {f: set() for f in totals}
+        with self._lock:
+            for r in self._db.execute("SELECT agent, content, tags FROM nodes"):
+                tagset = set(json.loads(r["tags"]))
+                if r["agent"] != "feeder" and not (tagset & KINDS):
+                    continue
+                for f in totals:
+                    if f in tagset:
+                        taught[f].add(r["content"])
+        out = []
+        for f, total in totals.items():
+            t = min(len(taught[f]), total)
+            out.append({"field": f, "taught": t, "total": total,
+                        "pct": round(t / total * 100) if total else 0})
+        out.sort(key=lambda x: x["pct"], reverse=True)
+        return out
+
     # -- collaboration analytics ----------------------------------------
     def metrics(self):
         """How well the swarm works with each other's data.

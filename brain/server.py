@@ -16,6 +16,13 @@ from .events import EventBus
 
 WEB_DIR = os.path.join(os.path.dirname(__file__), "web")
 
+# curriculum totals per field — the denominator for "% trained"
+try:
+    from knowledge.seo_corpus import FIELDS, by_field
+    CURRICULUM_TOTALS = {f: len(by_field(f)) for f in FIELDS}
+except Exception:
+    CURRICULUM_TOTALS = {}
+
 
 class BrainApp:
     """Holds the shared state passed to every request handler."""
@@ -112,6 +119,8 @@ def make_handler(app):
                 return self._json(app.brain.stats())
             if u.path == "/metrics":
                 return self._json(app.brain.metrics())
+            if u.path == "/training":
+                return self._json({"fields": app.brain.training(CURRICULUM_TOTALS)})
             if u.path == "/teach":
                 field = (q.get("field") or [None])[0]
                 query = (q.get("q") or [None])[0]

@@ -22,13 +22,64 @@
     text-transform: uppercase; color: #3f5578; user-select: none; pointer-events: none; display: flex; align-items: center; gap: 7px; }
   #conn .d { width: 6px; height: 6px; border-radius: 50%; background: #ffcf6b; box-shadow: 0 0 8px #ffcf6b; }
   #conn.live .d { background: #5ff0c0; box-shadow: 0 0 8px #5ff0c0; }
+
+  /* team value panel — quiet, on the right */
+  #panel { position: fixed; top: 0; right: 0; height: 100%; width: 300px; z-index: 6;
+    padding: 24px 22px 30px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto;
+    background: linear-gradient(270deg, rgba(6,11,26,.88) 0%, rgba(6,11,26,.42) 76%, transparent 100%);
+    backdrop-filter: blur(3px); transition: transform .4s ease; }
+  #panel.hidden { transform: translateX(316px); }
+  #panel::-webkit-scrollbar { width: 0; }
+  .p-h { font-size: 9.5px; letter-spacing: .2em; text-transform: uppercase; color: #5c76a4;
+    margin-bottom: 11px; display: flex; justify-content: space-between; align-items: baseline; }
+  .p-h span:last-child { color: #4d648c; letter-spacing: .1em; }
+  .big { display: flex; gap: 18px; }
+  .big .n b { font-size: 24px; font-weight: 300; color: #eaf3ff; font-variant-numeric: tabular-nums; line-height: 1; }
+  .big .n span { display: block; font-size: 8.5px; letter-spacing: .16em; text-transform: uppercase; color: #4d648c; margin-top: 6px; }
+  .bar { height: 4px; border-radius: 4px; background: rgba(255,255,255,.06); overflow: hidden; }
+  .bar i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg,#3f7fd0,#7fd0ff); transition: width .6s; }
+  .field { margin: 8px 0; }
+  .field .top { display: flex; justify-content: space-between; font-size: 11px; color: #a9bcdd; margin-bottom: 4px; }
+  .field .top b { color: #86b9ee; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .mind { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 12px; }
+  .mind .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+  .mind .nm { color: #cfe0ff; } .mind .rl { color: #4d648c; font-size: 10px; }
+  .mind .rx { margin-left: auto; color: #6f88b4; font-variant-numeric: tabular-nums; font-size: 11px; }
+  #spark { width: 100%; height: 46px; display: block; }
+  #toggle { position: fixed; top: 22px; right: 20px; z-index: 7; width: 28px; height: 28px; border-radius: 50%;
+    border: 1px solid rgba(120,165,255,.3); background: rgba(8,13,30,.65); color: #86b9ee; font-size: 12px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  #toggle:hover { border-color: rgba(120,165,255,.6); }
 </style>
 
 <canvas id="brain"></canvas>
 <div class="label" id="mark">Agent <b>Brain</b></div>
 <div class="label" id="sub">shared cortex · live</div>
-<div id="count"><b id="c-neu">0</b> neurons · <b id="c-syn">0</b> synapses · <b id="c-min">0</b> minds</div>
 <div id="conn"><span class="d"></span><span id="conn-t">connecting…</span></div>
+
+<button id="toggle" title="Toon/verberg teampaneel">≡</button>
+<aside id="panel">
+  <section>
+    <div class="p-h"><span>Team</span><span id="p-collab">—</span></div>
+    <div class="big">
+      <div class="n"><b id="c-neu">0</b><span>neurons</span></div>
+      <div class="n"><b id="c-syn">0</b><span>synapses</span></div>
+      <div class="n"><b id="c-min">0</b><span>minds</span></div>
+    </div>
+  </section>
+  <section>
+    <div class="p-h"><span>Getraind per vakgebied</span></div>
+    <div id="fields"></div>
+  </section>
+  <section>
+    <div class="p-h"><span>De minds</span><span>neuronen · reach</span></div>
+    <div id="minds"></div>
+  </section>
+  <section>
+    <div class="p-h"><span>Groei</span><span id="growth-n">—</span></div>
+    <canvas id="spark"></canvas>
+  </section>
+</aside>
 
 <script>
 "use strict";
@@ -204,11 +255,14 @@ function renderBrain() {
   pathOutline(blx); blx.strokeStyle = 'rgba(195,228,255,0.9)';  blx.lineWidth = 1.3*DPR; blx.stroke();
   blx.globalCompositeOperation = 'source-over';
 }
+let panelOpen = innerWidth > 720;   // give the brain room; auto-hide on small screens
 function resize() {
   DPR = Math.min(2, window.devicePixelRatio || 1);
   W = cv.width = innerWidth * DPR; H = cv.height = innerHeight * DPR;
   cv.style.width = innerWidth + 'px'; cv.style.height = innerHeight + 'px';
-  S = Math.min(innerWidth, innerHeight) * 0.34 * DPR; CX = W * 0.5; CY = H * 0.46;
+  const panelPx = panelOpen ? 300 : 0;   // brain centres in the space left of the panel
+  S = Math.min(innerWidth - panelPx*0.5, innerHeight) * 0.34 * DPR;
+  CX = (W - panelPx*DPR) / 2; CY = H * 0.46;
   for (const a of team.values()) a.node = nearestNode(a.bx, a.by);
   renderBrain();
 }
@@ -360,4 +414,57 @@ function connect() {
   es.onerror = () => { setConn(false); es.close(); setTimeout(connect, 1500); };
 }
 connect();
+
+// ---- team value panel -------------------------------------------------
+function esc(s) { return (s || '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }
+function colorFor(n) { let h = 0; for (let i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) & 0xffffff; return 'hsl(' + (h % 360) + ',78%,64%)'; }
+
+const growth = [];
+function drawSpark() {
+  const c = document.getElementById('spark');
+  const w = c.width = c.clientWidth * DPR, h = c.height = 46 * DPR, x = c.getContext('2d');
+  x.clearRect(0, 0, w, h);
+  if (growth.length < 2) return;
+  const max = Math.max(...growth), min = Math.min(...growth), span = (max - min) || 1;
+  const px = i => i / (growth.length - 1) * w, py = v => h - 7*DPR - (v - min) / span * (h - 14*DPR);
+  x.beginPath(); growth.forEach((v, i) => i ? x.lineTo(px(i), py(v)) : x.moveTo(px(i), py(v)));
+  x.strokeStyle = 'rgba(127,208,255,0.85)'; x.lineWidth = 1.6 * DPR; x.stroke();
+  x.lineTo(w, h); x.lineTo(0, h); x.closePath(); x.fillStyle = 'rgba(127,208,255,0.08)'; x.fill();
+  const last = growth.length - 1;
+  x.fillStyle = '#c8ecff'; x.beginPath(); x.arc(px(last), py(growth[last]), 2.6 * DPR, 0, 7); x.fill();
+}
+
+const toggle = document.getElementById('toggle'), panelEl = document.getElementById('panel');
+toggle.onclick = () => { panelOpen = !panelOpen; panelEl.classList.toggle('hidden', !panelOpen); resize(); };
+if (!panelOpen) panelEl.classList.add('hidden');
+
+async function poll() {
+  try {
+    const [m, tr, dir] = await Promise.all([
+      fetch('/metrics').then(r => r.json()),
+      fetch('/training').then(r => r.json()),
+      fetch('/directives').then(r => r.json()),
+    ]);
+    document.getElementById('p-collab').textContent = Math.round(m.collaboration_index * 100) + '% samen';
+    document.getElementById('c-min').textContent = m.minds.length;
+
+    document.getElementById('fields').innerHTML = tr.fields.map(f =>
+      `<div class="field"><div class="top"><span>${esc(f.field)}</span><b>${f.pct}%</b></div>` +
+      `<div class="bar"><i style="width:${f.pct}%"></i></div></div>`).join('');
+
+    document.getElementById('minds').innerHTML = m.minds.map(x => {
+      const role = ((dir[x.agent] || {}).role || '').split('—')[0].split('/')[0].trim();
+      const col = colorFor(x.agent);
+      return `<div class="mind"><span class="dot" style="background:${col};box-shadow:0 0 7px ${col}"></span>` +
+        `<span><span class="nm">${esc(x.agent)}</span> <span class="rl">${esc(role)}</span></span>` +
+        `<span class="rx">${x.neurons} · ${x.reach}</span></div>`;
+    }).join('');
+
+    growth.push(neu); if (growth.length > 80) growth.shift();
+    document.getElementById('growth-n').textContent = growth.length > 1 ? '+' + (growth[growth.length-1] - growth[0]) + ' neurons' : '—';
+    drawSpark();
+  } catch (e) { /* brain not reachable yet */ }
+  setTimeout(poll, 2000);
+}
+poll();
 </script>
