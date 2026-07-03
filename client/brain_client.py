@@ -134,6 +134,22 @@ class BrainClient:
     def stats(self):
         return self._get("/stats")
 
+    # -- observability (for an overseer watching the brain) -------------
+    def metrics(self):
+        return self._get("/metrics")
+
+    def training(self):
+        return self._get("/training")
+
+    def directives(self):
+        return self._get("/directives")
+
+    def dedupe(self):
+        return self._get("/dedupe")
+
+    def decay(self):
+        return self._post("/decay", {})
+
     # -- transport ------------------------------------------------------
     def _headers(self, base=None):
         h = dict(base or {})

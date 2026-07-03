@@ -111,10 +111,29 @@ curl -s localhost:8000/steer -d '{"agent":"feeder","focus":["technical"]}'
 
 Add or change agents anytime in `agents/roster.json`.
 
+## Watch & self-improve — the Overseer
+
+A brain doctor that plugs into one or more brains, sees how they run, safely
+tunes what it can, and writes an improvement report (working *and* code):
+
+```bash
+python agents/overseer.py                 # observe the default brain
+BRAINS="http://nas:8000,http://x:8000" python agents/overseer.py   # several at once
+python agents/overseer.py --fix           # also apply the safe fixes
+python agents/overseer.py --watch 300     # keep watching every 5 minutes
+```
+
+It flags siloed teams, untrained skills, unfilled demand, idle agents,
+duplicate bloat and a stalled Feeder; auto-applies safe fixes (de-dupe,
+register gap fields, nudge the Feeder); and writes `overseer_report.md` with
+concrete code/design improvements to apply next. It never edits code itself —
+that stays reviewed.
+
 ## Check everything works
 
 ```bash
-python tests/test_brain.py     # 16 checks: store, professor, steering, metrics, live API
+python tests/test_brain.py     # store, professor, steering, metrics, dynamic
+                               # fields, security, GET-write, dedupe, live API
 ```
 
 ## What's real today vs. next
