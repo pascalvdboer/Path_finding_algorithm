@@ -58,6 +58,20 @@ class BrainClient:
             parts.append(f"q={urllib.parse.quote(topic)}")
         return self._get("/teach?" + "&".join(parts))
 
+    def mark_useful(self, node_id):
+        """Tell the brain a memory actually helped — it will value it more,
+        so proven knowledge rises to the top over time."""
+        return self._post("/useful", {"node_id": node_id})
+
+    def analyze(self):
+        """The Professor's needs analysis: the biggest knowledge gaps and the
+        weakest-covered fields, as concrete teaching priorities."""
+        return self._get("/analyze")
+
+    def gaps(self, k=8):
+        """What the team keeps needing but the brain lacks."""
+        return self._get(f"/gaps?k={k}")
+
     def listen(self, callback, only_handoffs_to_me=True, background=True):
         """Subscribe to the live stream. Calls `callback(event)` per event.
 

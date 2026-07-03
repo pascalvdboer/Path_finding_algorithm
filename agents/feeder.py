@@ -1,18 +1,16 @@
-"""The Feeder — the brain stem.
+"""The Feeder / Professor — the brain stem & master teacher.
 
-A constant inflow of the best SEO knowledge, tools, and trainings into the
-brain. This is not a one-time seed: it runs continuously, forming the stable
-base every working agent draws from. It keeps the foundation warm by cycling
-through the corpus and re-affirming connections.
+Not a fixed playlist: it *analyses what the team needs* and feeds that first.
+Each cycle it asks the brain what's missing (knowledge gaps + weakest-covered
+fields) and teaches toward those, so the agents get exactly what will lift
+their work. When a need falls outside the built-in curriculum, it tries to
+source it from the web (if a search endpoint is configured — see
+brain/sourcing.py). It also keeps the memory sharp by decaying stale
+knowledge.
 
-It is fully steerable while running — change it from anywhere without a
-restart:
+Fully steerable while running (focus / pace / pause), no restart:
 
-    # from any agent / the control panel / curl:
-    ctrl.steer("feeder", focus=["technical", "sea"])   # narrow the inflow
-    ctrl.steer("feeder", pace=0.4)                      # faster rush
-    ctrl.steer("feeder", paused=True)                   # hold
-    ctrl.steer("feeder", paused=False)                  # resume
+    curl -s $URL/steer -d '{"agent":"feeder","focus":["technical"]}'
 
 Run it:
     python main.py                       # terminal 1
@@ -27,7 +25,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "client"))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from brain_client import BrainClient          # noqa: E402
-from knowledge.seo_corpus import CORPUS, FIELDS, stats  # noqa: E402
+from knowledge.seo_corpus import CORPUS, by_field, stats  # noqa: E402
+from brain import sourcing                     # noqa: E402
 
 URL = os.environ.get("BRAIN_URL", "http://127.0.0.1:8000")
 
@@ -35,7 +34,6 @@ URL = os.environ.get("BRAIN_URL", "http://127.0.0.1:8000")
 def main():
     feeder = BrainClient("feeder", URL)
 
-    # React the instant someone re-steers the brain stem.
     def on_change(d):
         bits = []
         if d.get("paused"):
@@ -47,43 +45,73 @@ def main():
         print(f"  [feeder] re-steered → {', '.join(bits) or 'defaults'}")
     feeder.follow_steering(on_change)
 
-    print(f"  🌫  Feeder (brain stem) online → {URL}")
-    print(f"      corpus: {stats()}")
-    print("      steer it live, e.g.:  curl -s $URL/steer -d '{\"agent\":\"feeder\",\"focus\":[\"technical\"]}'\n")
+    print(f"  🌫  Feeder / Professor online → {URL}")
+    print(f"      curriculum: {stats()}")
+    print(f"      web sourcing: {'ON' if sourcing.configured() else 'off (set BRAIN_SEARCH_URL to enable)'}\n")
 
-    # Fast initial pass — teach the whole curriculum in so the Professor is
-    # fully knowledgeable within seconds, then settle to a steady inflow.
+    # 1) Fast initial pass — teach the whole curriculum so the Professor is
+    #    fully knowledgeable within seconds.
     print("      seeding the curriculum …")
     for field, kind, text, tags in CORPUS:
         if (feeder.directive or {}).get("paused"):
             break
         feeder.remember(text, tags=list(tags) + [field, kind])
-        time.sleep(0.06)
-    print("      curriculum seeded — now keeping the base fresh.\n")
+        time.sleep(0.05)
+    print("      curriculum seeded — now teaching to the team's needs.\n")
 
-    idx = 0
+    # per-field rotation cursors so re-feeding a field cycles its material
+    cursors = {}
+    tick = 0
     while True:
         d = feeder.directive or {}
-
         if d.get("paused"):
             time.sleep(0.5)
             continue
 
-        # a directive may narrow the inflow to certain fields
+        # 2) Ask the brain what the team needs most, right now.
+        analysis = feeder.analyze()
         focus = d.get("focus")
-        corpus = [e for e in CORPUS if not focus or e[0] in focus]
-        if not corpus:
-            time.sleep(0.5)
-            continue
 
-        field, kind, text, tags = corpus[idx % len(corpus)]
-        idx += 1
-        # tag with field + kind so the Filer / working agents can find it
-        feeder.remember(text, tags=list(tags) + [field, kind])
+        target_field = None
+        gap_topic = None
+        if focus:
+            target_field = focus[0]
+        elif analysis.get("recommendations"):
+            rec = analysis["recommendations"][0]
+            target_field = rec.get("field")
+            if rec.get("priority") == "gap":
+                gap_topic = rec.get("need")
 
-        # pace: seconds between pulses of knowledge (the "rush" speed)
-        pace = float(d.get("pace", 1.5))
-        time.sleep(max(0.05, pace))
+        # 3a) A real gap outside the curriculum → try to source it from the web.
+        if gap_topic:
+            found = sourcing.source(gap_topic, target_field)
+            if found:
+                for text, tags in found:
+                    feeder.remember(text, tags=tags)
+                feeder._post("/gap_filled", {"topic": gap_topic})
+                print(f"  [feeder] sourced & taught for gap: {gap_topic!r}")
+            else:
+                # can't source it offline — surface the need
+                print(f"  [feeder] gap needs external sourcing: {gap_topic!r}")
+
+        # 3b) Teach toward the weakest / focused field from the curriculum.
+        field = target_field if (target_field and by_field(target_field)) else None
+        if not field:
+            fields = [c["field"] for c in analysis.get("weakest_fields", [])] or None
+            field = fields[0] if fields else CORPUS[tick % len(CORPUS)][0]
+        entries = by_field(field)
+        if entries:
+            i = cursors.get(field, 0) % len(entries)
+            cursors[field] = i + 1
+            _f, kind, text, tags = entries[i]
+            feeder.remember(text, tags=list(tags) + [field, kind])
+
+        # 4) Filer upkeep — let stale knowledge fade every so often.
+        tick += 1
+        if tick % 25 == 0:
+            feeder._post("/decay", {})
+
+        time.sleep(max(0.05, float(d.get("pace", 1.5))))
 
 
 if __name__ == "__main__":

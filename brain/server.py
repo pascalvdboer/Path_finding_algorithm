@@ -34,13 +34,40 @@ class BrainApp:
     # Each write emits an event so the map lights up in real time.
     def remember(self, agent, content, tags):
         node, edges = self.brain.remember(agent, content, tags)
-        self.bus.publish({"type": "node_added", "node": node,
-                          "color": self.brain.agent_color(agent)})
-        for e in edges:
-            self.bus.publish({"type": "edge_added", "edge": e})
-        self.bus.publish({"type": "fire", "node": node["id"],
-                          "targets": [e["dst"] for e in edges]})
-        return {"node": node, "linked": [e["dst"] for e in edges]}
+        if node.get("new", True):
+            self.bus.publish({"type": "node_added", "node": node,
+                              "color": self.brain.agent_color(agent)})
+            for e in edges:
+                self.bus.publish({"type": "edge_added", "edge": e})
+            self.bus.publish({"type": "fire", "node": node["id"],
+                              "targets": [e["dst"] for e in edges]})
+        else:
+            # a near-duplicate reinforced an existing memory — light it, don't add
+            self.bus.publish({"type": "reinforce", "node": node["id"],
+                              "color": self.brain.agent_color(agent)})
+        return {"node": node, "linked": [e["dst"] for e in edges],
+                "merged": not node.get("new", True)}
+
+    def analyze(self, totals):
+        """The Professor analyses what the team needs to perform far better:
+        the biggest knowledge gaps and the weakest-covered fields, turned into
+        concrete teaching priorities."""
+        gaps = self.brain.top_gaps(k=8)
+        coverage = self.brain.training(totals)
+        weak = [c for c in coverage if c["pct"] < 100][:6]
+        recs = []
+        for g in gaps:
+            recs.append({"priority": "gap", "need": g["topic"],
+                         "why": f"agents asked {g['misses']}× and the brain barely had it",
+                         "field": g.get("field")})
+        for w in weak:
+            recs.append({"priority": "coverage", "need": f"more {w['field']} knowledge",
+                         "why": f"only {w['pct']}% of {w['field']} is trained",
+                         "field": w["field"]})
+        return {"gaps": gaps, "weakest_fields": weak, "recommendations": recs}
+
+    def mark_useful(self, node_id):
+        return self.brain.mark_useful(node_id)
 
     def recall(self, query, k, by=None):
         results = self.brain.recall(query, k)
@@ -121,6 +148,11 @@ def make_handler(app):
                 return self._json(app.brain.metrics())
             if u.path == "/training":
                 return self._json({"fields": app.brain.training(CURRICULUM_TOTALS)})
+            if u.path == "/gaps":
+                return self._json({"gaps": app.brain.top_gaps(
+                    int((q.get("k") or ["8"])[0]))})
+            if u.path == "/analyze":
+                return self._json(app.analyze(CURRICULUM_TOTALS))
             if u.path == "/teach":
                 field = (q.get("field") or [None])[0]
                 query = (q.get("q") or [None])[0]
@@ -162,6 +194,14 @@ def make_handler(app):
                     data.get("agent", "*"),
                     {k: v for k, v in data.items() if k != "agent"},
                 ))
+            if u.path == "/useful":
+                return self._json(app.mark_useful(data.get("node_id")))
+            if u.path == "/gap_filled":
+                app.brain.mark_gap_filled(data.get("topic", ""))
+                return self._json({"ok": True})
+            if u.path == "/decay":
+                app.brain.decay()
+                return self._json({"ok": True})
             return self._json({"error": "not found"}, 404)
 
         # -- static files ----------------------------------------------

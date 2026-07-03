@@ -45,6 +45,11 @@
   .mind .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
   .mind .nm { color: #cfe0ff; } .mind .rl { color: #4d648c; font-size: 10px; }
   .mind .rx { margin-left: auto; color: #6f88b4; font-variant-numeric: tabular-nums; font-size: 11px; }
+  .need { display: flex; gap: 8px; padding: 5px 0; font-size: 11.5px; color: #b7c7e6; align-items: baseline; }
+  .need .p { flex: none; width: 6px; height: 6px; border-radius: 50%; margin-top: 4px; }
+  .need .p.gap { background: #ffcf6b; box-shadow: 0 0 7px #ffcf6b; }
+  .need .p.coverage { background: #7fd0ff; box-shadow: 0 0 7px #7fd0ff; }
+  .need .w { color: #5c76a4; font-size: 10px; display: block; }
   #spark { width: 100%; height: 46px; display: block; }
   #toggle { position: fixed; top: 22px; right: 20px; z-index: 7; width: 28px; height: 28px; border-radius: 50%;
     border: 1px solid rgba(120,165,255,.3); background: rgba(8,13,30,.65); color: #86b9ee; font-size: 12px;
@@ -74,6 +79,10 @@
   <section>
     <div class="p-h"><span>De minds</span><span>neuronen · reach</span></div>
     <div id="minds"></div>
+  </section>
+  <section>
+    <div class="p-h"><span>Wat het team nodig heeft</span><span id="need-src">—</span></div>
+    <div id="needs"></div>
   </section>
   <section>
     <div class="p-h"><span>Groei</span><span id="growth-n">—</span></div>
@@ -440,10 +449,11 @@ if (!panelOpen) panelEl.classList.add('hidden');
 
 async function poll() {
   try {
-    const [m, tr, dir] = await Promise.all([
+    const [m, tr, dir, an] = await Promise.all([
       fetch('/metrics').then(r => r.json()),
       fetch('/training').then(r => r.json()),
       fetch('/directives').then(r => r.json()),
+      fetch('/analyze').then(r => r.json()),
     ]);
     document.getElementById('p-collab').textContent = Math.round(m.collaboration_index * 100) + '% samen';
     document.getElementById('c-min').textContent = m.minds.length;
@@ -459,6 +469,12 @@ async function poll() {
         `<span><span class="nm">${esc(x.agent)}</span> <span class="rl">${esc(role)}</span></span>` +
         `<span class="rx">${x.neurons} · ${x.reach}</span></div>`;
     }).join('');
+
+    const recs = (an.recommendations || []).slice(0, 5);
+    document.getElementById('needs').innerHTML = recs.length ? recs.map(r =>
+      `<div class="need"><span class="p ${r.priority}"></span><span>${esc(r.need)}<span class="w">${esc(r.why)}</span></span></div>`
+    ).join('') : '<div class="need" style="color:#4d648c">alles gedekt — geen openstaande behoeften</div>';
+    document.getElementById('need-src').textContent = (an.gaps || []).length + ' gaten';
 
     growth.push(neu); if (growth.length > 80) growth.shift();
     document.getElementById('growth-n').textContent = growth.length > 1 ? '+' + (growth[growth.length-1] - growth[0]) + ' neurons' : '—';

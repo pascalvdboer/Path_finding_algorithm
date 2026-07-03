@@ -55,6 +55,46 @@ def test_professor():
     check("quality-score fact tops the SEA lesson", "Quality Score" in sea[0]["content"])
 
 
+def test_semantic():
+    print("meaning: recall understands phrasing, not just words")
+    b = Brain(":memory:")
+    for field, kind, text, tags in CORPUS:
+        b.remember("feeder", text, list(tags) + [field, kind])
+    # 'pages competing' never appears; the concept is 'cannibalization'
+    hits = b.recall("pages competing with each other for the same term")
+    check("finds cannibalization by meaning", hits and "cannibali" in hits[0]["node"]["content"].lower())
+
+
+def test_filer_dedup():
+    print("filer: near-duplicates merge instead of piling up")
+    b = Brain(":memory:")
+    for _ in range(3):
+        for field, kind, text, tags in CORPUS:
+            b.remember("feeder", text, list(tags) + [field, kind])
+    check("feeding 3x did not triple the neurons", b.stats()["neurons"] <= len(CORPUS) + 2)
+
+
+def test_gaps_and_analyze():
+    print("gaps & analysis: the brain notices what it lacks")
+    b = Brain(":memory:")
+    for field, kind, text, tags in CORPUS:
+        b.remember("feeder", text, list(tags) + [field, kind])
+    b.recall("how to run tiktok ads for gen z audiences")
+    b.recall("how to run tiktok ads for gen z audiences")
+    gaps = b.top_gaps()
+    check("an unmet need is logged as a gap", any("tiktok" in g["topic"] for g in gaps))
+    check("gap counts repeated misses", any(g["misses"] >= 2 for g in gaps))
+
+
+def test_useful():
+    print("value: marking a memory useful strengthens it")
+    b = Brain(":memory:")
+    n, _ = b.remember("onpage", "Title tags under 60 characters", ["onpage"])
+    b.mark_useful(n["id"])
+    row = b._db.execute("SELECT strength FROM nodes WHERE id = ?", (n["id"],)).fetchone()
+    check("strength rose after 'useful'", row["strength"] > 1.0)
+
+
 def test_steering():
     print("steering: change an agent while it runs")
     b = Brain(":memory:")
@@ -104,12 +144,19 @@ def test_http():
     post("/steer", {"agent": "feeder", "focus": ["technical"]})
     check("steer persists", get("/directive?agent=feeder").get("focus") == ["technical"])
     check("metrics endpoint works", "collaboration_index" in get("/metrics"))
+    for _ in range(2):
+        get("/recall?q=obscure%20unmet%20topic%20xyz&by=onpage")
+    check("gaps endpoint works", "gaps" in get("/gaps"))
+    check("analyze endpoint works", "recommendations" in get("/analyze"))
+    nid = post("/remember", {"agent": "onpage", "content": "H1 once per page", "tags": ["onpage"]})["node"]["id"]
+    check("useful endpoint works", post("/useful", {"node_id": nid}).get("reinforced"))
     check("dashboard is served", b"<canvas" in urllib.request.urlopen(base + "/").read())
     httpd.shutdown()
 
 
 def main():
-    for t in (test_store, test_professor, test_steering, test_metrics, test_http):
+    for t in (test_store, test_professor, test_semantic, test_filer_dedup,
+              test_gaps_and_analyze, test_useful, test_steering, test_metrics, test_http):
         t()
     print(f"\n{_passed} passed, {_failed} failed")
     sys.exit(1 if _failed else 0)
