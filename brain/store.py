@@ -76,6 +76,9 @@ class Brain:
                     topic TEXT PRIMARY KEY, field TEXT, misses INTEGER NOT NULL DEFAULT 1,
                     best REAL NOT NULL DEFAULT 0, updated REAL NOT NULL, filled INTEGER NOT NULL DEFAULT 0
                 );
+                CREATE TABLE IF NOT EXISTS fields (
+                    name TEXT PRIMARY KEY, added REAL NOT NULL
+                );
                 """
             )
             # migrate older DBs that predate strength/uses
@@ -278,6 +281,40 @@ class Brain:
                              ((topic or "").strip().lower()[:120],))
             self._db.commit()
 
+    # -- the Filer: clean up duplicates already in the brain ------------
+    def dedupe(self):
+        """Merge exact-duplicate memories that piled up (e.g. an old Feeder
+        loop re-teaching the same text). Keeps the earliest copy, sums its
+        strength/uses, rewires synapses onto it, and drops the rest."""
+        with self._lock:
+            seen = {}
+            removed = 0
+            for r in self._db.execute("SELECT id, content FROM nodes ORDER BY id"):
+                c = r["content"]
+                if c in seen:
+                    keep, dup = seen[c], r["id"]
+                    self._db.execute(
+                        "UPDATE nodes SET strength = strength + "
+                        "(SELECT strength FROM nodes WHERE id=?), uses = uses + "
+                        "(SELECT uses FROM nodes WHERE id=?) WHERE id=?",
+                        (dup, dup, keep))
+                    self._db.execute("UPDATE edges SET src=? WHERE src=?", (keep, dup))
+                    self._db.execute("UPDATE edges SET dst=? WHERE dst=?", (keep, dup))
+                    self._db.execute("DELETE FROM edges WHERE src=dst")
+                    self._db.execute("DELETE FROM nodes WHERE id=?", (dup,))
+                    removed += 1
+                else:
+                    seen[c] = r["id"]
+            # collapse duplicate synapses (same src-dst)
+            self._db.execute(
+                "DELETE FROM edges WHERE id NOT IN "
+                "(SELECT MIN(id) FROM edges GROUP BY src, dst)")
+            self._db.commit()
+            # rebuild the meaning caches from the cleaned store
+            self._vec, self._df, self._n = {}, {}, 0
+            self._warm_cache()
+            return {"removed": removed, "neurons": self.stats()["neurons"]}
+
     # -- the Filer's upkeep: let stale knowledge fade -------------------
     def decay(self, factor=0.995, floor=0.2):
         """Gently reduce every memory's strength so unused knowledge fades and
@@ -326,24 +363,43 @@ class Brain:
             return {r["agent"]: json.loads(r["data"])
                     for r in self._db.execute("SELECT agent, data FROM directives")}
 
-    # -- training coverage per field ------------------------------------
+    # -- fields / skill areas (extensible) ------------------------------
+    def add_field(self, name):
+        name = (name or "").strip().lower()
+        if not name:
+            return {"ok": False}
+        with self._lock:
+            self._db.execute(
+                "INSERT INTO fields (name, added) VALUES (?,?) ON CONFLICT(name) DO NOTHING",
+                (name, _now()))
+            self._db.commit()
+            return {"ok": True, "field": name}
+
+    def added_fields(self):
+        with self._lock:
+            return [r["name"] for r in self._db.execute("SELECT name FROM fields")]
+
+    # -- knowledge depth per field --------------------------------------
     def training(self, totals):
+        """How much the brain actually *knows* per field — real depth, not
+        coverage of a fixed seed list. `known` counts distinct authoritative
+        memories in the field; `all` counts everything tagged with it. The
+        dashboard shows these as bars relative to the richest field, so the
+        numbers keep growing as the team and Feeder add knowledge."""
+        fields = list(totals)
         KINDS = {"fact", "tool", "training"}
-        taught = {f: set() for f in totals}
+        known = {f: set() for f in fields}
+        allc = {f: 0 for f in fields}
         with self._lock:
             for r in self._db.execute("SELECT agent, content, tags FROM nodes"):
                 tagset = set(json.loads(r["tags"]))
-                if r["agent"] != "feeder" and not (tagset & KINDS):
-                    continue
-                for f in totals:
+                for f in fields:
                     if f in tagset:
-                        taught[f].add(r["content"])
-        out = []
-        for f, total in totals.items():
-            t = min(len(taught[f]), total)
-            out.append({"field": f, "taught": t, "total": total,
-                        "pct": round(t / total * 100) if total else 0})
-        out.sort(key=lambda x: x["pct"], reverse=True)
+                        allc[f] += 1
+                        if r["agent"] == "feeder" or (tagset & KINDS):
+                            known[f].add(r["content"])
+        out = [{"field": f, "known": len(known[f]), "all": allc[f]} for f in fields]
+        out.sort(key=lambda x: (x["known"], x["all"]), reverse=True)
         return out
 
     # -- collaboration analytics ----------------------------------------

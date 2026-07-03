@@ -95,6 +95,58 @@ def test_useful():
     check("strength rose after 'useful'", row["strength"] > 1.0)
 
 
+def test_dedupe():
+    print("cleanup: exact duplicates merge")
+    b = Brain(":memory:")
+    for _ in range(4):
+        b.remember("feeder", "Ahrefs Backlink audit finds toxic links", ["linkbuilding", "tool"])
+    before = b.stats()["neurons"]
+    res = b.dedupe()
+    check("duplicates were removed", res["removed"] == before - 1 and b.stats()["neurons"] == 1)
+
+
+def test_dynamic_fields():
+    print("fields: expand by agent, by director, by demand")
+    b = Brain(":memory:")
+    b.add_field("options-trading")
+    check("director can add a field", "options-trading" in b.added_fields())
+    b.remember("optionsbot", "Sell covered calls above resistance", ["options-trading", "fact"])
+    depth = b.training(["options-trading", "seo"])
+    opt = [d for d in depth if d["field"] == "options-trading"][0]
+    check("knowledge counts toward the new field", opt["known"] >= 1)
+
+
+def test_token_and_getwrite():
+    print("security + GET-write: token gate and GET-only writing")
+    from brain.server import BrainApp, make_handler
+    from http.server import ThreadingHTTPServer
+    os.environ["BRAIN_TOKEN"] = "s3cret"
+    try:
+        app = BrainApp(":memory:")
+        httpd = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(app))
+        port = httpd.server_address[1]
+        threading.Thread(target=httpd.serve_forever, daemon=True).start()
+        time.sleep(0.3)
+        base = f"http://127.0.0.1:{port}"
+
+        def code(path):
+            try:
+                urllib.request.urlopen(base + path); return 200
+            except urllib.error.HTTPError as e:
+                return e.code
+
+        check("request without token is blocked", code("/stats") == 401)
+        check("request with token is allowed", code("/stats?token=s3cret") == 200)
+        # GET-write (for GET-only agents), with token
+        urllib.request.urlopen(base + "/register?name=trader&token=s3cret")
+        urllib.request.urlopen(base + "/remember?agent=trader&content=SPY%20broke%20support&tags=macro&token=s3cret")
+        got = json.load(urllib.request.urlopen(base + "/recall?q=SPY%20support&token=s3cret"))
+        check("GET-write stored a memory", got["results"] and "SPY" in got["results"][0]["node"]["content"])
+        httpd.shutdown()
+    finally:
+        del os.environ["BRAIN_TOKEN"]
+
+
 def test_steering():
     print("steering: change an agent while it runs")
     b = Brain(":memory:")
@@ -156,7 +208,8 @@ def test_http():
 
 def main():
     for t in (test_store, test_professor, test_semantic, test_filer_dedup,
-              test_gaps_and_analyze, test_useful, test_steering, test_metrics, test_http):
+              test_gaps_and_analyze, test_useful, test_dedupe, test_dynamic_fields,
+              test_token_and_getwrite, test_steering, test_metrics, test_http):
         t()
     print(f"\n{_passed} passed, {_failed} failed")
     sys.exit(1 if _failed else 0)

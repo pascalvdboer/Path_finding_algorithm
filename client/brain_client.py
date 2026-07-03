@@ -15,15 +15,18 @@ handoffs pushed to it in real time. Standard-library only.
 
 import json
 import threading
+import os
 import urllib.parse
 import urllib.request
 from urllib.error import URLError
 
 
 class BrainClient:
-    def __init__(self, name, url="http://127.0.0.1:8000"):
+    def __init__(self, name, url="http://127.0.0.1:8000", token=None):
         self.name = name
         self.url = url.rstrip("/")
+        # shared secret, if the brain requires one (arg or BRAIN_TOKEN env)
+        self.token = token or os.environ.get("BRAIN_TOKEN") or None
         self.info = self._post("/register", {"name": name})
         # a live, always-current view of how this agent is being steered
         self.directive = self._get(f"/directive?agent={urllib.parse.quote(name)}")
@@ -79,7 +82,7 @@ class BrainClient:
         agent waiting for a teammate wakes the moment the info arrives.
         """
         def run():
-            req = urllib.request.Request(self.url + "/events")
+            req = urllib.request.Request(self.url + "/events", headers=self._headers())
             with urllib.request.urlopen(req) as resp:
                 for raw in resp:
                     line = raw.decode("utf-8").strip()
@@ -123,19 +126,30 @@ class BrainClient:
                     on_change(self.directive)
         return self.listen(handle, only_handoffs_to_me=False)
 
+    def add_field(self, name):
+        """Add a new field / skill area to the brain so the team can start
+        building knowledge in it (the director expanding what the team does)."""
+        return self._get(f"/field?name={urllib.parse.quote(name)}")
+
     def stats(self):
         return self._get("/stats")
 
     # -- transport ------------------------------------------------------
+    def _headers(self, base=None):
+        h = dict(base or {})
+        if self.token:
+            h["X-Brain-Token"] = self.token
+        return h
+
     def _post(self, path, obj):
         data = json.dumps(obj).encode("utf-8")
         req = urllib.request.Request(
             self.url + path, data=data,
-            headers={"Content-Type": "application/json"}, method="POST")
+            headers=self._headers({"Content-Type": "application/json"}), method="POST")
         return self._send(req)
 
     def _get(self, path):
-        req = urllib.request.Request(self.url + path, method="GET")
+        req = urllib.request.Request(self.url + path, headers=self._headers(), method="GET")
         return self._send(req)
 
     def _send(self, req):

@@ -49,6 +49,15 @@ def main():
     print(f"      curriculum: {stats()}")
     print(f"      web sourcing: {'ON' if sourcing.configured() else 'off (set BRAIN_SEARCH_URL to enable)'}\n")
 
+    # 0) Clean up any duplicates already in the brain (e.g. from an older
+    #    Feeder that re-taught the same text).
+    try:
+        cleaned = feeder._get("/dedupe")
+        if cleaned.get("removed"):
+            print(f"      cleaned {cleaned['removed']} duplicate memories.")
+    except Exception:
+        pass
+
     # 1) Fast initial pass — teach the whole curriculum so the Professor is
     #    fully knowledgeable within seconds.
     print("      seeding the curriculum …")

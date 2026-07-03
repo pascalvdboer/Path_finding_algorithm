@@ -30,6 +30,8 @@ class BrainApp:
     def __init__(self, db_path="brain.db"):
         self.brain = Brain(db_path)
         self.bus = EventBus()
+        # optional shared secret — when set, every request must present it
+        self.token = os.environ.get("BRAIN_TOKEN") or None
 
     # Each write emits an event so the map lights up in real time.
     def remember(self, agent, content, tags):
@@ -53,21 +55,34 @@ class BrainApp:
         the biggest knowledge gaps and the weakest-covered fields, turned into
         concrete teaching priorities."""
         gaps = self.brain.top_gaps(k=8)
-        coverage = self.brain.training(totals)
-        weak = [c for c in coverage if c["pct"] < 100][:6]
+        depth = self.brain.training(totals)          # [{field, known, all}]
+        # weakest = the fields the brain knows least about (most room to grow)
+        weak = sorted(depth, key=lambda c: c["known"])[:6]
         recs = []
         for g in gaps:
             recs.append({"priority": "gap", "need": g["topic"],
                          "why": f"agents asked {g['misses']}× and the brain barely had it",
                          "field": g.get("field")})
         for w in weak:
-            recs.append({"priority": "coverage", "need": f"more {w['field']} knowledge",
-                         "why": f"only {w['pct']}% of {w['field']} is trained",
+            recs.append({"priority": "coverage", "need": f"deepen {w['field']} knowledge",
+                         "why": f"only {w['known']} pieces of {w['field']} knowledge so far",
                          "field": w["field"]})
         return {"gaps": gaps, "weakest_fields": weak, "recommendations": recs}
 
     def mark_useful(self, node_id):
         return self.brain.mark_useful(node_id)
+
+    def fields(self):
+        """The live set of fields/skill areas — curriculum defaults, plus any
+        field an agent declares (its directive), plus any the director adds.
+        This is how the brain's fields expand: new agents / new skills / on
+        demand, without touching code."""
+        names = set(CURRICULUM_TOTALS)
+        for d in self.brain.all_directives().values():
+            if d.get("field"):
+                names.add(d["field"])
+        names.update(self.brain.added_fields())
+        return sorted(names)
 
     def recall(self, query, k, by=None):
         results = self.brain.recall(query, k)
@@ -132,12 +147,40 @@ def make_handler(app):
         def log_message(self, *args):
             pass  # keep the console clean; the map is the log
 
+        def _authorized(self, q):
+            """When a token is configured, require it (query ?token= or the
+            X-Brain-Token header). No token configured → open (local use)."""
+            if not app.token:
+                return True
+            given = (q.get("token") or [None])[0] or self.headers.get("X-Brain-Token")
+            return given == app.token
+
+        def _tags(self, q):
+            raw = (q.get("tags") or [""])[0]
+            return [t.strip() for t in raw.split(",") if t.strip()]
+
         # -- routing ----------------------------------------------------
         def do_GET(self):
             u = urlparse(self.path)
             q = parse_qs(u.query)
+            if not self._authorized(q):
+                return self._json({"error": "unauthorized"}, 401)
             if u.path == "/" or u.path == "/index.html":
                 return self._file("index.html", "text/html")
+            # -- GET-write variants (for agents that can only do GET) ----
+            if u.path == "/register":
+                return self._json(app.brain.register((q.get("name") or ["anon"])[0]))
+            if u.path == "/remember":
+                return self._json(app.remember((q.get("agent") or ["anon"])[0],
+                                               (q.get("content") or [""])[0], self._tags(q)))
+            if u.path == "/handoff":
+                return self._json(app.handoff((q.get("from") or ["anon"])[0],
+                                              (q.get("to") or ["anon"])[0],
+                                              (q.get("content") or [""])[0], self._tags(q)))
+            if u.path == "/useful":
+                return self._json(app.mark_useful(int((q.get("node_id") or ["0"])[0])))
+            if u.path == "/dedupe":
+                return self._json(app.brain.dedupe())
             if u.path == "/events":
                 return self._sse()
             if u.path == "/state":
@@ -147,12 +190,14 @@ def make_handler(app):
             if u.path == "/metrics":
                 return self._json(app.brain.metrics())
             if u.path == "/training":
-                return self._json({"fields": app.brain.training(CURRICULUM_TOTALS)})
+                return self._json({"fields": app.brain.training(app.fields())})
+            if u.path == "/field":
+                return self._json(app.brain.add_field((q.get("name") or [""])[0]))
             if u.path == "/gaps":
                 return self._json({"gaps": app.brain.top_gaps(
                     int((q.get("k") or ["8"])[0]))})
             if u.path == "/analyze":
-                return self._json(app.analyze(CURRICULUM_TOTALS))
+                return self._json(app.analyze(app.fields()))
             if u.path == "/teach":
                 field = (q.get("field") or [None])[0]
                 query = (q.get("q") or [None])[0]
@@ -173,6 +218,9 @@ def make_handler(app):
 
         def do_POST(self):
             u = urlparse(self.path)
+            q = parse_qs(u.query)
+            if not self._authorized(q):
+                return self._json({"error": "unauthorized"}, 401)
             data = self._body()
             if u.path == "/register":
                 return self._json(app.brain.register(data.get("name", "anon")))
@@ -202,6 +250,10 @@ def make_handler(app):
             if u.path == "/decay":
                 app.brain.decay()
                 return self._json({"ok": True})
+            if u.path == "/dedupe":
+                return self._json(app.brain.dedupe())
+            if u.path == "/field":
+                return self._json(app.brain.add_field(data.get("name", "")))
             return self._json({"error": "not found"}, 404)
 
         # -- static files ----------------------------------------------
