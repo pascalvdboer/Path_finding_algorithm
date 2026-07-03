@@ -381,10 +381,13 @@ if (!panelOpen) panelEl.classList.add('hidden');
 
 async function poll() {
   try {
-    const [m, tr, dir, an] = await Promise.all([
-      fetch(withTok('/metrics')).then(r => r.json()), fetch(withTok('/training')).then(r => r.json()),
-      fetch(withTok('/directives')).then(r => r.json()), fetch(withTok('/analyze')).then(r => r.json()),
+    const [st, m, tr, dir, an] = await Promise.all([
+      fetch(withTok('/stats')).then(r => r.json()), fetch(withTok('/metrics')).then(r => r.json()),
+      fetch(withTok('/training')).then(r => r.json()), fetch(withTok('/directives')).then(r => r.json()),
+      fetch(withTok('/analyze')).then(r => r.json()),
     ]);
+    // header shows the true totals from /stats (live events keep it moving between polls)
+    neu = st.neurons; syn = st.synapses; counts();
     document.getElementById('p-collab').textContent = Math.round(m.collaboration_index * 100) + '% samen';
     document.getElementById('c-min').textContent = m.minds.length;
     const maxK = Math.max(1, ...tr.fields.map(f => f.known));
