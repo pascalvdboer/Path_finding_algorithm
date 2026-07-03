@@ -331,6 +331,10 @@ requestAnimationFrame(draw);
 setTimeout(() => cv.classList.add('in'), 80);
 
 // ---- live data + panel ------------------------------------------------
+// carry the token from the page URL (?token=...) into every API call and the
+// event stream, so a token-protected brain doesn't 401 the dashboard.
+const TOKEN = new URLSearchParams(location.search).get('token') || '';
+function withTok(p) { return TOKEN ? p + (p.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(TOKEN) : p; }
 let neu = 0, syn = 0;
 function counts() {
   document.getElementById('c-neu').textContent = neu;
@@ -342,7 +346,7 @@ function setConn(live) {
   document.getElementById('conn-t').textContent = live ? 'connected · live' : 'reconnecting…';
 }
 function connect() {
-  const es = new EventSource('/events');
+  const es = new EventSource(withTok('/events'));
   es.onopen = () => setConn(true);
   es.onmessage = (m) => { let ev; try { ev = JSON.parse(m.data); } catch { return; }
     if (ev.type === 'snapshot') { neu = ev.state.nodes.length; syn = ev.state.edges.length;
@@ -378,8 +382,8 @@ if (!panelOpen) panelEl.classList.add('hidden');
 async function poll() {
   try {
     const [m, tr, dir, an] = await Promise.all([
-      fetch('/metrics').then(r => r.json()), fetch('/training').then(r => r.json()),
-      fetch('/directives').then(r => r.json()), fetch('/analyze').then(r => r.json()),
+      fetch(withTok('/metrics')).then(r => r.json()), fetch(withTok('/training')).then(r => r.json()),
+      fetch(withTok('/directives')).then(r => r.json()), fetch(withTok('/analyze')).then(r => r.json()),
     ]);
     document.getElementById('p-collab').textContent = Math.round(m.collaboration_index * 100) + '% samen';
     document.getElementById('c-min').textContent = m.minds.length;
