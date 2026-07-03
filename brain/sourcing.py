@@ -1,18 +1,20 @@
-"""Where the Feeder finds *new* knowledge to fill a gap.
+"""Where the Feeder finds *new, trustworthy* knowledge to fill a need.
 
-By default the brain teaches from its built-in curriculum. To let the Feeder
-actually go and source the best current material from the web for a gap, plug
-in a search endpoint — no code change needed, just an environment variable:
+The value of the whole brain depends on the quality of what goes in. So the
+Feeder sources from **reliable, primary sources** — official manuals, docs,
+standards, reputable courses — not random blogs. You configure both the
+search endpoint and the trusted sources; no code change:
 
-    BRAIN_SEARCH_URL = https://your-search-proxy/seo?q={topic}
+    BRAIN_SEARCH_URL     = https://your-search-bridge?q={topic}
+    BRAIN_TRUSTED_SOURCES = developers.google.com, schema.org, web.dev, ...
 
-That URL should return JSON: a list of {"text": "...", "tags": ["field", ...]}.
-Point it at any search/RAG service you like (an internal proxy over a web
-search API, your own vector store, etc.). When it's not set, sourcing is a
-safe no-op and the brain simply reports the gap.
+The search bridge should return JSON: a list of
+    {"text": "...", "tags": ["field", ...], "source": "developers.google.com"}
+Prefer results *from the trusted sources*; the brain records each memory's
+`source:` so provenance is kept and trusted knowledge can be valued higher.
 
-This keeps the brain dependency-free and self-contained, while leaving one
-clean seam for real-time, needs-driven web sourcing.
+When BRAIN_SEARCH_URL is not set, sourcing is a safe no-op and the brain
+simply reports the need — nothing is invented.
 """
 
 import json
@@ -25,20 +27,32 @@ def configured():
     return bool(os.environ.get("BRAIN_SEARCH_URL"))
 
 
-def source(topic, field=None, limit=3):
-    """Fetch new knowledge for a gap. Returns a list of (text, tags).
+def trusted():
+    raw = os.environ.get("BRAIN_TRUSTED_SOURCES", "")
+    return [d.strip().lower() for d in raw.split(",") if d.strip()]
 
-    Safe by default: returns [] unless BRAIN_SEARCH_URL is configured.
-    """
+
+def _domain(item):
+    src = (item.get("source") or item.get("url") or "").lower()
+    src = src.replace("https://", "").replace("http://", "").split("/")[0]
+    return src or None
+
+
+def source(topic, field=None, limit=3):
+    """Fetch new, trustworthy knowledge for a need. Returns (text, tags),
+    each tagged with its source for provenance. Safe no-op unless a search
+    endpoint is configured."""
     url_tmpl = os.environ.get("BRAIN_SEARCH_URL")
     if not url_tmpl or not topic:
         return []
-    url = url_tmpl.replace("{topic}", urllib.parse.quote(topic))
-    if "{topic}" not in url_tmpl:
-        sep = "&" if "?" in url_tmpl else "?"
-        url = f"{url_tmpl}{sep}q={urllib.parse.quote(topic)}"
+    q = urllib.parse.quote(topic)
+    url = url_tmpl.replace("{topic}", q) if "{topic}" in url_tmpl else \
+        f"{url_tmpl}{'&' if '?' in url_tmpl else '?'}q={q}"
+    tl = trusted()
+    if tl:
+        url += ("&" if "?" in url else "?") + "trusted=" + urllib.parse.quote(",".join(tl))
     try:
-        with urllib.request.urlopen(url, timeout=15) as resp:
+        with urllib.request.urlopen(url, timeout=20) as resp:
             data = json.loads(resp.read().decode("utf-8"))
     except Exception:
         return []
@@ -51,5 +65,11 @@ def source(topic, field=None, limit=3):
         if field and field not in tags:
             tags.append(field)
         tags.append("sourced")
+        dom = _domain(item)
+        if dom:
+            tags.append(f"source:{dom}")
+            # a small quality signal: mark knowledge from a trusted source
+            if any(dom.endswith(t) or t in dom for t in tl):
+                tags.append("trusted")
         out.append((text, tags))
     return out

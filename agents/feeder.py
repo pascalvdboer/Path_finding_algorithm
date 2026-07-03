@@ -117,19 +117,29 @@ def main():
                 print(f"  [feeder] '{f}' has no built-in material — will source it on demand.")
             trained.add(f)
 
-        # Fill a real demand gap from the web (if a search endpoint is set).
-        for rec in analysis.get("recommendations", []):
-            if rec.get("priority") == "gap":
-                topic = rec["need"]
+        # Make sure the data the agents need is actually there: source new,
+        # trustworthy knowledge — for real demand gaps AND for skills that are
+        # still too thin — from reliable/primary sources.
+        if sourcing.configured():
+            for rec in analysis.get("recommendations", []):
+                is_gap = rec.get("priority") == "gap"
+                topic = rec["need"] if is_gap else f"{rec.get('field','')} authoritative guide manual"
                 found = sourcing.source(topic, rec.get("field"))
                 if found:
                     for text, tags in found:
                         feeder.remember(text, tags=tags)
-                    feeder._post("/gap_filled", {"topic": topic})
-                    print(f"  [feeder] sourced & taught for gap: {topic!r}")
-                elif sourcing.configured():
-                    feeder._post("/gap_filled", {"topic": topic})
-                break
+                    if is_gap:
+                        feeder._post("/gap_filled", {"topic": rec["need"]})
+                    prov = next((t for t in (found[0][1]) if t.startswith("source:")), "web")
+                    print(f"  [feeder] sourced {len(found)} for '{rec.get('field') or rec['need']}' ({prov})")
+                    break
+                elif is_gap:
+                    feeder._post("/gap_filled", {"topic": rec["need"]})
+        elif analysis.get("recommendations"):
+            # No source connected — the brain can't grow from nothing. Say so.
+            if tick % 20 == 0:
+                print("  [feeder] needs a source to grow — set BRAIN_SEARCH_URL "
+                      "(+ BRAIN_TRUSTED_SOURCES) so I can fetch from manuals/docs.")
 
         # Keep a needed field's material fresh (steady, light).
         f = sorted(need)[tick % len(need)]

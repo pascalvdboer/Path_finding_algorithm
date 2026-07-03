@@ -242,6 +242,8 @@ class Brain:
                     score += 0.6
                 score += 0.15 if "fact" in tagset else 0.08 if "training" in tagset else 0.0
                 score += 0.08 * math.log(1 + (r["strength"] or 1.0))   # proven value
+                if "trusted" in tagset:
+                    score += 0.2                                        # from a reliable/primary source
                 if score <= 0 and not (field or query):
                     score = 0.01
                 if score > 0:
