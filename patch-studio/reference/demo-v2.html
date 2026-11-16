@@ -376,7 +376,13 @@ function analyze(src){
   const orig=mk(c3.width,c3.height); orig.getContext('2d').putImageData(id,0,0);
   const quant=mk(c3.width,c3.height); quant.getContext('2d').putImageData(q,0,0);
 
-  return {W,H,pal,shares:sig.map(c=>c.n/fgN),isPhoto,isIllustration,hasGradient,shape,fineThk,srcW:bw,bg,orig,quant};
+  // achtergrond van het bestand (kleur en/of tekening) bewaren, behalve als die wit is: die vult straks de hele patch
+  const isWhite = bg && Math.min(...bg)>170 && Math.max(...bg)-Math.min(...bg)<35;
+  const keepBg = !!bg && !isWhite && !shape;
+  let back=null;
+  if(keepBg){ const k4=Math.min(1,1000/Math.max(sw,sh)); const c4=mk(sw*k4,sh*k4); c4.getContext('2d').drawImage(src,0,0,c4.width,c4.height);
+    back={canvas:c4,x:bx*k4,y:by*k4,w:bw*k4}; }
+  return {W,H,pal,shares:sig.map(c=>c.n/fgN),isPhoto,isIllustration,hasGradient,shape,fineThk,srcW:bw,bg,keepBg,isWhite,back,orig,quant};
 }
 
 /* ---------- Geometrie ---------- */
@@ -475,7 +481,14 @@ function fabricColor(){
   const t=state.type;
   if(t==='leder') return '#8a5a36';
   if(state.fabric!=='auto') return state.fabric;
-  return state.a.bg ? hex(state.a.bg) : '#ffffff';
+  const a=state.a;
+  if(a.keepBg) return hex(a.bg);
+  // witte of transparante achtergrond: kies de stofkleur waarop het ontwerp het best uitkomt
+  let best='#ffffff',bs=-1;
+  for(const f of FABRICS){ const L=lum(f); let sc=0;
+    a.pal.forEach((c,i)=>{ sc+=a.shares[i]*Math.min(1,Math.abs(lum(c)-L)/110); });
+    if(sc>bs+0.02){bs=sc;best=f;} }
+  return best;
 }
 function borderColor(){
   if(state.borderColor!=='auto') return state.borderColor;
@@ -508,6 +521,12 @@ function draw(){
   let lw=g.logoW*scale, lh=g.logoH*scale;
   let lx=x+(w-lw)/2, ly=state.shape==='schild' ? y+h*0.42-lh/2 : y+(h-lh)/2;
   if(g.full){ ly=y+(h-lh)/2; }
+  // achtergrondtekening/-kleur van het bestand onder het ontwerp, uitgelijnd en tot over de rand van de patch
+  if(a.back && t!=='leder'){ const f=lw/a.back.w, c=a.back.canvas;
+    ctx.save(); shapePath(ctx,state.shape,x,y,w,h); ctx.clip(); ctx.fillStyle=fab; ctx.fillRect(x,y,w,h);
+    ctx.drawImage(c,lx-a.back.x*f,ly-a.back.y*f,c.width*f,c.height*f);
+    if(t!=='bedrukt' && t!=='pvc'){ ctx.fillStyle=ctx.createPattern(stripes('d',t==='geweven'?4:6,lum(fab)<80?0.25:0.06,lum(fab)<80),'repeat'); ctx.fillRect(x,y,w,h); }
+    ctx.restore(); }
   const src = (t==='bedrukt') ? a.orig : a.quant;
   const L=mk(lw,lh), lx2=L.getContext('2d'); lx2.imageSmoothingQuality='high'; lx2.drawImage(src,0,0,L.width,L.height);
   if(t==='leder'){ lx2.globalCompositeOperation='source-in'; lx2.fillStyle='#3a2212'; lx2.fillRect(0,0,L.width,L.height); }

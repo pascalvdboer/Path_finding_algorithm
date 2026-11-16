@@ -49,3 +49,11 @@ De analyse moet dit aankunnen (zie reference/demo-v2.html, die dit nu oplost): a
 die alleen over zachte overgangen groeit (stop aan harde rand), check of de rand grotendeels effen is (anders full-bleed ontwerp),
 losse vlekjes (stofstructuur) verwijderen, daarna vorm herkennen (rond/ovaal/rechthoek) en het ontwerp de patch laten vullen.
 Idealiter ook: perspectief/scheefheid tolereren en de klant tonen "we hebben je patch uit de foto geknipt", met een knop om bij te stellen.
+
+## EIS VAN DE EIGENAAR: altijd een mooie, volle patch
+"Het moet ook altijd de achtergrond opvullen met de bestaande achtergrond tekening en/of kleur van het bestand (tenzij wit).
+Het moet een mooie patch zijn ten alle tijden."
+- Heeft het bestand een gekleurde of getekende achtergrond (niet wit), dan wordt die de achtergrond van de patch: uitgelijnd met
+  het ontwerp, tot aan de rand van de patchvorm. Waar het bestand ophoudt, vult de achtergrondkleur verder.
+- Witte (of transparante) achtergrond = papier, niet overnemen: kies automatisch de stofkleur waarop het ontwerp het best uitkomt.
+- Nooit lege, rare of afgesneden stukken in het voorbeeld. Zie reference/demo-v2.html voor de huidige aanpak.
