@@ -1,0 +1,638 @@
+<title>Patch Studio</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: links het live voorbeeld + borduurcheck, rechts de stappen. Gestikte kaders als handtekening. */
+:root{
+  --bg:#eef1f6; --surface:#ffffff; --surface-2:#f6f8fb; --ink:#141c33; --muted:#59647e; --line:#d5dbe7;
+  --accent:#2148b8; --accent-soft:#e3e9fb; --on-accent:#ffffff;
+  --ok:#1d7f47; --ok-soft:#e0f3e8; --warn:#9a5f0c; --warn-soft:#fbefd9; --bad:#b4302a; --bad-soft:#fbe3e1;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"Figtree", "Segoe UI", system-ui, sans-serif;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1322; --surface:#161d31; --surface-2:#1b2339; --ink:#e7ebf5; --muted:#9ba6c1; --line:#2b3553;
+  --accent:#8aa6ff; --accent-soft:#223060; --on-accent:#0e1322;
+  --ok:#4fc983; --ok-soft:#173826; --warn:#f0b04a; --warn-soft:#3a2c12; --bad:#ff7a6e; --bad-soft:#401b1a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1322; --surface:#161d31; --surface-2:#1b2339; --ink:#e7ebf5; --muted:#9ba6c1; --line:#2b3553;
+  --accent:#8aa6ff; --accent-soft:#223060; --on-accent:#0e1322;
+  --ok:#4fc983; --ok-soft:#173826; --warn:#f0b04a; --warn-soft:#3a2c12; --bad:#ff7a6e; --bad-soft:#401b1a; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px}
+.wrap{max-width:1180px;margin:0 auto;display:grid;gap:20px}
+header{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:12px}
+h1{font:800 clamp(28px,4vw,40px)/1.05 var(--display);margin:0;letter-spacing:-.01em;text-wrap:balance}
+header p{margin:6px 0 0;color:var(--muted);max-width:60ch}
+.demo-tag{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--warn);background:var(--warn-soft);padding:6px 10px;border-radius:999px}
+.grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;min-width:0}
+.left{display:grid;gap:20px;position:sticky;top:max(16px,env(safe-area-inset-top,0px))}
+@media (max-width:900px){.left{position:static}}
+.stage{position:relative;background:var(--surface-2);border-radius:8px;outline:1.5px dashed var(--line);outline-offset:-8px;aspect-ratio:1/1;max-width:100%;display:grid;place-items:center;overflow:hidden}
+.stage canvas{width:100%;height:100%;display:block}
+.dims{position:absolute;left:16px;bottom:14px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;background:var(--surface);padding:4px 10px;border-radius:999px;border:1px solid var(--line)}
+.busy{position:absolute;inset:0;display:grid;place-items:center;background:color-mix(in srgb,var(--surface-2) 70%,transparent);font-weight:600}
+h2{font:700 18px/1.2 var(--display);margin:0 0 4px}
+.step{display:grid;gap:12px;padding-block:18px;border-top:1px solid var(--line)}
+.step:first-of-type{border-top:0;padding-top:0}
+.step-h{display:flex;gap:10px;align-items:baseline}
+.step-n{font:800 13px/1 var(--display);color:var(--accent);background:var(--accent-soft);border-radius:6px;padding:5px 7px;font-variant-numeric:tabular-nums}
+.hint{color:var(--muted);font-size:13px;margin:0}
+.drop{border:1.5px dashed var(--line);border-radius:8px;padding:16px;display:grid;gap:10px;text-align:center;background:var(--surface-2);transition:border-color .15s}
+.drop.over{border-color:var(--accent)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button,.btn{font:600 14px/1 var(--body);border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:10px 14px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button:focus-visible,input:focus-visible,select:focus-visible,label.chip:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.samples button{font-size:13px;padding:8px 10px}
+input[type=text],input[type=number],input[type=email],select,textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 11px;width:100%;min-width:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+label.chip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:999px;padding:7px 13px;cursor:pointer;font-weight:500;font-size:14px;background:var(--surface)}
+label.chip input{position:absolute;opacity:0;pointer-events:none}
+label.chip:has(input:checked){border-color:var(--accent);background:var(--accent-soft);color:var(--ink)}
+label.chip small{color:var(--muted);font-weight:500}
+.swatches{display:flex;flex-wrap:wrap;gap:8px}
+.sw{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);cursor:pointer;padding:0;position:relative}
+.sw[aria-pressed="true"]{outline:2px solid var(--accent);outline-offset:2px}
+.sw.auto{width:auto;border-radius:999px;padding:0 10px;font-size:12px;font-weight:600;background:var(--surface)}
+.slider{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.val{font:700 16px/1 var(--display);font-variant-numeric:tabular-nums;min-width:64px;text-align:right}
+/* verdict */
+.types{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+.type{display:grid;gap:6px;text-align:left;padding:12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);cursor:pointer;font:inherit;color:inherit;position:relative}
+.type[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.type .tn{font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px}
+.type .td{font-size:12.5px;color:var(--muted);line-height:1.35}
+.dot{width:10px;height:10px;border-radius:50%;flex:none}
+.dot.ok{background:var(--ok)} .dot.warn{background:var(--warn)} .dot.bad{background:var(--bad)}
+.badge{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ok);background:var(--ok-soft);padding:3px 7px;border-radius:999px;justify-self:start}
+.verdict{border-radius:8px;padding:14px 16px;display:grid;gap:8px}
+.verdict.ok{background:var(--ok-soft)} .verdict.warn{background:var(--warn-soft)} .verdict.bad{background:var(--bad-soft)}
+.verdict h3{margin:0;font:700 17px/1.25 var(--display);display:flex;gap:8px;align-items:center}
+.verdict ul{margin:0;padding-left:0;list-style:none;display:grid;gap:6px}
+.verdict li{display:flex;gap:8px;align-items:flex-start;font-size:14px}
+.verdict li .dot{margin-top:6px}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.fact{background:var(--surface-2);border-radius:8px;padding:10px 12px;min-width:0}
+.fact b{display:block;font:700 18px/1.2 var(--display);font-variant-numeric:tabular-nums}
+.fact span{font-size:12px;color:var(--muted)}
+.palette{display:flex;flex-wrap:wrap;gap:6px}
+.palette i{width:22px;height:22px;border-radius:5px;border:1px solid var(--line);display:block}
+/* price */
+.price{display:grid;gap:6px;font-variant-numeric:tabular-nums}
+.price .line{display:flex;justify-content:space-between;gap:12px;font-size:14px;color:var(--muted)}
+.price .total{display:flex;justify-content:space-between;align-items:baseline;gap:12px;border-top:1px solid var(--line);padding-top:10px;margin-top:4px}
+.price .total b{font:800 26px/1 var(--display)}
+.note{font-size:12px;color:var(--muted)}
+.form{display:grid;gap:10px}
+.form .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:480px){.form .two{grid-template-columns:1fr}.facts{grid-template-columns:1fr 1fr}}
+.thanks{background:var(--ok-soft);border-radius:8px;padding:12px 14px;font-size:14px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Patch Studio</h1>
+      <p>Upload je logo en zie meteen welke soort patch geschikt is: geborduurd, geweven, bedrukt, chenille, PVC of leder.</p>
+    </div>
+    <span class="demo-tag">Demo · voorbeeldprijzen</span>
+  </header>
+
+  <div class="grid">
+    <div class="left">
+      <section class="panel" aria-label="Voorbeeld">
+        <div class="stage" id="stage">
+          <canvas id="preview" width="1000" height="1000" aria-label="Voorbeeld van de patch"></canvas>
+          <span class="dims" id="dims">8,0 × 8,0 cm</span>
+          <div class="busy" id="busy" hidden>Ontwerp analyseren…</div>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="checkTitle" style="display:grid;gap:14px">
+        <div>
+          <h2 id="checkTitle">Borduurcheck</h2>
+          <p class="hint">Wij controleren je ontwerp voor elke techniek. Klik op een techniek om ze te kiezen.</p>
+        </div>
+        <div class="facts" id="facts"></div>
+        <div class="types" id="types"></div>
+        <div id="verdict"></div>
+      </section>
+    </div>
+
+    <section class="panel" aria-label="Patch samenstellen">
+      <div class="step">
+        <div class="step-h"><span class="step-n">1</span><h2>Je ontwerp</h2></div>
+        <div class="drop" id="drop">
+          <div><b>Sleep je logo hierheen</b> of kies een bestand</div>
+          <div class="row" style="justify-content:center">
+            <label class="btn primary" for="file" style="display:inline-block">Bestand kiezen</label>
+            <input id="file" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden>
+          </div>
+          <p class="hint">PNG, JPG, WEBP of SVG. Een transparante achtergrond werkt het best.</p>
+        </div>
+        <div class="row">
+          <input id="txt" type="text" placeholder="Of typ een tekst, bv. je clubnaam" aria-label="Tekst voor de patch" style="flex:1 1 220px">
+          <button id="txtBtn" type="button">Tekst gebruiken</button>
+        </div>
+        <div class="row samples"><span class="hint">Probeer een voorbeeld:</span>
+          <button type="button" data-sample="logo">Eenvoudig logo</button>
+          <button type="button" data-sample="fine">Fijne tekst</button>
+          <button type="button" data-sample="photo">Foto</button>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-h"><span class="step-n">2</span><h2>Vorm en maat</h2></div>
+        <div class="chips" role="radiogroup" aria-label="Vorm">
+          <label class="chip"><input type="radio" name="shape" value="rond" checked>Rond</label>
+          <label class="chip"><input type="radio" name="shape" value="rechthoek">Rechthoek</label>
+          <label class="chip"><input type="radio" name="shape" value="ovaal">Ovaal</label>
+          <label class="chip"><input type="radio" name="shape" value="schild">Schild</label>
+        </div>
+        <div class="slider">
+          <input id="width" type="range" min="3" max="30" step="0.5" value="8" aria-label="Breedte in cm">
+          <span class="val" id="widthVal">8,0 cm</span>
+        </div>
+        <p class="hint">Breedte van de patch. Een borstlogo is meestal 7 à 9 cm, een rugpatch 20 à 28 cm.</p>
+      </div>
+
+      <div class="step">
+        <div class="step-h"><span class="step-n">3</span><h2>Kleuren en afwerking</h2></div>
+        <div><p class="hint" style="margin-bottom:6px">Achtergrond (stof)</p><div class="swatches" id="fabricSw"></div></div>
+        <div><p class="hint" style="margin-bottom:6px">Rand</p>
+          <div class="chips" role="radiogroup" aria-label="Rand">
+            <label class="chip"><input type="radio" name="border" value="merrow" checked>Omgezoomde rand <small>(merrow)</small></label>
+            <label class="chip"><input type="radio" name="border" value="hotcut">Gesneden rand <small>(hot-cut)</small></label>
+          </div>
+        </div>
+        <div><p class="hint" style="margin-bottom:6px">Randkleur</p><div class="swatches" id="borderSw"></div></div>
+        <div><p class="hint" style="margin-bottom:6px">Achterkant</p>
+          <div class="chips" role="radiogroup" aria-label="Achterkant">
+            <label class="chip"><input type="radio" name="backing" value="opstrijk" checked>Opstrijkbaar</label>
+            <label class="chip"><input type="radio" name="backing" value="opnaai">Opnaaien</label>
+            <label class="chip"><input type="radio" name="backing" value="klitteband">Klittenband</label>
+            <label class="chip"><input type="radio" name="backing" value="plak">Zelfklevend</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-h"><span class="step-n">4</span><h2>Aantal en prijs</h2></div>
+        <div class="row">
+          <label for="qty" class="hint">Aantal stuks</label>
+          <input id="qty" type="number" min="1" max="10000" value="25" style="width:120px">
+        </div>
+        <div class="price" id="price"></div>
+      </div>
+
+      <div class="step">
+        <div class="step-h"><span class="step-n">5</span><h2>Offerte aanvragen</h2></div>
+        <form class="form" id="form" novalidate>
+          <div class="two">
+            <input id="fname" type="text" placeholder="Naam" aria-label="Naam" required>
+            <input id="femail" type="email" placeholder="E-mailadres" aria-label="E-mailadres" required>
+          </div>
+          <textarea id="fmsg" rows="3" placeholder="Opmerkingen, bv. gewenste leverdatum" aria-label="Opmerkingen"></textarea>
+          <button class="primary" type="submit">Offerte aanvragen</button>
+          <div id="formMsg" aria-live="polite"></div>
+        </form>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+(() => {
+const $ = s => document.querySelector(s);
+const fmt = (n, d=1) => n.toLocaleString('nl-BE',{minimumFractionDigits:d,maximumFractionDigits:d});
+const eur = n => '€ ' + n.toLocaleString('nl-BE',{minimumFractionDigits:2,maximumFractionDigits:2});
+const mk = (w,h) => { const c=document.createElement('canvas'); c.width=Math.max(1,Math.round(w)); c.height=Math.max(1,Math.round(h)); return c; };
+
+/* ---------- Regels per techniek (aanpasbaar in de echte plugin) ---------- */
+const TYPES = [
+  {id:'geborduurd', name:'Geborduurd', desc:'Klassiek, met reliëf van garen.', maxColors:12, minDetail:1.0, photo:'bad', gradient:'warn', minW:3, maxW:30, setup:35, base:0.60, perCm2:0.022},
+  {id:'geweven', name:'Geweven', desc:'Fijn garen, scherpe details en kleine tekst.', maxColors:12, minDetail:0.5, photo:'bad', gradient:'warn', minW:2, maxW:20, setup:45, base:0.50, perCm2:0.018},
+  {id:'bedrukt', name:'Bedrukt', desc:'Sublimatie: foto’s, verlopen, onbeperkt kleuren.', maxColors:Infinity, minDetail:0.2, photo:'ok', gradient:'ok', minW:2, maxW:30, setup:15, base:0.45, perCm2:0.012},
+  {id:'chenille', name:'Chenille', desc:'Dikke, zachte lussen. Varsity-stijl.', maxColors:4, minDetail:5.0, photo:'bad', gradient:'bad', minW:8, maxW:30, setup:60, base:1.20, perCm2:0.050},
+  {id:'pvc', name:'PVC / rubber', desc:'3D-reliëf, waterbestendig, outdoor.', maxColors:8, minDetail:1.0, photo:'bad', gradient:'bad', minW:3, maxW:15, setup:120, base:0.80, perCm2:0.030},
+  {id:'leder', name:'Leder', desc:'Gelaserd in één tint, premium look.', maxColors:1, minDetail:0.5, photo:'bad', gradient:'warn', minW:3, maxW:15, setup:30, base:1.40, perCm2:0.035, mono:true},
+];
+const PREF = ['geborduurd','geweven','bedrukt','pvc','chenille','leder'];
+const BACKING = {opstrijk:{label:'Opstrijkbaar',add:0.15}, opnaai:{label:'Opnaaien',add:0}, klitteband:{label:'Klittenband (met tegenstuk)',add:0.60}, plak:{label:'Zelfklevend',add:0.10}};
+const STAFFEL = [[250,0.45],[100,0.55],[50,0.65],[25,0.75],[10,0.85],[1,1]];
+const FABRICS = ['#ffffff','#111111','#1b2a4a','#b3262d','#3e4f2a','#d9c7a3','#6b6f76','#1f5aa6'];
+
+const state = {type:'geborduurd', userPicked:false, shape:'rond', width:8, border:'merrow', backing:'opstrijk', qty:25, fabric:'auto', borderColor:'auto', a:null};
+
+/* ---------- Analyse ---------- */
+const PHOTO_COVER=150;
+function dist2(a,b){const r=a[0]-b[0],g=a[1]-b[1],bb=a[2]-b[2];return r*r+g*g+bb*bb;}
+
+function analyze(src){
+  const sw = src.naturalWidth||src.width, sh = src.naturalHeight||src.height;
+  if(!sw||!sh) throw new Error('leeg');
+  // pass 1: achtergrond, verloop, kader
+  const k1 = Math.min(1, 600/Math.max(sw,sh));
+  const c1 = mk(sw*k1, sh*k1), x1 = c1.getContext('2d',{willReadFrequently:true});
+  x1.drawImage(src,0,0,c1.width,c1.height);
+  const W1=c1.width,H1=c1.height,d1=x1.getImageData(0,0,W1,H1).data;
+
+  // achtergrond: vlak dat de rand raakt (flood fill vanaf de rand), transparant of effen kleur.
+  // Zo blijft een kleur binnen het ontwerp die op de achtergrond lijkt gewoon deel van het ontwerp.
+  const n1=W1*H1, bgM=new Uint8Array(n1);
+  const px=p=>[d1[p*4],d1[p*4+1],d1[p*4+2]];
+  const edge=[]; for(let x=0;x<W1;x++){edge.push(x,(H1-1)*W1+x);} for(let y=0;y<H1;y++){edge.push(y*W1,y*W1+W1-1);}
+  let trEdge=0; const ecs=[];
+  for(const p of edge){ if(d1[p*4+3]<128) trEdge++; else ecs.push(px(p)); }
+  let bg=null;
+  if(trEdge<edge.length*0.5 && ecs.length){
+    // meest voorkomende randkleur
+    const m=new Map(); for(const c of ecs){const k=(c[0]>>4)<<8|(c[1]>>4)<<4|(c[2]>>4); const e=m.get(k); if(e){e.n++;e.c[0]+=c[0];e.c[1]+=c[1];e.c[2]+=c[2];} else m.set(k,{n:1,c:[...c]});}
+    const top=[...m.values()].sort((a,b)=>b.n-a.n)[0];
+    if(top.n>=ecs.length*0.35) bg=top.c.map(v=>Math.round(v/top.n));
+  }
+  const isBgPx=p=> d1[p*4+3]<128 || (bg && dist2(px(p),bg)<20*20);
+  { const st=[]; for(const p of edge) if(!bgM[p] && isBgPx(p)){bgM[p]=1;st.push(p);}
+    while(st.length){const p=st.pop(),x=p%W1,y=(p-x)/W1;
+      const nb=[x>0?p-1:-1,x<W1-1?p+1:-1,y>0?p-W1:-1,y<H1-1?p+W1:-1];
+      for(const q of nb) if(q>=0 && !bgM[q] && isBgPx(q)){bgM[q]=1;st.push(q);} } }
+  const hasBg = bgM.some(v=>v);
+
+  let minX=W1,minY=H1,maxX=-1,maxY=-1,fgCount=0;
+  for(let y=0;y<H1;y++)for(let x=0;x<W1;x++){ if(!bgM[y*W1+x]){ fgCount++; if(x<minX)minX=x; if(x>maxX)maxX=x; if(y<minY)minY=y; if(y>maxY)maxY=y; } }
+  if(maxX<0) throw new Error('leeg');
+  const bbW=maxX-minX+1, bbH=maxY-minY+1;
+
+  // vorm van het ontwerp zelf herkennen (is het al een volledige patch?)
+  let shape=null;
+  if(hasBg && bbW>40 && bbH>40){
+    const cx=minX+bbW/2, cy=minY+bbH/2, rx=bbW/2, ry=bbH/2; let inE=0,inFg=0,outE=0,outFg=0;
+    for(let y=minY;y<=maxY;y++)for(let x=minX;x<=maxX;x++){ const e=((x+.5-cx)/rx)**2+((y+.5-cy)/ry)**2, fg=!bgM[y*W1+x];
+      if(e<=0.92){inE++; if(fg) inFg++;} else if(e>=1.08){outE++; if(fg) outFg++;} }
+    const fill=fgCount/(bbW*bbH), ar=bbW/bbH;
+    if(fill>0.97) shape='rechthoek';
+    else if(inE && outE && inFg/inE>0.97 && outFg/outE<0.12) shape = (ar>0.93&&ar<1.07)?'rond':'ovaal';
+  }
+
+  // kleurspreiding (4-bit buckets) op het ontwerp: vlak logo / illustratie met tinten / foto
+  const buckets=new Map(); let opaque=0;
+  for(let p=0;p<n1;p++){ if(bgM[p]) continue; const i=p*4; opaque++;
+    const key=(d1[i]>>4)<<8|(d1[i+1]>>4)<<4|(d1[i+2]>>4); buckets.set(key,(buckets.get(key)||0)+1); }
+  const bc=[...buckets.values()].sort((a,b)=>b-a); let acc=0,cover=0;
+  for(const v of bc){acc+=v;cover++; if(acc>=opaque*0.85) break;}
+  const isPhoto = cover>PHOTO_COVER, isIllustration = !isPhoto && cover>24, hasGradient = !isPhoto && !isIllustration && cover>10;
+  // harde randen (illustratie met contouren) vs zachte overgangen (foto)
+  let pairs=0,hard=0;
+  for(let y=minY;y<maxY;y++)for(let x=minX;x<maxX;x++){ const p=y*W1+x; if(bgM[p]||bgM[p+1]) continue; const i=p*4,j=i+4;
+    const df=Math.max(Math.abs(d1[i]-d1[j]),Math.abs(d1[i+1]-d1[j+1]),Math.abs(d1[i+2]-d1[j+2])); pairs++; if(df>60) hard++; }
+  const hardRatio=pairs?hard/pairs:0;
+  window.__cover=cover; window.__hard=hardRatio;
+
+  // voorgrond-test in andere resoluties: terugkoppelen naar het masker van pass 1
+  const fgAt=(x,y,Wt,Ht)=>{ const X=Math.min(W1-1,minX+Math.floor((x+.5)*bbW/Wt)), Y=Math.min(H1-1,minY+Math.floor((y+.5)*bbH/Ht)); return !bgM[Y*W1+X]; };
+  // bron-coördinaten van het kader
+  const bx=minX/k1, by=minY/k1, bw=bbW/k1, bh=bbH/k1;
+
+  // pass 2: analyse op max 360 px
+  const k2=Math.min(1,360/Math.max(bw,bh));
+  const c2=mk(bw*k2,bh*k2), x2=c2.getContext('2d',{willReadFrequently:true});
+  x2.drawImage(src,bx,by,bw,bh,0,0,c2.width,c2.height);
+  const W=c2.width,H=c2.height,n=W*H,d2=x2.getImageData(0,0,W,H).data;
+
+  // kleuren clusteren
+  const cb=new Map(); let fgN=0;
+  for(let i=0;i<d2.length;i+=4){ const pp=i/4; if(d2[i+3]<128||!fgAt(pp%W,(pp-pp%W)/W,W,H)) continue; fgN++;
+    const key=(d2[i]>>3)<<10|(d2[i+1]>>3)<<5|(d2[i+2]>>3); const e=cb.get(key);
+    if(e){e.n++;e.r+=d2[i];e.g+=d2[i+1];e.b+=d2[i+2];} else cb.set(key,{n:1,r:d2[i],g:d2[i+1],b:d2[i+2]}); }
+  const sorted=[...cb.values()].sort((a,b)=>b.n-a.n); const clusters=[];
+  for(const e of sorted){ const c=[e.r/e.n,e.g/e.n,e.b/e.n]; let best=null,bd=1e9;
+    for(const cl of clusters){const dd=dist2(cl.c,c); if(dd<bd){bd=dd;best=cl;}}
+    if(best && bd<52*52){ const t=best.n+e.n; best.c=best.c.map((v,j)=>(v*best.n+c[j]*e.n)/t); best.n=t; }
+    else clusters.push({c,n:e.n}); }
+  let sig=clusters.filter(c=>c.n/fgN>=0.006).sort((a,b)=>b.n-a.n);
+  if(!sig.length) sig=[clusters[0]];
+  const pal=sig.map(c=>c.c.map(Math.round));
+  const nearest=(r,g,b)=>{let bi=0,bd=1e9; for(let j=0;j<pal.length;j++){const p=pal[j],dd=(p[0]-r)**2+(p[1]-g)**2+(p[2]-b)**2; if(dd<bd){bd=dd;bi=j;}} return bi;};
+
+  // labels + modusfilter (verwijdert anti-aliasruis)
+  let L=new Int16Array(n);
+  for(let p=0;p<n;p++){const i=p*4; L[p]=(d2[i+3]>=128&&fgAt(p%W,(p-p%W)/W,W,H))?nearest(d2[i],d2[i+1],d2[i+2]):-1;}
+  const L2=new Int16Array(n); const cnt=new Int16Array(pal.length+1);
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){ cnt.fill(0);
+    for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const xx=x+dx,yy=y+dy; if(xx<0||yy<0||xx>=W||yy>=H) continue; cnt[L[yy*W+xx]+1]++;}
+    let bi=0; for(let j=1;j<cnt.length;j++) if(cnt[j]>cnt[bi]) bi=j;
+    const own=L[y*W+x]+1; L2[y*W+x]=(cnt[own]>=cnt[bi]?own:bi)-1; }
+  L=L2;
+
+  // afstand tot rand van eigen kleurvlak (chamfer) -> dikte van lijnen
+  const D=new Float32Array(n).fill(1e9), SQ=Math.SQRT2;
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){const p=y*W+x; if(L[p]<0){D[p]=0;continue;}
+    if(x===0||y===0||x===W-1||y===H-1||L[p-1]!==L[p]||L[p+1]!==L[p]||L[p-W]!==L[p]||L[p+W]!==L[p]) D[p]=1;}
+  const relax=(p,q,w)=>{ if(L[q]===L[p] && D[q]+w<D[p]) D[p]=D[q]+w; };
+  for(let y=1;y<H;y++)for(let x=1;x<W-1;x++){const p=y*W+x; if(L[p]<0) continue; relax(p,p-1,1);relax(p,p-W,1);relax(p,p-W-1,SQ);relax(p,p-W+1,SQ);}
+  for(let y=H-2;y>=0;y--)for(let x=W-2;x>=1;x--){const p=y*W+x; if(L[p]<0) continue; relax(p,p+1,1);relax(p,p+W,1);relax(p,p+W+1,SQ);relax(p,p+W-1,SQ);}
+  const ridges=[];
+  for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){const p=y*W+x; if(L[p]<0||D[p]>1e8) continue; let max=true;
+    for(let dy=-1;dy<=1&&max;dy++)for(let dx=-1;dx<=1;dx++){ if(!dx&&!dy) continue; const q=p+dy*W+dx; if(L[q]===L[p]&&D[q]>D[p]){max=false;break;} }
+    if(max) ridges.push(2*D[p]-0.5); }
+  // gewogen percentiel: dunne lijnen tellen mee naar hun oppervlakte, losse ruispixels nauwelijks
+  ridges.sort((a,b)=>a-b);
+  let fineThk=Infinity;
+  if(ridges.length>=30){ const tot=ridges.reduce((s,v)=>s+v,0); let c=0;
+    for(const v of ridges){ c+=v; if(c>=tot*0.04){ fineThk=v; break; } } }
+
+  // weergave-canvassen (max 700 px)
+  const k3=Math.min(1,700/Math.max(bw,bh));
+  const c3=mk(bw*k3,bh*k3), x3=c3.getContext('2d',{willReadFrequently:true});
+  x3.drawImage(src,bx,by,bw,bh,0,0,c3.width,c3.height);
+  const id=x3.getImageData(0,0,c3.width,c3.height), dd=id.data, q=new ImageData(c3.width,c3.height), qd=q.data;
+  const W3=c3.width,H3=c3.height;
+  for(let i=0;i<dd.length;i+=4){ const pp=i/4; if(dd[i+3]<128||!fgAt(pp%W3,(pp-pp%W3)/W3,W3,H3)){ dd[i+3]=0; continue; } const j=nearest(dd[i],dd[i+1],dd[i+2]); qd[i]=pal[j][0];qd[i+1]=pal[j][1];qd[i+2]=pal[j][2];qd[i+3]=255; }
+  const orig=mk(c3.width,c3.height); orig.getContext('2d').putImageData(id,0,0);
+  const quant=mk(c3.width,c3.height); quant.getContext('2d').putImageData(q,0,0);
+
+  return {W,H,pal,shares:sig.map(c=>c.n/fgN),isPhoto,isIllustration,hasGradient,shape,fineThk,srcW:bw,bg,orig,quant};
+}
+
+/* ---------- Geometrie ---------- */
+function geometry(){
+  const a=state.a, Wmm=state.width*10, ar=a.H/a.W;
+  const full = a.shape && a.shape===state.shape; // ontwerp is zelf al een volledige patch
+  let Hmm;
+  if(state.shape==='rond') Hmm=Wmm;
+  else if(full) Hmm=Wmm*ar;
+  else if(state.shape==='ovaal') Hmm=Wmm*0.68;
+  else if(state.shape==='schild') Hmm=Wmm*1.18;
+  else Hmm=Math.min(Wmm*1.6,Math.max(Wmm*0.38,Wmm*ar+12));
+  const rim=(state.border==='merrow'?4:1.5)+3;
+  let s; // mm per analysepixel
+  if(full){ const e=state.border==='merrow'?2.5:0; s=Math.min((Wmm-2*e)/a.W,(Hmm-2*e)/a.H); }
+  else if(state.shape==='rond'||state.shape==='ovaal'){ const ax=Wmm/2-rim, ay=Hmm/2-rim; s=1/Math.sqrt((a.W/(2*ax))**2+(a.H/(2*ay))**2); }
+  else if(state.shape==='schild'){ s=Math.min((Wmm-2*rim)*0.86/a.W,(Hmm*0.62)/a.H); }
+  else s=Math.min((Wmm-2*rim)/a.W,(Hmm-2*rim)/a.H);
+  let area;
+  if(state.shape==='rond'||state.shape==='ovaal') area=Math.PI*(Wmm/20)*(Hmm/20); else if(state.shape==='schild') area=0.82*Wmm*Hmm/100; else area=Wmm*Hmm/100;
+  return {Wmm,Hmm,s,area,full,logoW:a.W*s,logoH:a.H*s};
+}
+
+/* ---------- Beoordeling ---------- */
+const RANK={ok:0,warn:1,bad:2};
+const ILLUS={
+  geborduurd:['warn','Je ontwerp heeft veel tinten en schaduwen. Onze digitaliseerder vereenvoudigt de tinten tot effen garenvlakken: het blijft herkenbaar en krijgt de echte borduurlook, maar zachte schaduwen vallen weg.'],
+  geweven:['ok','Geweven toont het meeste detail van een gedetailleerd ontwerp: fijne lijnen en kleine tekst blijven scherp.'],
+  bedrukt:['ok','Bedrukt geeft je ontwerp exact weer, met alle schaduwen en tinten.'],
+  chenille:['bad','Chenille is te grof voor een ontwerp met zoveel detail. Dit werkt alleen voor grote, eenvoudige vormen en letters.'],
+  pvc:['bad','PVC werkt met effen, afgebakende kleurvlakken. Voor dit ontwerp zou het ontwerp volledig hertekend moeten worden.'],
+  leder:['warn','Op leder wordt alles in één tint gegraveerd. Schaduwen worden een fijn raster.'],
+};
+function evaluate(t,g){
+  const a=state.a, msgs=[]; let st='ok';
+  const push=(lvl,txt)=>{msgs.push([lvl,txt]); if(RANK[lvl]>RANK[st]) st=lvl;};
+  const nC=a.pal.length;
+  if(a.isPhoto){ push(t.photo, t.photo==='ok' ? 'Foto’s en kleurverlopen worden scherp gedrukt.' : 'Foto of fotorealistisch beeld: dit kan niet met deze techniek. Kies een bedrukte patch.'); }
+  else if(a.hasGradient){ push(t.gradient, t.gradient==='ok' ? 'Het kleurverloop wordt gedrukt zoals op je bestand.' : t.gradient==='warn' ? 'Kleurverloop gevonden: dat wordt vervangen door effen kleurvlakken.' : 'Kleurverloop gevonden: dat lukt niet met deze techniek.'); }
+  else if(a.isIllustration){ const I=ILLUS[t.id]; push(I[0], I[1]); }
+  if(!a.isPhoto){
+    if(a.isIllustration && !t.mono && t.maxColors!==Infinity && nC>t.maxColors){ push('warn', `We kiezen de ${t.maxColors} belangrijkste garenkleuren uit de ${nC} tinten in je ontwerp.`); }
+    else if(t.mono){ push(nC>1?'warn':'ok', nC>1 ? `Je ontwerp heeft ${nC} kleuren. Leder wordt in één tint gegraveerd.` : 'Eén kleur: ideaal om te graveren.'); }
+    else if(nC<=t.maxColors) push('ok', t.maxColors===Infinity ? `${nC} kleur${nC>1?'en':''}: geen beperking bij drukken.` : `${nC} kleur${nC>1?'en':''}, binnen de grens van ${t.maxColors}.`);
+    else if(nC<=Math.ceil(t.maxColors*1.5)+1) push('warn', `${nC} kleuren: wij brengen het terug naar ${t.maxColors} garenkleuren.`);
+    else push('bad', `${nC} kleuren is te veel voor deze techniek (max. ${t.maxColors}).`);
+  }
+  if(isFinite(a.fineThk) && !(a.isPhoto && t.photo==='ok')){
+    const fine=a.fineThk*g.s;
+    if(fine>=t.minDetail) push('ok', `Fijnste detail ±${fmt(fine)} mm. Minimum voor ${t.name.toLowerCase()} is ${fmt(t.minDetail)} mm.`);
+    else { const need=Math.ceil(state.width*t.minDetail/fine*2)/2;
+      if(a.isIllustration && (t.id==='geborduurd'||t.id==='geweven')) push('warn', `Fijnste lijnen ±${fmt(fine)} mm. Die tekent onze digitaliseerder dikker of laat ze weg.${need<=t.maxW?` Voor meer detail: maak de patch ${fmt(need)} cm breed.`:''}`);
+      else if(need<=t.maxW) push('warn', `Fijnste detail ±${fmt(fine)} mm, minimum is ${fmt(t.minDetail)} mm. Maak de patch minstens ${fmt(need)} cm breed.`);
+      else push('bad', `Details zijn te fijn (±${fmt(fine)} mm) voor ${t.name.toLowerCase()}, ook op de maximummaat.`); }
+  }
+  if(state.width<t.minW) push('warn', `Minimummaat voor ${t.name.toLowerCase()} is ${fmt(t.minW)} cm.`);
+  if(state.width>t.maxW) push('warn', `Maximummaat voor ${t.name.toLowerCase()} is ${fmt(t.maxW)} cm.`);
+  const ppm=a.srcW/g.logoW;
+  if(t.id==='bedrukt' && ppm<6) push('warn', 'Je bestand is te laag van resolutie om scherp te drukken. Stuur een groter bestand of een vectorbestand (AI, EPS, PDF, SVG).');
+  return {st,msgs};
+}
+
+function recommend(results){
+  const order = state.a.isIllustration ? ['geweven','geborduurd','bedrukt','pvc','chenille','leder'] : PREF;
+  for(const lvl of ['ok','warn']) for(const id of order) if(results[id].st===lvl) return id;
+  return 'bedrukt';
+}
+
+/* ---------- Tekenen ---------- */
+function shapePath(ctx,shape,x,y,w,h){
+  ctx.beginPath();
+  if(shape==='rond'||shape==='ovaal'){ ctx.ellipse(x+w/2,y+h/2,w/2,h/2,0,0,Math.PI*2); }
+  else if(shape==='schild'){ const r=w*0.06;
+    ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+    ctx.lineTo(x+w,y+h*0.5); ctx.bezierCurveTo(x+w,y+h*0.78,x+w*0.7,y+h*0.9,x+w/2,y+h);
+    ctx.bezierCurveTo(x+w*0.3,y+h*0.9,x,y+h*0.78,x,y+h*0.5); ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y); }
+  else { const r=Math.min(w,h)*0.07; ctx.roundRect(x,y,w,h,r); }
+  ctx.closePath();
+}
+const hex=c=>'#'+c.map(v=>Math.round(v).toString(16).padStart(2,'0')).join('');
+const lum=c=>{const [r,g,b]=(typeof c==='string'?[1,3,5].map(i=>parseInt(c.slice(i,i+2),16)):c); return 0.299*r+0.587*g+0.114*b;};
+function shade(c,amt){const [r,g,b]=[1,3,5].map(i=>parseInt(c.slice(i,i+2),16)); const f=v=>Math.max(0,Math.min(255,Math.round(v+amt))); return hex([f(r),f(g),f(b)]);}
+
+let noiseCanvas=null;
+function noise(){ if(noiseCanvas) return noiseCanvas; const c=mk(128,128),x=c.getContext('2d'),im=x.createImageData(128,128);
+  for(let i=0;i<im.data.length;i+=4){const v=Math.random()*255; im.data[i]=im.data[i+1]=im.data[i+2]=v; im.data[i+3]=60;} x.putImageData(im,0,0); return noiseCanvas=c; }
+function stripes(angle,gap,alpha,light){ const c=mk(gap*8,gap*8),x=c.getContext('2d');
+  x.strokeStyle=`rgba(0,0,0,${alpha})`; x.lineWidth=gap*0.45;
+  for(let i=-c.width;i<c.width*2;i+=gap){ x.beginPath();
+    if(angle==='h'){x.moveTo(0,i);x.lineTo(c.width,i);} else {x.moveTo(i,0);x.lineTo(i+c.width,c.height);} x.stroke(); }
+  if(light){ x.strokeStyle=`rgba(255,255,255,${alpha*0.8})`; x.lineWidth=gap*0.2;
+    for(let i=-c.width+gap/2;i<c.width*2;i+=gap){ x.beginPath(); if(angle==='h'){x.moveTo(0,i);x.lineTo(c.width,i);} else {x.moveTo(i,0);x.lineTo(i+c.width,c.height);} x.stroke(); } }
+  return c; }
+
+function fabricColor(){
+  const t=state.type;
+  if(t==='leder') return '#8a5a36';
+  if(state.fabric!=='auto') return state.fabric;
+  return state.a.bg ? hex(state.a.bg) : '#ffffff';
+}
+function borderColor(){
+  if(state.borderColor!=='auto') return state.borderColor;
+  if(state.type==='leder') return '#5a3820';
+  const p=[...state.a.pal].sort((a,b)=>lum(a)-lum(b));
+  const fab=fabricColor(); const dark=p[0]? hex(p[0]) : '#1b2a4a';
+  return Math.abs(lum(dark)-lum(fab))<40 ? shade(fab,-60) : dark;
+}
+
+function draw(){
+  const cv=$('#preview'), ctx=cv.getContext('2d'), S=cv.width; ctx.clearRect(0,0,S,S);
+  const a=state.a; if(!a) return;
+  const g=geometry(), t=state.type;
+  const box=S*0.8, scale=box/Math.max(g.Wmm,g.Hmm); // px per mm
+  const w=g.Wmm*scale, h=g.Hmm*scale, x=(S-w)/2, y=(S-h)/2;
+  const fab=fabricColor(), bcol=borderColor();
+
+  // schaduw van de patch
+  ctx.save(); shapePath(ctx,state.shape,x,y,w,h);
+  ctx.shadowColor='rgba(10,20,40,.28)'; ctx.shadowBlur=S*0.03; ctx.shadowOffsetY=S*0.012;
+  ctx.fillStyle=fab; ctx.fill(); ctx.restore();
+
+  // stofstructuur
+  ctx.save(); shapePath(ctx,state.shape,x,y,w,h); ctx.clip();
+  if(t==='pvc'){ const gr=ctx.createLinearGradient(x,y,x,y+h); gr.addColorStop(0,'rgba(255,255,255,.18)'); gr.addColorStop(1,'rgba(0,0,0,.12)'); ctx.fillStyle=gr; ctx.fillRect(x,y,w,h); }
+  else if(t==='leder'){ ctx.globalAlpha=.5; ctx.fillStyle=ctx.createPattern(noise(),'repeat'); ctx.fillRect(x,y,w,h); ctx.globalAlpha=1; }
+  else if(t!=='bedrukt'){ ctx.fillStyle=ctx.createPattern(stripes('d',t==='geweven'?4:6,lum(fab)<80?0.25:0.06,lum(fab)<80),'repeat'); ctx.fillRect(x,y,w,h); }
+
+  // logo (een foto vult de hele patch)
+  let lw=g.logoW*scale, lh=g.logoH*scale;
+  let lx=x+(w-lw)/2, ly=state.shape==='schild' ? y+h*0.42-lh/2 : y+(h-lh)/2;
+  if(g.full){ ly=y+(h-lh)/2; }
+  const src = (t==='bedrukt') ? a.orig : a.quant;
+  const L=mk(lw,lh), lx2=L.getContext('2d'); lx2.imageSmoothingQuality='high'; lx2.drawImage(src,0,0,L.width,L.height);
+  if(t==='leder'){ lx2.globalCompositeOperation='source-in'; lx2.fillStyle='#3a2212'; lx2.fillRect(0,0,L.width,L.height); }
+  lx2.globalCompositeOperation='source-atop';
+  if(t==='geborduurd'){ lx2.fillStyle=lx2.createPattern(stripes('d',5,.16,true),'repeat'); lx2.fillRect(0,0,L.width,L.height); }
+  else if(t==='geweven'){ lx2.fillStyle=lx2.createPattern(stripes('h',3,.10,false),'repeat'); lx2.fillRect(0,0,L.width,L.height); }
+  else if(t==='chenille'){ lx2.fillStyle=lx2.createPattern(noise(),'repeat'); lx2.fillRect(0,0,L.width,L.height); lx2.fillRect(0,0,L.width,L.height); }
+  else if(t==='pvc'){ const gr=lx2.createLinearGradient(0,0,0,L.height); gr.addColorStop(0,'rgba(255,255,255,.35)'); gr.addColorStop(.5,'rgba(255,255,255,0)'); gr.addColorStop(1,'rgba(0,0,0,.18)'); lx2.fillStyle=gr; lx2.fillRect(0,0,L.width,L.height); }
+  else if(t==='leder'){ lx2.globalAlpha=.4; lx2.fillStyle=lx2.createPattern(noise(),'repeat'); lx2.fillRect(0,0,L.width,L.height); }
+  ctx.save();
+  if(t==='geborduurd'){ctx.shadowColor='rgba(0,0,0,.35)';ctx.shadowBlur=S*0.004;ctx.shadowOffsetY=S*0.002;}
+  if(t==='chenille'){ctx.shadowColor='rgba(0,0,0,.4)';ctx.shadowBlur=S*0.01;ctx.shadowOffsetY=S*0.004;}
+  if(t==='pvc'){ctx.shadowColor='rgba(0,0,0,.45)';ctx.shadowBlur=S*0.006;ctx.shadowOffsetY=S*0.005;}
+  if(t==='leder'){ctx.shadowColor='rgba(255,230,200,.35)';ctx.shadowOffsetY=S*0.0015;}
+  ctx.drawImage(L,lx,ly,lw,lh); ctx.restore();
+  ctx.restore();
+
+  // rand
+  ctx.save(); shapePath(ctx,state.shape,x,y,w,h);
+  if(state.border==='merrow' && t!=='pvc' && t!=='leder'){
+    const bw=4*scale; ctx.lineWidth=bw; ctx.strokeStyle=bcol; ctx.stroke();
+    ctx.setLineDash([bw*0.12,bw*0.22]); ctx.lineWidth=bw*0.92; ctx.strokeStyle=lum(bcol)<90?'rgba(255,255,255,.16)':'rgba(0,0,0,.16)'; ctx.stroke();
+  } else { ctx.lineWidth=Math.max(2,1.2*scale); ctx.strokeStyle=t==='pvc'||t==='leder'?shade(fab,-45):bcol; ctx.stroke(); }
+  ctx.restore();
+
+  $('#dims').textContent=`${fmt(g.Wmm/10)} × ${fmt(g.Hmm/10)} cm`;
+}
+
+/* ---------- UI ---------- */
+function renderAll(){
+  if(!state.a) return;
+  const g=geometry(), results={};
+  for(const t of TYPES) results[t.id]=evaluate(t,g);
+  const rec=recommend(results);
+  if(!state.userPicked) state.type=rec;
+
+  const a=state.a;
+  $('#facts').innerHTML=`
+    <div class="fact"><b>${a.isPhoto?'Foto':a.isIllustration?'Veel tinten':a.pal.length}</b><span>${a.isPhoto?'fotorealistisch beeld':a.isIllustration?'foto of illustratie met schaduwen':'kleuren gevonden'}</span></div>
+    <div class="fact"><b>${isFinite(a.fineThk)&&!a.isPhoto&&!a.isIllustration?fmt(a.fineThk*g.s)+' mm':'—'}</b><span>fijnste detail op ${fmt(state.width)} cm</span></div>
+    <div class="fact"><div class="palette" aria-label="Gevonden kleuren">${a.isPhoto?'<span class="note">veel kleuren</span>':a.pal.map(c=>`<i style="background:${hex(c)}" title="${hex(c)}"></i>`).join('')}</div><span>kleurpalet</span></div>`;
+
+  $('#types').innerHTML=TYPES.map(t=>{const r=results[t.id];
+    return `<button type="button" class="type" data-type="${t.id}" aria-pressed="${state.type===t.id}">
+      ${t.id===rec?'<span class="badge">Aanbevolen</span>':''}
+      <span class="tn"><span class="dot ${r.st}" aria-hidden="true"></span>${t.name}</span>
+      <span class="td">${t.desc}</span></button>`;}).join('');
+
+  const cur=TYPES.find(t=>t.id===state.type), r=results[state.type];
+  const head={ok:`${cur.name}: dit kan zo`, warn:`${cur.name}: kan, met aanpassingen`, bad:`${cur.name}: niet geschikt`}[r.st];
+  const tip = r.st==='bad' ? `<li><span class="dot ok" aria-hidden="true"></span><span>Ons advies: <b>${TYPES.find(t=>t.id===rec).name}</b>.</span></li>` : '';
+  $('#verdict').innerHTML=`<div class="verdict ${r.st}" role="status"><h3><span class="dot ${r.st}" aria-hidden="true"></span>${head}</h3>
+    <ul>${r.msgs.map(([l,m])=>`<li><span class="dot ${l}" aria-hidden="true"></span><span>${m}</span></li>`).join('')}${tip}</ul>
+    <span class="note">Automatische inschatting. Onze vakmensen controleren elk ontwerp voor we produceren.</span></div>`;
+
+  // prijs
+  const qty=Math.max(1,Math.min(10000,parseInt($('#qty').value)||1)); state.qty=qty;
+  const disc=STAFFEL.find(([m])=>qty>=m)[1];
+  const unitBase=(cur.base+cur.perCm2*g.area)*disc, back=BACKING[state.backing].add;
+  const setup=cur.setup, perPiece=unitBase+back+setup/qty, total=perPiece*qty;
+  $('#price').innerHTML=`
+    <div class="line"><span>${cur.name}, ${fmt(g.Wmm/10)} × ${fmt(g.Hmm/10)} cm${disc<1?` (−${Math.round((1-disc)*100)}% staffel)`:''}</span><span>${eur(unitBase)} /st</span></div>
+    <div class="line"><span>${BACKING[state.backing].label}</span><span>${back?eur(back)+' /st':'inbegrepen'}</span></div>
+    <div class="line"><span>Opstartkost${cur.id==='pvc'?' (gietmal)':cur.id==='bedrukt'?'':' (digitaliseren)'}, eenmalig</span><span>${eur(setup)}</span></div>
+    <div class="total"><span>${qty} stuks · ${eur(perPiece)} per stuk</span><b>${eur(total)}</b></div>
+    <span class="note">Voorbeeldprijzen voor de demo, excl. btw. In de plugin vullen jullie je eigen tarieven in.</span>`;
+
+  const merrowOk = cur.id!=='pvc' && cur.id!=='leder';
+  document.querySelectorAll('input[name=border]').forEach(i=>i.disabled=!merrowOk);
+  draw();
+}
+
+function swatches(el,key,list){
+  el.innerHTML=`<button type="button" class="sw auto" data-c="auto" aria-pressed="${state[key]==='auto'}">Automatisch</button>`+
+    list.map(c=>`<button type="button" class="sw" data-c="${c}" style="background:${c}" aria-label="Kleur ${c}" aria-pressed="${state[key]===c}"></button>`).join('');
+  el.onclick=e=>{const b=e.target.closest('.sw'); if(!b) return; state[key]=b.dataset.c; swatches(el,key,list); renderAll();};
+}
+
+function load(src){
+  $('#busy').hidden=false;
+  setTimeout(()=>{ try{ state.a=analyze(src); state.userPicked=false;
+      if(state.a.shape){ state.shape=state.a.shape; let r=document.querySelector(`input[name=shape][value="${state.a.shape}"]`);
+        if(!r){ r=document.querySelector('input[name=shape][value=ovaal]'); }
+        if(r) r.checked=true; }
+      renderAll(); }
+    catch(e){ $('#verdict').innerHTML=`<div class="verdict bad"><h3>Geen ontwerp gevonden</h3><span>We vonden niets op de afbeelding. Probeer een ander bestand of een logo met een duidelijke achtergrond.</span></div>`; }
+    $('#busy').hidden=true; },20);
+}
+function loadFile(f){ if(!f||!/^image\//.test(f.type)) return; const r=new FileReader();
+  r.onload=()=>{const im=new Image(); im.onload=()=>load(im); im.onerror=()=>$('#verdict').innerHTML='<div class="verdict bad"><h3>Dit bestand kunnen we niet openen</h3><span>Gebruik PNG, JPG, WEBP of SVG.</span></div>'; im.src=r.result;};
+  r.readAsDataURL(f); }
+
+/* ---------- Voorbeelden ---------- */
+function sample(kind){
+  if(kind==='logo'){ const c=mk(800,800),x=c.getContext('2d');
+    x.fillStyle='#1b2a4a'; x.beginPath(); x.arc(400,400,360,0,Math.PI*2); x.fill();
+    x.fillStyle='#ffffff'; x.beginPath(); x.arc(400,400,300,0,Math.PI*2); x.fill();
+    x.fillStyle='#c8202f'; x.beginPath(); x.moveTo(400,150); for(let i=1;i<10;i++){const r=i%2?95:230,an=-Math.PI/2+i*Math.PI/5; x.lineTo(400+r*Math.cos(an),370+r*Math.sin(an));} x.closePath(); x.fill();
+    x.fillStyle='#1b2a4a'; x.font='800 120px "Bricolage Grotesque", Arial, sans-serif'; x.textAlign='center'; x.fillText('FC',400,640); return c; }
+  if(kind==='fine'){ const c=mk(1000,420),x=c.getContext('2d'); x.textAlign='center';
+    x.fillStyle='#1b2a4a'; x.font='800 170px "Bricolage Grotesque", Arial, sans-serif'; x.fillText('ZWALUW',500,190);
+    x.fillStyle='#b3262d'; x.font='italic 400 44px Georgia, serif'; x.fillText('volleybalclub · opgericht 1987',500,280);
+    x.fillStyle='#1b2a4a'; x.font='400 30px Georgia, serif'; x.fillText('jeugd · recreanten · competitie',500,350); return c; }
+  const c=mk(800,600),x=c.getContext('2d');
+  let gr=x.createLinearGradient(0,0,0,600); gr.addColorStop(0,'#2d4f9e'); gr.addColorStop(.55,'#f08a4b'); gr.addColorStop(1,'#f7c873'); x.fillStyle=gr; x.fillRect(0,0,800,600);
+  x.fillStyle='rgba(255,236,170,.95)'; x.beginPath(); x.arc(520,330,70,0,Math.PI*2); x.fill();
+  gr=x.createLinearGradient(0,330,0,600); gr.addColorStop(0,'#3b3a5c'); gr.addColorStop(1,'#16162a'); x.fillStyle=gr;
+  x.beginPath(); x.moveTo(0,600); x.lineTo(0,380); x.lineTo(180,250); x.lineTo(330,390); x.lineTo(470,300); x.lineTo(640,420); x.lineTo(800,330); x.lineTo(800,600); x.fill();
+  const im=x.getImageData(0,0,800,600); for(let i=0;i<im.data.length;i+=4){const v=(Math.random()-.5)*70; im.data[i]+=v;im.data[i+1]+=v;im.data[i+2]+=v;} x.putImageData(im,0,0);
+  return c;
+}
+
+/* ---------- Events ---------- */
+$('#file').addEventListener('change',e=>loadFile(e.target.files[0]));
+const drop=$('#drop');
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over');}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over');}));
+drop.addEventListener('drop',e=>loadFile(e.dataTransfer.files[0]));
+document.addEventListener('paste',e=>{const f=[...(e.clipboardData?.files||[])][0]; if(f) loadFile(f);});
+document.querySelectorAll('[data-sample]').forEach(b=>b.addEventListener('click',()=>load(sample(b.dataset.sample))));
+$('#txtBtn').addEventListener('click',()=>{const v=$('#txt').value.trim(); if(!v) return;
+  const c=mk(1200,300),x=c.getContext('2d'); x.font='800 160px "Bricolage Grotesque", Arial, sans-serif';
+  const w=Math.min(1180,x.measureText(v).width); const c2=mk(w+40,240),x2=c2.getContext('2d');
+  x2.font='800 160px "Bricolage Grotesque", Arial, sans-serif'; x2.fillStyle='#1b2a4a'; x2.textBaseline='middle'; x2.fillText(v,20,125,1180); load(c2);});
+$('#txt').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#txtBtn').click();}});
+$('#types').addEventListener('click',e=>{const b=e.target.closest('.type'); if(!b) return; state.type=b.dataset.type; state.userPicked=true; renderAll();});
+document.querySelectorAll('input[name=shape]').forEach(i=>i.addEventListener('change',()=>{state.shape=i.value;renderAll();}));
+document.querySelectorAll('input[name=border]').forEach(i=>i.addEventListener('change',()=>{state.border=i.value;renderAll();}));
+document.querySelectorAll('input[name=backing]').forEach(i=>i.addEventListener('change',()=>{state.backing=i.value;renderAll();}));
+$('#width').addEventListener('input',e=>{state.width=parseFloat(e.target.value); $('#widthVal').textContent=fmt(state.width)+' cm'; renderAll();});
+$('#qty').addEventListener('input',renderAll);
+$('#form').addEventListener('submit',e=>{e.preventDefault();
+  const ok=$('#fname').value.trim() && /.+@.+\..+/.test($('#femail').value);
+  $('#formMsg').innerHTML= ok ? `<div class="thanks">Aanvraag klaar. In de echte plugin komt dit als offerte of bestelling in WooCommerce, met je logo, het voorbeeld en alle keuzes erbij.</div>`
+    : `<span class="note" style="color:var(--bad)">Vul je naam en een geldig e-mailadres in.</span>`;});
+
+swatches($('#fabricSw'),'fabric',FABRICS);
+swatches($('#borderSw'),'borderColor',['#111111','#ffffff','#1b2a4a','#b3262d','#d4a72c','#3e4f2a','#c0c4cc']);
+const start=()=>load(sample('logo'));
+(document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(start);
+})();
+</script>

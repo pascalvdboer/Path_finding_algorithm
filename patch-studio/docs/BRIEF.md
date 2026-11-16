@@ -29,3 +29,17 @@ geborduurd, geweven, bedrukt/sublimatie, chenille, PVC/rubber, leder/gelaserd, .
 ## Eerlijkheid
 Advies moet kloppen en eerlijk zijn: geen valse schaarste, nep-reviews of verzonnen cijfers. Overtuigen gebeurt via deskundigheid,
 duidelijkheid, vertrouwen (digitale proef, vanaf 1 stuk, persoonlijke service) en een vlotte flow. Voorbeeldprijzen duidelijk configureerbaar.
+
+## BELANGRIJKE FEEDBACK VAN DE EIGENAAR (na test van demo-v1 op gsm)
+De eigenaar uploadde een eigen, volledig ontworpen RONDE patch (vierkante afbeelding met een cirkelvormige patch erin,
+gedetailleerde illustratie met schaduwen, tekst rond de rand). demo-v1 deed dit fout:
+1. Het snijdt de helft van het ontwerp weg: bij "foto" werd de afbeelding als "cover" over de patchvorm gelegd. NOOIT bijsnijden:
+   het ontwerp moet altijd volledig zichtbaar zijn (contain).
+2. De vorm werd niet herkend. Als het ontwerp zelf al een patchvorm is (rond, ovaal, rechthoek, schild, contour) moet de tool dat
+   herkennen, automatisch die vorm kiezen en het ontwerp de patch laten vullen (de eigen rand van het ontwerp respecteren).
+   Achtergrond rond de vorm (wit, zwart, transparant, effen kleur) moet als achtergrond herkend worden, ook als het ontwerp veel tinten heeft.
+3. Het ontwerp werd "Foto" genoemd. Een gedetailleerde illustratie met schaduwen is GEEN foto: dit soort ontwerpen (militaire/club-patches)
+   wordt in de praktijk vaak geborduurd of geweven na vereenvoudiging door de digitaliseerder. Maak onderscheid tussen
+   vlak logo / illustratie met tinten / echte foto, en geef bij illustraties eerlijk vakadvies (bv. geweven = meeste detail,
+   geborduurd = mits vereenvoudiging tot X garenkleuren, bedrukt = exact zoals het bestand).
+Testbeeld: patch-studio/reference/eigenaar-ronde-patch.png
