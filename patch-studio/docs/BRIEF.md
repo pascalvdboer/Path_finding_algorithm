@@ -43,3 +43,9 @@ gedetailleerde illustratie met schaduwen, tekst rond de rand). demo-v1 deed dit 
    vlak logo / illustratie met tinten / echte foto, en geef bij illustraties eerlijk vakadvies (bv. geweven = meeste detail,
    geborduurd = mits vereenvoudiging tot X garenkleuren, bedrukt = exact zoals het bestand).
 Testbeeld: patch-studio/reference/eigenaar-ronde-patch.png
+Tweede testbeeld van de eigenaar: patch-studio/reference/eigenaar-foto-patch.jpg = GSM-FOTO van een echte (bedrukte) ronde patch op
+witte stof met plooien en ongelijk licht; de cirkel raakt bijna de zijkanten. Klanten zullen zulke foto's uploaden!
+De analyse moet dit aankunnen (zie reference/demo-v2.html, die dit nu oplost): achtergrond = mediaan van de randpixels, flood fill
+die alleen over zachte overgangen groeit (stop aan harde rand), check of de rand grotendeels effen is (anders full-bleed ontwerp),
+losse vlekjes (stofstructuur) verwijderen, daarna vorm herkennen (rond/ovaal/rechthoek) en het ontwerp de patch laten vullen.
+Idealiter ook: perspectief/scheefheid tolereren en de klant tonen "we hebben je patch uit de foto geknipt", met een knop om bij te stellen.

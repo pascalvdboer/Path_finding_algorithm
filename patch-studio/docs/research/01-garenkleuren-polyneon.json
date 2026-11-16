@@ -2,7 +2,7 @@
  "source": "https://borduurservicebelgie.be/beschikbare-kleuren-garen/",
  "brand": "Madeira Polyneon 100% polyester (volgens kop op pagina)",
  "fetched": "2026-11-16",
- "note": "hex = schermkleur van de swatch op de site (Elementor divider-kleur); garen kan afwijken van scherm. Bestel op kleurnummer.",
+ "note": "hex = schermkleur van de swatch op de site (Elementor divider-kleur); garen kan afwijken van scherm. Bestel op kleurnummer. Let op: de fluo-reeks aan het einde heeft dubbele namen en enkele onlogische hexwaarden (kopieerfouten op de site); match op code+hex.",
  "colors": [
   {
    "name": "Baby Chick",

@@ -236,7 +236,7 @@ const FABRICS = ['#ffffff','#111111','#1b2a4a','#b3262d','#3e4f2a','#d9c7a3','#6
 const state = {type:'geborduurd', userPicked:false, shape:'rond', width:8, border:'merrow', backing:'opstrijk', qty:25, fabric:'auto', borderColor:'auto', a:null};
 
 /* ---------- Analyse ---------- */
-const PHOTO_COVER=150;
+const PHOTO_COVER=150, UNIFORM_EDGE=0.3;
 function dist2(a,b){const r=a[0]-b[0],g=a[1]-b[1],bb=a[2]-b[2];return r*r+g*g+bb*bb;}
 
 function analyze(src){
@@ -255,18 +255,33 @@ function analyze(src){
   const edge=[]; for(let x=0;x<W1;x++){edge.push(x,(H1-1)*W1+x);} for(let y=0;y<H1;y++){edge.push(y*W1,y*W1+W1-1);}
   let trEdge=0; const ecs=[];
   for(const p of edge){ if(d1[p*4+3]<128) trEdge++; else ecs.push(px(p)); }
+  // Achtergrondkleur = mediaan van de rand. De vulling groeit alleen over zachte overgangen (stof, licht en schaduw
+  // op een foto) en stopt aan de harde rand van het ontwerp.
   let bg=null;
-  if(trEdge<edge.length*0.5 && ecs.length){
-    // meest voorkomende randkleur
-    const m=new Map(); for(const c of ecs){const k=(c[0]>>4)<<8|(c[1]>>4)<<4|(c[2]>>4); const e=m.get(k); if(e){e.n++;e.c[0]+=c[0];e.c[1]+=c[1];e.c[2]+=c[2];} else m.set(k,{n:1,c:[...c]});}
-    const top=[...m.values()].sort((a,b)=>b.n-a.n)[0];
-    if(top.n>=ecs.length*0.35) bg=top.c.map(v=>Math.round(v/top.n));
-  }
-  const isBgPx=p=> d1[p*4+3]<128 || (bg && dist2(px(p),bg)<20*20);
-  { const st=[]; for(const p of edge) if(!bgM[p] && isBgPx(p)){bgM[p]=1;st.push(p);}
+  if(trEdge<edge.length*0.5 && ecs.length){ bg=[0,1,2].map(j=>{const v=ecs.map(c=>c[j]).sort((x,y)=>x-y); return v[v.length>>1];});
+    // rand moet grotendeels effen zijn, anders loopt het ontwerp tot de rand (foto zonder achtergrond)
+    const uni=ecs.filter(c=>dist2(c,bg)<45*45).length/ecs.length;
+    if(uni<UNIFORM_EDGE) bg=null; }
+  const tr=p=>d1[p*4+3]<128;
+  const near=(p,lim)=> bg && dist2(px(p),bg)<lim*lim;
+  const step=(p,q)=>{ if(tr(q)) return true; if(tr(p)||!near(q,95)) return false;
+    const i=p*4,j=q*4; return Math.max(Math.abs(d1[i]-d1[j]),Math.abs(d1[i+1]-d1[j+1]),Math.abs(d1[i+2]-d1[j+2]))<14; };
+  { const st=[]; for(const p of edge) if(!bgM[p] && (tr(p)||near(p,60))){bgM[p]=1;st.push(p);}
     while(st.length){const p=st.pop(),x=p%W1,y=(p-x)/W1;
       const nb=[x>0?p-1:-1,x<W1-1?p+1:-1,y>0?p-W1:-1,y<H1-1?p+W1:-1];
-      for(const q of nb) if(q>=0 && !bgM[q] && isBgPx(q)){bgM[q]=1;st.push(q);} } }
+      for(const q of nb) if(q>=0 && !bgM[q] && step(p,q)){bgM[q]=1;st.push(q);} } }
+  // losse vlekjes (stofstructuur, stof, ruis) wegnemen: alleen grote ontwerpdelen blijven over
+  { const lab=new Int32Array(n1).fill(-1), sizes=[]; const st=[];
+    for(let p0=0;p0<n1;p0++){ if(bgM[p0]||lab[p0]>=0) continue; const id=sizes.length; let sz=0; lab[p0]=id; st.push(p0);
+      while(st.length){const p=st.pop(); sz++; const x=p%W1,y=(p-x)/W1;
+        for(const q of [x>0?p-1:-1,x<W1-1?p+1:-1,y>0?p-W1:-1,y<H1-1?p+W1:-1]) if(q>=0&&!bgM[q]&&lab[q]<0){lab[q]=id;st.push(q);} }
+      sizes.push(sz); }
+    const big=Math.max(0,...sizes);
+    if(bg && sizes.length>1){ const sd=new Float64Array(sizes.length);
+      for(let p=0;p<n1;p++) if(lab[p]>=0) sd[lab[p]]+=Math.sqrt(dist2(px(p),bg));
+      for(let p=0;p<n1;p++){ const l=lab[p]; if(l>=0 && sizes[l]<big*0.02 && (sd[l]/sizes[l]<70 || sizes[l]<n1*0.00015)) bgM[p]=1; } } }
+  // te weinig achtergrond gevonden: dan is de hele afbeelding het ontwerp
+  { let c=0; for(let p=0;p<n1;p++) c+=bgM[p]; if(c<n1*0.03){ bgM.fill(0); bg=null; } }
   const hasBg = bgM.some(v=>v);
 
   let minX=W1,minY=H1,maxX=-1,maxY=-1,fgCount=0;
@@ -282,7 +297,7 @@ function analyze(src){
       if(e<=0.92){inE++; if(fg) inFg++;} else if(e>=1.08){outE++; if(fg) outFg++;} }
     const fill=fgCount/(bbW*bbH), ar=bbW/bbH;
     if(fill>0.97) shape='rechthoek';
-    else if(inE && outE && inFg/inE>0.97 && outFg/outE<0.12) shape = (ar>0.93&&ar<1.07)?'rond':'ovaal';
+    else if(inE && outE && inFg/inE>0.97 && outFg/outE<0.12) shape = (ar>0.9&&ar<1.1)?'rond':'ovaal';
   }
 
   // kleurspreiding (4-bit buckets) op het ontwerp: vlak logo / illustratie met tinten / foto
@@ -297,7 +312,6 @@ function analyze(src){
   for(let y=minY;y<maxY;y++)for(let x=minX;x<maxX;x++){ const p=y*W1+x; if(bgM[p]||bgM[p+1]) continue; const i=p*4,j=i+4;
     const df=Math.max(Math.abs(d1[i]-d1[j]),Math.abs(d1[i+1]-d1[j+1]),Math.abs(d1[i+2]-d1[j+2])); pairs++; if(df>60) hard++; }
   const hardRatio=pairs?hard/pairs:0;
-  window.__cover=cover; window.__hard=hardRatio;
 
   // voorgrond-test in andere resoluties: terugkoppelen naar het masker van pass 1
   const fgAt=(x,y,Wt,Ht)=>{ const X=Math.min(W1-1,minX+Math.floor((x+.5)*bbW/Wt)), Y=Math.min(H1-1,minY+Math.floor((y+.5)*bbH/Ht)); return !bgM[Y*W1+X]; };
