@@ -10,3 +10,11 @@
 7. **Referenties**: welke klanten mogen genoemd worden?
 8. **Afzender**: e-mails vanaf welk adres en met welke handtekening?
 9. **Startsein**: wanneer mag het team uit de inleerfase?
+
+## Backlinks & AI-vindbaarheid
+10. Heeft het SEO-team al een backlinklijst of -beslissing? (dan sluiten we daarop aan)
+11. Mogen we klanten/clubs vragen om een vermelding met link op hun sponsor-/leverancierspagina?
+12. Welke merken/leveranciers werkt u mee (voor partnerpagina's)?
+13. Bent u lid van Unizo, Voka, een sectorfederatie of lokale ondernemersvereniging?
+14. Toegang tot Google Bedrijfsprofiel en Search Console (om bestaande links te zien)?
+15. Mogen we perskansen voorstellen (lokale pers)?
