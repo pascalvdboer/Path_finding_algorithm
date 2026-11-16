@@ -19,6 +19,9 @@ Kopieer deze map naar `C:\Users\pasca\Documents\Claude\Projects\sociale media te
 | **Donderdag 14:30** | `05-controle` | Controle (vier ogen) | Elke conceptpost GOED of TERUG |
 | **Vrijdag 15:10** | `06-weekafsluiting` | Directeur | Log, leerregister, fotoverzoek voor volgende week |
 | **1e maandag v.d. maand** | `07-maandrapport` | Strateeg | 1 pagina: wat werkte, wat niet, 3 bijsturingen, vragen → SEO-inbox |
+| **Maandag 08:50** | `09-ads-weekcheck` | Google Ads-team | 3 regels "Ads deze week" in de weekbundel; stop-test bewaakt |
+| **1e maandag 09:30** | `10-ads-maandrapport` | Google Ads-team | Uitgaven vs. aanvragen, stand afbouw |
+| **Eenmalig** | `08-ads-doorlichting` | Google Ads-team | Advies stoppen/afslanken/verbeteren/houden (1 pagina) |
 
 De tijden zijn bewust niet op het hele uur (minder vertraging bij geplande taken).
 
@@ -61,5 +64,8 @@ Ongewijzigd t.o.v. het team: Directeur · Strateeg/Analist · SEO-brug · Conten
 Per kanaal: bereik, interacties, % posts **met** interactie (doel: duidelijk hoger dan in 2025), klikken naar de site (UTM in Analytics), nieuwe volgers, vragen/aanvragen via socials (→ salesteam `leads.csv`, bron `social`).
 Eén zin conclusie + 3 bijsturingen. Werkt een pijler 2 maanden slecht → voorstel om te vervangen.
 
-## 8. Wat Pascal **niet** meer hoeft te doen
+## 8. Samen met het Google Ads-team
+Het Google Ads-team (`google-ads-team\`) draait mee op dezelfde klok en gebruikt **dezelfde weekbundel**: Pascal heeft dus nog altijd maar één leesmoment per week. Als de ads worden afgebouwd, krijgen onderwerpen en zoektermen die vroeger via ads binnenkwamen voorrang in de pijler "Uitleg / tip" (met link naar de SEO-pagina), zodat socials en SEO dat verkeer overnemen.
+
+## 9. Wat Pascal **niet** meer hoeft te doen
 Ideeën bedenken, teksten schrijven, kanalen aanpassen, inplannen, cijfers bijhouden, reacties opvolgen (alleen goedkeuren als het gevoelig is).

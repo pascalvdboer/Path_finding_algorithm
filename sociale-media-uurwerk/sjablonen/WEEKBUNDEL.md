@@ -17,6 +17,10 @@ Volledige teksten per kanaal: `WEEKPLAN/[WW]/posts.md`
 - **"ja, behalve 2 en 5"** → die worden herwerkt of geschrapt
 - **niets** → de buffer loopt door, deze bundel schuift een week op
 
+## Ads deze week (Google Ads-team)
+- Uitgegeven: € … · Aanvragen uit ads: … · Afbouw: fase … (… % t.o.v. nulmeting)
+- Ter goedkeuring (alleen als er iets is): …
+
 ## Alleen als het nodig is (max. 3 vragen)
 1.
 
