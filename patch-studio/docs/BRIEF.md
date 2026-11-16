@@ -57,3 +57,14 @@ Het moet een mooie patch zijn ten alle tijden."
   het ontwerp, tot aan de rand van de patchvorm. Waar het bestand ophoudt, vult de achtergrondkleur verder.
 - Witte (of transparante) achtergrond = papier, niet overnemen: kies automatisch de stofkleur waarop het ontwerp het best uitkomt.
 - Nooit lege, rare of afgesneden stukken in het voorbeeld. Zie reference/demo-v2.html voor de huidige aanpak.
+
+## EIS VAN DE EIGENAAR: zelf schikken en tekst toevoegen
+"Ze moeten de afbeelding kunnen vergroten en verkleinen binnen de rand, en kunnen veranderen van positie. Misschien tekst toevoegen
+in bepaald font of vorm etc."
+- Ontwerp: grootte-schuifbalk (20-200%), slepen in het voorbeeld (muis + touch + pijltjestoetsen), knoppen Centreren / Passend maken.
+  Alles blijft binnen de rand van de patch (geknipt op de vorm, rand erover).
+- Tekstlagen: meerdere teksten, lettertypes (Sora, Oswald, Graduate, Roboto Slab, Cinzel, Pacifico), garenkleuren,
+  letterhoogte in mm, vorm Recht / Boog boven / Boog onder (langs de rand, slepen = draaien en afstand tot rand).
+  Ook een patch met alleen tekst (zonder afbeelding).
+- De borduurcheck controleert ook de tekst: minimale letterhoogte per techniek (dunne/script-lettertypes strenger) en tekstkleuren
+  tellen mee in het aantal garenkleuren. Zie reference/demo-v2.html voor de werkende aanpak.
