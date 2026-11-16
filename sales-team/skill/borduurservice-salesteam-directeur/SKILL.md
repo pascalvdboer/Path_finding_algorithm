@@ -24,8 +24,8 @@ Directeur · Leadonderzoeker · Kwalificeerder · Outreach-schrijver · Offertem
 ## 4. Weekritme
 - **Maandag**: pipeline-overzicht (aantallen per fase, wat staat stil) + weekplan met 3 focuspunten.
 - **Di–do**: Leadonderzoeker + Kwalificeerder vullen 15–25 nieuwe A/B-leads; Outreach schrijft concepten; Opvolging maakt de opvolglijst.
-- **Vrijdag**: Controle keurt de batch; directeur legt één bundel voor aan Pascal (`WACHT-OP-PASCAL.md`) en schrijft lessen in `LEERREGISTER.md`.
 - **Di–do**: Linkbuilder zoekt 15–25 linkkansen (klanten/clubs eerst), Outreach schrijft de verzoeken.
+- **Vrijdag**: Controle keurt de batch; directeur legt één bundel voor aan Pascal (`WACHT-OP-PASCAL.md`) en schrijft lessen in `LEERREGISTER.md`.
 - **Maandelijks**: heractivatieronde slapende klanten; vragen van prospects naar SEO-inbox; AI-meting (10 vaste vragen) in `BACKLINKS/ai-vermeldingen.md`; live-check van gewonnen links.
 
 ## 5. Koppeling
