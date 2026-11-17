@@ -205,35 +205,36 @@ function woven(ctx) {
 function chenille(ctx) {
   const { g, W, H, ppm, relief } = ctx;
   const D = g.alb, hg = g.hgt, sp = g.spec, gl = g.gloss, ao = g.ao;
-  const loop = Math.max(2.5, 1.25 * ppm);
-  const pile = 1.0 * ppm * relief, domeA = 0.32 * ppm, fibA = 0.05 * ppm;
+  const loop = Math.max(2.2, 0.95 * ppm);
+  const pile = 1.1 * ppm * relief, domeA = 0.16 * ppm, fibA = 0.07 * ppm;
   const glC = glossByte(0, false);
   for (let y = 0; y < H; y++) {
-    const row = y * W;
-    const gy = Math.floor(y / loop);
+    const row = y * W, gy = Math.floor(y / loop), fy = y / loop - gy;
     for (let x = 0; x < W; x++) {
-      const i = row + x, p = i * 4, a = D[p + 3];
-      if (!a) continue;
+      const i = row + x, p = i * 4;
+      if (!D[p + 3]) continue;
       const d = distAt(ctx, x, y);
-      const gx = Math.floor(x / loop);
-      // nearest of the 4 surrounding jittered loop centres
+      const gx = Math.floor(x / loop), fx = x / loop - gx;
+      // nearest of the 2×2 closest jittered loop centres
       let best = 9, bh = 0;
+      const bx = fx < 0.5 ? gx - 1 : gx, by = fy < 0.5 ? gy - 1 : gy;
       for (let oy = 0; oy <= 1; oy++) for (let ox = 0; ox <= 1; ox++) {
-        const cx = gx + ox - ((x / loop - gx) < 0.5 ? 1 : 0), cy = gy + oy - ((y / loop - gy) < 0.5 ? 1 : 0);
+        const cx = bx + ox, cy = by + oy;
         const hs = ((cx * 73856093) ^ (cy * 19349663)) >>> 0;
-        const px = (cx + 0.5 + ((hs & 255) / 255 - 0.5) * 0.7) * loop, py = (cy + 0.5 + (((hs >> 8) & 255) / 255 - 0.5) * 0.7) * loop;
+        const px = (cx + 0.5 + ((hs & 255) / 255 - 0.5) * 0.8) * loop, py = (cy + 0.5 + (((hs >> 8) & 255) / 255 - 0.5) * 0.8) * loop;
         const dd = ((x - px) * (x - px) + (y - py) * (y - py)) / (loop * loop);
         if (dd < best) { best = dd; bh = hs; }
       }
-      const dome = Math.max(0, 1 - best * 2.4);
-      const fib = hashI(x * 7 + (bh & 1023), y * 13) - 0.5;
-      const edge = smooth(d / 1.1);
-      hg[i] = pile * Math.sqrt(edge) + domeA * dome * edge + fibA * fib;
-      ao[i] = 255 * (0.62 + 0.38 * dome) * (0.55 + 0.45 * smooth(d / 0.5));
-      sp[i] = 26; gl[i] = glC;
-      const f = 0.95 + fib * 0.14;
+      const dome = Math.max(0, 1 - best * 2.2);
+      // fibres: fine streaks in a random direction per loop
+      const ang = (bh & 1023) / 1023 * Math.PI;
+      const fs = Math.sin((x * Math.cos(ang) + y * Math.sin(ang)) * 2.1 + (bh >> 10)) * 0.5 + (hashI(x, y * 31) - 0.5) * 0.9;
+      const edge = smooth(d / 1.8);
+      hg[i] = pile * Math.sqrt(edge) + domeA * dome + fibA * fs;
+      ao[i] = 255 * (0.8 + 0.2 * dome) * (0.78 + 0.22 * smooth(d / 0.6)) * (0.92 + 0.08 * fs);
+      sp[i] = 18; gl[i] = glC;
+      const f = 0.97 + fs * 0.08;
       D[p] = Math.min(255, D[p] * f); D[p + 1] = Math.min(255, D[p + 1] * f); D[p + 2] = Math.min(255, D[p + 2] * f);
-      if (d < 0.35) D[p + 3] = a * Math.max(0, Math.min(1, 0.35 + d * 1.6 + fib * 1.3));
     }
   }
 }

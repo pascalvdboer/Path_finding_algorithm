@@ -1,6 +1,8 @@
 /**
- * Patch Studio UI — application: builds the layout inside the root, owns the store, runs analysis,
- * derives advice/price, steps + history, persistence, events (SPEC §1.2, §7.4, §7.8).
+ * Patch Studio UI — application: the design studio. Owns the store, runs the analysis, derives advice/price and
+ * lays out the workspace: top bar (undo/redo, new), icon rail with tool panels, the big canvas stage, the assistant
+ * with the technique comparer, and the slim action bar. On phones the canvas stays fixed on top, tools open as a
+ * compact sheet above a tab bar, and only the sheet scrolls (SPEC §1.2, §7.4, §7.8; docs/STUDIO-REDESIGN.md).
  */
 import { createT, langOf } from '../shared/i18n.js';
 import { label } from '../shared/config.js';
@@ -15,16 +17,20 @@ import { h, text, icon, debounce, uid } from './dom.js';
 import { createStore, initialState, sanitizeState, normalizeQty, reconcileOptions, persist, loadPersisted, clearPersisted } from './state.js';
 import { derive, fabricList } from './derive.js';
 import { createApi } from './api.js';
-import { createPreview } from './preview.js';
-import { emptyState, stepDesign } from './step-design.js';
-import { stepTechnique } from './step-technique.js';
-import { stepSize } from './step-size.js';
-import { stepFinish } from './step-finish.js';
-import { stepSummary } from './step-summary.js';
-import { createPriceCard, createStickyBar } from './price.js';
+import { createStage } from './stage.js';
+import { emptyState, createPanels } from './panels.js';
+import { createAssistant } from './assistant.js';
+import { createCheckout } from './checkout.js';
+import { createPriceCard, createBar, createQty } from './price.js';
 import { createFlows } from './flows.js';
+import { createHistory } from './history.js';
 
-const STEP_RE = /bps_step=(\d)/;
+/** Tool panels in the left dock (desktop) and their rail icons. */
+const DOCK = [['design', 'image'], ['text', 'type'], ['shape', 'shape'], ['edge', 'edge'], ['colors', 'colors'], ['back', 'back'], ['size', 'ruler']];
+/** Phone tab bar: tab → panels it groups (owner: Ontwerp, Tekst, Vorm, Kleuren, Techniek, Prijs). */
+const TABS = [['design', 'image', ['design']], ['text', 'type', ['text']], ['shape', 'shape', ['shape', 'edge', 'back']], ['colors', 'colors', ['colors']],
+  ['advice', 'spark', ['advice']], ['price', 'euro', ['size', 'checkout']]];
+const MOBILE_Q = '(max-width: 899px)';
 
 function overridesFor(config) {
   const s = config.strings || {};
@@ -43,19 +49,19 @@ export function createApp(root, config) {
   const moneyLocale = langOf(locale) === 'fr' ? 'fr-BE' : 'nl-BE';
   const store = createStore(initialState(config));
   const api = createApi(config);
+  const mq = typeof matchMedia === 'function' ? matchMedia(MOBILE_Q) : { matches: false, addEventListener() {} };
 
   const ctx = {
     root, config, t, store, api, locale, overrides,
     uidBase: uid('bps-app'),
-    step: 0,
-    maxStep: 0,
     analysis: null,
     analysisState: { status: 'idle', stage: null, message: '' },
     file: null,
     tweaks: null,
     dragTarget: null,
     busy: false,
-    ui: { exclVat: false, showAllTech: false, showChanges: false, rights: false, device: false, qtyAdjustedFrom: null },
+    inStudio: false,
+    ui: { exclVat: false, showAllTech: false, showChanges: false, rights: false, device: false, qtyAdjustedFrom: null, dock: 'design', side: 'advice', mob: 'design', sheetMin: false },
     derived: null,
     L: (o) => label(o, locale),
     fmt: (x) => formatMoney(x, moneyLocale),
@@ -67,6 +73,7 @@ export function createApp(root, config) {
     const s = store.get();
     return s.source.kind === 'text' || !!s.source.fileName || !!ctx.analysis;
   };
+  ctx.isMobile = () => !!mq.matches;
 
   /* ------------------------------ live regions ------------------------------ */
   const status = h('div.bps-sr', { role: 'status', 'aria-live': 'polite' });
@@ -85,36 +92,155 @@ export function createApp(root, config) {
   };
 
   /* ------------------------------ components ------------------------------ */
-  const preview = createPreview(ctx);
-  ctx.preview = preview;
-  const flows = createFlows(ctx);
-  Object.assign(ctx, flows);
-
+  const history = createHistory(store, { onChange: () => syncUndo() });
+  ctx.history = history;
+  const stage = createStage(ctx);
+  ctx.preview = stage;
+  Object.assign(ctx, createFlows(ctx));
+  ctx.priceCard = createPriceCard(ctx);
+  ctx.qtyControl = (where) => createQty(ctx, where);
   const empty = emptyState(ctx);
-  const steps = [null, stepDesign(ctx), stepTechnique(ctx), stepSize(ctx), stepFinish(ctx), stepSummary(ctx)];
-  const card = createPriceCard(ctx);
-  const bar = createStickyBar(ctx);
+  const panels = createPanels(ctx);
+  const assistant = createAssistant(ctx);
+  const checkout = createCheckout(ctx);
+  const bar = createBar(ctx, ctx.priceCard);
   const restoreBox = h('div.bps-restore', { hidden: true });
+  const all = { ...panels, advice: assistant, checkout };
 
-  const stepBtns = [];
-  const stepNav = h('nav.bps-stepsnav', { 'aria-label': t('ui.steps.label') },
-    h('ol.bps-steps', [1, 2, 3, 4, 5].map((n) => {
-      const b = h('button.bps-steps__btn', { type: 'button', onclick: () => ctx.go(n) },
-        h('span.bps-steps__num', { 'aria-hidden': 'true' }, String(n)), h('span.bps-steps__name', t('ui.step.' + n)), h('span.bps-sr.bps-steps__done'));
-      stepBtns.push(b);
-      return h('li.bps-steps__item', b);
-    })),
-    h('button.bps-btn.bps-btn--link.bps-btn--small.bps-steps__new', { type: 'button', onclick: () => ctx.reset() }, t('ui.new')));
+  /* top bar */
+  const tbtn = (name, lbl, fn) => h('button.bps-ibtn.bps-top__btn', { type: 'button', 'aria-label': lbl, title: lbl, onclick: fn }, icon(name));
+  const undoBtn = tbtn('undo', t('ui.top.undo'), () => history.undo());
+  const redoBtn = tbtn('redo', t('ui.top.redo'), () => history.redo());
+  const fileName = h('span.bps-top__file');
+  const top = h('header.bps-top',
+    h('button.bps-ibtn.bps-top__leave', { type: 'button', 'aria-label': t('ui.top.leave'), title: t('ui.top.leave'), onclick: () => leaveStudio(true) }, icon('back2')),
+    h('div.bps-top__brand', h('span.bps-top__logo', { 'aria-hidden': 'true' }, icon('spark')), h('span.bps-top__name', t('ui.top.title')), fileName),
+    h('div.bps-top__tools', { role: 'toolbar', 'aria-label': t('ui.top.tools') }, undoBtn, redoBtn),
+    h('div.bps-top__end',
+      h('button.bps-btn.bps-btn--small.bps-btn--ghost.bps-top__new', { type: 'button', onclick: () => ctx.reset() }, icon('plus'), h('span', t('ui.new')))));
 
-  const c = config.contact || {};
-  const help = h('p.bps-helpline', icon('chat'), ' ',
-    c.whatsapp ? h('a', { href: 'https://wa.me/' + String(c.whatsapp).replace(/\D/g, ''), target: '_blank', rel: 'noopener' }, t('ui.help', { phone: c.phone || '' })) : t('ui.help', { phone: c.phone || '' }),
-    c.email ? [' ', h('a', { href: 'mailto:' + c.email }, t('ui.help.mail', { email: c.email }))] : null);
+  /* left rail */
+  const railBtns = DOCK.map(([id, ic]) => h('button.bps-rail__btn', { type: 'button', 'aria-pressed': 'false', 'aria-controls': ctx.uidBase + '-dock', dataset: { panel: id }, onclick: () => (ctx.ui.dock === id ? ctx.closePanel(id) : ctx.openPanel(id)) },
+    icon(ic), h('span.bps-rail__lbl', t('ui.panel.' + id + '.short'))));
+  const rail = h('nav.bps-rail', { 'aria-label': t('ui.rail.label') }, railBtns);
+  const dock = h('div.bps-dock', { id: ctx.uidBase + '-dock' }, DOCK.map(([id]) => panels[id].el));
+  const side = h('aside.bps-side', { 'aria-label': t('ui.panel.advice') }, assistant.el, checkout.el);
+  const subnav = h('div.bps-subnav', { hidden: true });
+  const grab = h('button.bps-grab', { type: 'button', 'aria-expanded': 'true', 'aria-label': t('ui.sheet.toggle'), onclick: () => { ctx.ui.sheetMin = !ctx.ui.sheetMin; ctx.refresh(); } }, h('span', { 'aria-hidden': 'true' }));
 
-  const stepWrap = h('div.bps-stepwrap', steps.slice(1).map((s) => s.el));
-  const main = h('div.bps-main', restoreBox, empty.el, stepWrap, help);
-  const side = h('div.bps-side', preview.el, h('p.bps-disclaimer.bps-side__disc', t('ui.s2.disclaimer')), card.el);
-  const app = h('div.bps-app', { role: 'region', 'aria-label': t('ui.app.label') }, status, alertBox, stepNav, h('div.bps-grid', main, side), bar.el, bar.sheet);
+  /* phone tab bar */
+  const tabBtns = TABS.map(([id, ic, group]) => h('button.bps-tabs__btn', { type: 'button', 'aria-pressed': 'false', dataset: { tab: id }, onclick: () => ctx.openPanel(group.includes(ctx.ui.mob) ? ctx.ui.mob : group[0]) },
+    icon(ic), h('span', t('ui.tab.' + id))));
+  const tabs = h('nav.bps-tabs', { 'aria-label': t('ui.rail.label') }, tabBtns);
+
+  const ws = h('div.bps-ws', { hidden: true }, top, rail, dock, h('div.bps-stagehost', stage.el), side, h('div.bps-sheetbar', grab, subnav), bar.el, tabs);
+  const help = (() => {
+    const c = config.contact || {};
+    return h('p.bps-helpline', icon('chat'), ' ',
+      c.whatsapp ? h('a', { href: 'https://wa.me/' + String(c.whatsapp).replace(/\D/g, ''), target: '_blank', rel: 'noopener' }, t('ui.help', { phone: c.phone || '' })) : t('ui.help', { phone: c.phone || '' }),
+      c.email ? [' ', h('a', { href: 'mailto:' + c.email }, t('ui.help.mail', { email: c.email }))] : null);
+  })();
+  const landing = h('div.bps-landing', restoreBox, empty.el);
+  const app = h('div.bps-app', { role: 'region', 'aria-label': t('ui.app.label') }, status, alertBox, landing, ws, help, bar.sheet);
+
+  function syncUndo() {
+    undoBtn.disabled = !history.canUndo();
+    redoBtn.disabled = !history.canRedo();
+  }
+
+  /* ------------------------------ panels ------------------------------ */
+  const groupOf = (id) => (TABS.find(([, , g]) => g.includes(id)) || TABS[0]);
+  ctx.openPanel = (id, { focus = false } = {}) => {
+    if (!all[id]) return;
+    if (DOCK.some(([d]) => d === id)) ctx.ui.dock = id; else ctx.ui.side = id;
+    ctx.ui.mob = id;
+    ctx.ui.sheetMin = false;
+    render();
+    const p = all[id].el;
+    if (!ctx.isMobile() && (id === 'advice' || id === 'checkout')) {
+      p.classList.remove('is-pulse');
+      void p.offsetWidth;
+      p.classList.add('is-pulse');
+    }
+    if (focus) {
+      const hd = p.querySelector('.bps-panel__title');
+      if (hd) hd.focus({ preventScroll: true });
+    }
+    const body = p.querySelector('.bps-panel__body');
+    if (body && focus) body.scrollTop = 0;
+  };
+  ctx.closePanel = (id) => {
+    if (ctx.isMobile()) ctx.ui.sheetMin = true;
+    else if (ctx.ui.dock === id) ctx.ui.dock = null;
+    render();
+    const b = railBtns.find((x) => x.dataset.panel === id);
+    if (b && !ctx.isMobile()) b.focus();
+  };
+
+  /* ------------------------------ studio mode ------------------------------ */
+  let savedScroll = 0;
+  function lock(on) {
+    const de = document.documentElement;
+    if (on && !de.classList.contains('bps-lock')) {
+      savedScroll = window.scrollY || 0;
+      de.classList.add('bps-lock');
+      window.scrollTo(0, 0);
+    } else if (!on && de.classList.contains('bps-lock')) {
+      de.classList.remove('bps-lock');
+      window.scrollTo(0, savedScroll);
+    }
+  }
+  function enterStudio(panel, { focus = true } = {}) {
+    const was = ctx.inStudio;
+    ctx.inStudio = true;
+    if (panel) {
+      if (DOCK.some(([d]) => d === panel)) ctx.ui.dock = panel; else ctx.ui.side = panel;
+      ctx.ui.mob = panel;
+    }
+    render();
+    if (!was) {
+      emit(root, EV.STEP, { step: 1 });
+      if (!ctx.isMobile() && focus) {
+        const r = ws.getBoundingClientRect();
+        if (r.top < 0 || r.top > window.innerHeight * 0.4) ws.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+      }
+    }
+  }
+  function leaveStudio(keep) {
+    ctx.inStudio = false;
+    ctx.ui.away = !!keep;
+    render();
+    const hd = empty.el.querySelector('h2');
+    if (hd) hd.focus({ preventScroll: true });
+  }
+  ctx.enterStudio = enterStudio;
+  /** Compatibility with older callers: 0 = start, 1..5 = the matching part of the studio. */
+  ctx.go = (n) => (n ? enterStudio(['design', 'design', 'advice', 'size', 'edge', 'checkout'][n] || 'design') : leaveStudio());
+
+  /* phone: keep the canvas in view while typing (visual viewport shrinks with the keyboard) */
+  function syncViewport() {
+    const vv = window.visualViewport;
+    const hgt = vv ? vv.height : window.innerHeight;
+    root.style.setProperty('--bps-vvh', Math.round(hgt) + 'px');
+    root.style.setProperty('--bps-vvt', Math.round(vv ? vv.offsetTop : 0) + 'px');
+    root.classList.toggle('is-kb', ctx.isMobile() && hgt < window.innerHeight * 0.72);
+  }
+  if (window.visualViewport) { window.visualViewport.addEventListener('resize', syncViewport); window.visualViewport.addEventListener('scroll', syncViewport); }
+  window.addEventListener('resize', syncViewport);
+  syncViewport();
+  const onMq = () => { syncViewport(); render(); };
+  if (mq.addEventListener) mq.addEventListener('change', onMq); else if (mq.addListener) mq.addListener(onMq);
+
+  /* keyboard shortcuts (only while the studio is open and not while typing) */
+  document.addEventListener('keydown', (e) => {
+    if (!ctx.inStudio || !(e.ctrlKey || e.metaKey)) return;
+    const tg = e.target;
+    if (tg && (/^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName) || tg.isContentEditable)) return;
+    if (tg && tg !== document.body && !root.contains(tg)) return;
+    const k = e.key.toLowerCase();
+    if (k === 'z' && !e.shiftKey) { e.preventDefault(); history.undo(); }
+    else if ((k === 'z' && e.shiftKey) || k === 'y') { e.preventDefault(); history.redo(); }
+  });
 
   /* ------------------------------ rendering ------------------------------ */
   let raf = 0;
@@ -128,32 +254,52 @@ export function createApp(root, config) {
     const d = derive(s, ctx.analysis, config, ctx.tweaks);
     ctx.derived = d;
     const has = ctx.hasDesign();
-    empty.el.hidden = has && ctx.step > 0;
-    stepWrap.hidden = !(has && ctx.step > 0);
-    side.hidden = !(has && ctx.step > 0);
-    stepNav.hidden = !(has && ctx.step > 0);
-    root.classList.toggle('is-empty', !(has && ctx.step > 0));
-    root.dataset.step = String(has ? ctx.step : 0);
-    steps.forEach((st, i) => { if (st) st.el.hidden = i !== ctx.step; });
-    stepBtns.forEach((b, i) => {
-      const n = i + 1;
-      const cur = n === ctx.step;
-      if (cur) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current');
-      b.disabled = !has || n > ctx.maxStep;
-      b.parentNode.classList.toggle('is-done', n < ctx.maxStep || (n <= ctx.maxStep && !cur && n < ctx.step));
-      b.parentNode.classList.toggle('is-current', cur);
-      text(b.querySelector('.bps-steps__done'), n < ctx.step ? ' ' + t('ui.steps.done') : '');
-    });
-    if (has && ctx.step > 0) {
-      preview.update(s, d);
-      const cur = steps[ctx.step];
-      if (cur) cur.update(s, d);
-      // Keep other steps fresh enough for "Wijzig" jumps (cheap: they rebuild only on key changes).
-      card.update(s, d);
-      bar.update(s, d, card);
-    } else {
-      bar.update(s, d, card);
+    const open = has && ctx.inStudio;
+    const mob = ctx.isMobile();
+    landing.hidden = open;
+    ws.hidden = !open;
+    help.hidden = open && mob;
+    root.classList.toggle('is-empty', !open);
+    root.classList.toggle('is-studio', open);
+    root.classList.toggle('is-mobile', mob);
+    root.classList.toggle('is-sheetmin', open && mob && ctx.ui.sheetMin);
+    root.classList.toggle('is-dockclosed', !ctx.ui.dock);
+    root.dataset.step = open ? '1' : '0';
+    lock(open && mob);
+    let resume = landing.querySelector('.bps-resume');
+    if (has && !open) {
+      if (!resume) {
+        resume = h('p.bps-resume', h('button.bps-btn.bps-btn--primary', { type: 'button', onclick: () => enterStudio() }, t('ui.top.resume'), icon('arrow')));
+        empty.el.querySelector('.bps-hero__copy').prepend(resume);
+      }
+    } else if (resume) resume.remove();
+
+    if (open) {
+      const vis = (id) => (mob ? id === ctx.ui.mob : DOCK.some(([x]) => x === id) ? id === ctx.ui.dock : id === ctx.ui.side);
+      for (const [id, p] of Object.entries(all)) {
+        const v = vis(id);
+        if (p.el.hidden === v) p.el.hidden = !v;
+        if (v) p.update(s, d);
+      }
+      dock.hidden = !mob && !ctx.ui.dock;
+      railBtns.forEach((b) => { const on = b.dataset.panel === ctx.ui.dock; b.setAttribute('aria-pressed', String(on)); b.classList.toggle('is-on', on); });
+      const [tab, , group] = groupOf(ctx.ui.mob);
+      tabBtns.forEach((b) => { const on = b.dataset.tab === tab; b.setAttribute('aria-pressed', String(on)); b.classList.toggle('is-on', on); });
+      subnav.hidden = !mob || group.length < 2 || ctx.ui.sheetMin;
+      if (!subnav.hidden) {
+        const key = group.join() + ctx.ui.mob;
+        if (subnav._k !== key) {
+          subnav._k = key;
+          subnav.replaceChildren(...group.map((id) => h('button.bps-subnav__btn' + (id === ctx.ui.mob ? '.is-on' : ''), { type: 'button', 'aria-pressed': String(id === ctx.ui.mob), onclick: () => ctx.openPanel(id) }, t('ui.panel.' + id + '.short'))));
+        }
+      }
+      grab.setAttribute('aria-expanded', String(!ctx.ui.sheetMin));
+      text(fileName, s.source.kind === 'text' ? t('ui.s5.textOnly') : s.source.fileName || '');
+      stage.update(s, d);
+      ctx.priceCard.update(s, d);
+      syncUndo();
     }
+    bar.update(s, d);
     // Events
     const changed = [...changedAcc];
     changedAcc = new Set();
@@ -161,7 +307,7 @@ export function createApp(root, config) {
     const asig = d.advice.recommended + '|' + (d.advice.summary && d.advice.summary.headline && d.advice.summary.headline.text);
     if (asig !== lastAdviceSig && has) { lastAdviceSig = asig; emit(root, EV.ADVICE, { advice: d.advice }); }
     if (d.quote.totalIncl !== lastQuoteTotal && has) {
-      if (lastQuoteTotal != null && ctx.step >= 3 && d.quote.totalIncl > 0) ctx.announce(t('ui.status.price', { total: ctx.fmt(d.quote.totalIncl) }));
+      if (lastQuoteTotal != null && d.quote.totalIncl > 0) ctx.announce(t('ui.status.price', { total: ctx.fmt(d.quote.totalIncl) }));
       lastQuoteTotal = d.quote.totalIncl;
       emit(root, EV.QUOTE, { quote: d.quote, source: 'client' });
     }
@@ -174,42 +320,13 @@ export function createApp(root, config) {
     ctx.refresh();
   });
 
-  /* ------------------------------ navigation ------------------------------ */
-  ctx.go = (n, focusId, { push = true, focus = true } = {}) => {
-    n = Math.max(0, Math.min(5, Number(n) || 0));
-    if (n > 0 && !ctx.hasDesign()) n = 0;
-    const prev = ctx.step;
-    ctx.step = n;
-    ctx.maxStep = Math.max(ctx.maxStep, n);
-    if (push && prev !== n) {
-      try {
-        const url = new URL(location.href);
-        url.hash = n ? 'bps_step=' + n : '';
-        history.pushState({ bpsStep: n }, '', url);
-      } catch (e) { /* sandboxed */ }
-    }
-    if (prev !== n) { emit(root, EV.STEP, { step: n }); ctx.track('step', { step: n }); }
-    render();
-    if (focus && prev !== n) {
-      const target = (focusId && root.querySelector(`[id^="bps-${focusId}"]`)) || (n > 0 ? steps[n].el.querySelector('h2') : empty.el.querySelector('h2'));
-      if (target) {
-        target.focus({ preventScroll: true });
-        const r = (n > 0 ? stepNav : root).getBoundingClientRect();
-        if (r.top < 0 || r.top > window.innerHeight * 0.6) (n > 0 ? stepNav : root).scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
-      }
-    }
-  };
-  window.addEventListener('popstate', () => {
-    const m = STEP_RE.exec(location.hash);
-    ctx.go(m ? Number(m[1]) : 0, null, { push: false });
-  });
-
   ctx.barAction = () => {
-    if (ctx.step < 5) ctx.go(ctx.step + 1);
-    else steps[5].submit();
+    const shown = ctx.isMobile() ? ctx.ui.mob === 'checkout' : ctx.ui.side === 'checkout';
+    if (!shown) ctx.openPanel('checkout', { focus: true });
+    else checkout.submit();
   };
   ctx.openSheet = () => {
-    bar.refreshSheet(store.get(), ctx.derived, card);
+    bar.refreshSheet(store.get(), ctx.derived);
     if (bar.sheet.showModal) bar.sheet.showModal(); else bar.sheet.setAttribute('open', '');
   };
   ctx.setDragTarget = (id) => { if (ctx.dragTarget !== id) { ctx.dragTarget = id; ctx.refresh(); } };
@@ -235,7 +352,7 @@ export function createApp(root, config) {
     if (!action) return;
     if (action.type === 'set') ctx.applyPatch({ ...(techId && !action.patch.technique ? { technique: techId, techniquePicked: true } : {}), ...action.patch });
     else if (action.type === 'quote') ctx.openQuote();
-    else if (action.type === 'upload') { const i = root.querySelector('.bps-stepwrap input[type=file]'); if (i) i.click(); }
+    else if (action.type === 'upload') { const i = root.querySelector('.bps-ws input[type=file]'); if (i) i.click(); }
   };
   ctx.setShape = (id) => {
     const a = ctx.analysis;
@@ -279,6 +396,7 @@ export function createApp(root, config) {
     };
     store.set({ texts: [...s.texts, layer] });
     ctx.dragTarget = layer.id;
+    ctx.openPanel('text');
     ctx.loadFont(font);
     requestAnimationFrame(() => requestAnimationFrame(() => {
       const inp = root.querySelector(`[data-layer="${layer.id}"] input[type=text]`);
@@ -312,7 +430,8 @@ export function createApp(root, config) {
     });
     emit(root, EV.DESIGN_START, { mode: 'text' });
     ctx.track('design_start', { mode: 'text' });
-    ctx.go(1);
+    enterStudio('text');
+    history.reset();
     ctx.addText();
   };
 
@@ -325,10 +444,9 @@ export function createApp(root, config) {
     ctx.tweaks = null;
     ctx.dragTarget = null;
     ctx.analysisState = { status: 'idle', stage: null, message: '' };
-    ctx.maxStep = 0;
     restoreBox.hidden = true;
     store.set(initialState(config));
-    ctx.go(0);
+    leaveStudio();
   };
 
   /* ------------------------------ analysis ------------------------------ */
@@ -424,6 +542,7 @@ export function createApp(root, config) {
         ctx.analysisState = { status: 'done', stage: 'done', message: '' };
         ctx.dragTarget = 'art';
         applyAutoChoices(first);
+        Promise.resolve().then(() => history.reset());
         emit(root, EV.ANALYSIS_DONE, { result });
         store.touch();
         requestAnimationFrame(() => {
@@ -485,7 +604,8 @@ export function createApp(root, config) {
     store.set(patch);
     emit(root, EV.DESIGN_START, { file: { name: file.name, type: file.type, size: file.size }, mode: 'upload' });
     ctx.track('design_start', { mode: 'upload', type: file.type });
-    ctx.go(1);
+    enterStudio('design');
+    history.reset();
     hashFile(file).then((hash) => { if (ctx.file === file && hash) store.set({ source: { ...store.get().source, hash } }); });
     runAnalysis(file, { first: !keep });
   };
@@ -527,15 +647,14 @@ export function createApp(root, config) {
             const blob = await res.blob();
             const f = new File([blob], st.source.fileName || 'ontwerp', { type: blob.type || st.source.fileType || '' });
             ctx.file = f;
-            ctx.go(2, null, { push: false, focus: false });
+            enterStudio('advice');
             await runAnalysis(f, { first: false });
             store.set({ designId: st.designId, token: st.token, ref: st.ref });
             return;
           }
         } catch (e) { /* show summary without image */ }
       }
-      ctx.maxStep = 5;
-      ctx.go(5, null, { push: false, focus: false });
+      enterStudio('checkout');
     } catch (e) {
       restoreBox.replaceChildren(h('p.bps-notice.bps-notice--warn', { role: 'alert' }, t('ui.restore.failed')));
     }
@@ -549,8 +668,7 @@ export function createApp(root, config) {
     if (st.source.kind === 'text') {
       store.set(st);
       st.texts.forEach((l) => ctx.loadFont(l.font));
-      const m = STEP_RE.exec(location.hash);
-      ctx.go(m ? Number(m[1]) : 1, null, { push: false, focus: false });
+      enterStudio('design', { focus: false });
       return true;
     }
     if (st.source.fileName) {
@@ -577,20 +695,18 @@ export function createApp(root, config) {
     const q = new URLSearchParams(location.search);
     // Security: drop the restore token from the address bar right away, so it does not end up in
     // bookmarks, shared links, screenshots or later analytics hits (the values stay in `q`).
-    let cleanUrl = location.href;
     if (q.has('bps_design') || q.has('bps_token')) {
       try {
         const u = new URL(location.href);
         u.searchParams.delete('bps_design');
         u.searchParams.delete('bps_token');
-        cleanUrl = u.toString();
+        window.history.replaceState({}, '', u.toString());
       } catch (e) { /* ignore */ }
     }
-    try { history.replaceState({ bpsStep: 0 }, '', cleanUrl); } catch (e) { /* ignore */ }
     if (pending) ctx.handleFile(pending);
     else if (q.get('bps_design') && q.get('bps_token') && api.online) restoreFromLink(q.get('bps_design'), q.get('bps_token'));
-    else if (!restoreSession()) render();
-    else render();
+    else restoreSession();
+    render();
     // Optional: patches already in the cart count for the tier (SPEC §1.2 step 3).
     if (config.features && config.features.cartPoolHint && api.online) {
       api.storeCart().then((cart) => {
@@ -613,7 +729,6 @@ export function createApp(root, config) {
     }
   }
 
-  // Keyboard: Esc closes the price sheet (native dialog does this) — nothing else global.
   mount();
-  return { ctx, store, destroy() { app.remove(); } };
+  return { ctx, store, destroy() { lock(false); app.remove(); } };
 }
