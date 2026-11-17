@@ -12,7 +12,8 @@ import { h, debounce, icon, text } from './dom.js';
 import { renderArt, renderOptions } from './derive.js';
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
-const CAPS = R.capabilities || R.RENDER_CAPS || {};
+const RNS = R; // namespace object: optional render-v2 features are looked up at runtime (feature detection)
+const CAPS = RNS['capabilities'] || {};
 const ZMIN = 0.6, ZMAX = 6;
 const reduceMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 

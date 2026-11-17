@@ -8,10 +8,10 @@
  */
 import { shapePolygon, transformPolygon, tracePath, bbox, offsetPolygon, contourFromMask, convexHull, traceBoundary } from './shapes.js';
 import { analyzeComponents, chooseModes, colorTable, cleanLabels } from './stylize.js';
-import { edgeCoverMm, edgeBandMm, litEdge, edgeDecor } from './edges.js';
+import { edgeCoverMm, edgeBandMm, edgeGeo, shadeEdge, edgeDecor } from './edges.js';
 import { normLight, shadeGeo } from './light.js';
-import { buildLayer, buildBase } from './material.js';
-import { bandField, maskFromAlpha, absorbSmall } from './field.js';
+import { buildLayer, baseTile, shadeBase } from './material.js';
+import { bandField, absorbSmall } from './field.js';
 import { drawBackdrop } from './scene.js';
 import { drawTextLayer, fontFor, fontReady, loadFont } from './text.js';
 import { drawGarment, placePatch } from './garment.js';
@@ -230,8 +230,8 @@ function reliefOf(design) {
 }
 
 const geoCache = new Lru(3);       // art geometry (light independent)
-const baseGeoCache = new Lru(2);   // patch body geometry
 const bandCache = new Lru(4);
+const edgeGeoCache = new Lru(4);
 const litCache = new Lru(8);        // lit art layers (per light)
 
 /** Lit canvas of a geometry buffer, with an optional light-dependent relief shadow baked in. */
@@ -282,16 +282,22 @@ function artLayer(art, look, rect, ppm, o) {
     try { c.imageSmoothingQuality = 'high'; } catch (e) { /* older engines */ }
     const useLabels = LABEL_LOOKS[look] && art.labels && art.labels.width > 0 && art.labels.data;
     // PVC is moulded in flat colour levels: smooth the regions harder than thread looks
+    const tc = now();
     let clean = useLabels ? cleanFor(art.labels, look === 'pvc' ? 5 : 2) : null;
     if (clean) clean = islandsFor(clean, (look === 'pvc' ? 1.2 : 0.7) / Math.pow(rect.w / clean.width, 2));
     c.drawImage(useLabels ? recolored(art, ck, clean) : art.image, 0, 0, lw, lh);
     const img = c.getImageData(0, 0, lw, lh);
     let comps = null;
     if (useLabels && look === 'embroidered') comps = chooseModes(componentsFor(clean), rect.w / clean.width, 7);
+    PT('prep', tc);
+    const tq = now();
     geo = buildLayer(img, look, { ppm: layerPpm, labels: clean, comps, engrave: rgbOf(o.engraveHex), relief: o.relief, pvcDepth: o.pvcDepth });
+    PT('artBuild', tq);
     geoCache.set(key, geo);
   }
+  const tl = now();
   const lit = litCanvas(geo, o.light, RELIEF_SHADOW[look], layerPpm);
+  PT('artLit', tl);
   const out = { canvas: lit.canvas, pad: lit.pad, w: lw, h: lh, ppm: layerPpm };
   const outKey = key + '#' + o.light.key;
   artLatest.set(prefix, outKey);
@@ -338,17 +344,23 @@ function bandFor(F) {
   const key = [F.W, F.H, F.ppm.toFixed(3), F.polyKey, inMm, ext[1]].join('#');
   let b = bandCache.get(key);
   if (!b) {
-    const mcv = makeCanvas(F.W, F.H), mc = ctx2d(mcv, { willReadFrequently: true });
-    mc.beginPath(); tracePath(mc, F.poly); mc.fillStyle = '#000'; mc.fill();
-    const inside = maskFromAlpha(mc.getImageData(0, 0, F.W, F.H).data, F.W, F.H);
-    b = bandField(F.poly, F.W, F.H, inMm * F.ppm, ext[1] * F.ppm + 2, inside);
+    const tb = now();
+    b = bandField(F.poly, F.W, F.H, inMm * F.ppm, ext[1] * F.ppm + 2, null);
+    PT('band', tb);
     bandCache.set(key, b);
   }
   return b;
 }
 
 /** Everything under the design: drop shadow / fabric piece, base colour, drawn backdrop, lit base material. */
+function PT(k, t) { const P = globalThis.__bpsProf; if (P) P[k] = (P[k] || 0) + now() - t; }
 function underLayer(F) {
+  const t0 = now();
+  const r = underLayer0(F);
+  PT('under', t0);
+  return r;
+}
+function underLayer0(F) {
   const gkey = ['u', F.look, F.W, F.H, F.ppm.toFixed(3), F.polyKey, F.baseHex, F.fabricHex, F.edge.style, F.relief,
     F.backdrop ? idOf(F.backdrop.image) + ':' + F.rectL.x.toFixed(1) + ',' + F.rectL.y.toFixed(1) + ',' + F.rectL.w.toFixed(1) : '', F.hasBg ? 1 : 0].join('#');
   const key = gkey + '#' + (F.shadow ? 1 : 0) + '#' + F.light.key;
@@ -357,50 +369,63 @@ function underLayer(F) {
   const pb = F.pb, ppm = F.ppm;
   const uncut = F.edge.style === 'uncut';
   const fb = uncut ? { x: pb.x - 5 * ppm, y: pb.y - 5 * ppm, w: pb.w + 10 * ppm, h: pb.h + 10 * ppm } : null;
-  let geo = baseGeoCache.get(gkey);
-  if (!geo) {
-    const cv = makeCanvas(F.W, F.H), c = ctx2d(cv, { willReadFrequently: true });
-    if (uncut) { c.fillStyle = F.fabricHex; c.fillRect(fb.x, fb.y, fb.w, fb.h); }
-    c.save();
-    c.beginPath(); tracePath(c, F.poly); c.clip();
-    c.fillStyle = F.baseHex; c.fillRect(pb.x - 2, pb.y - 2, pb.w + 4, pb.h + 4);
-    if (F.backdrop) {
-      const bd = F.backdrop, s = F.rectL.w / bd.artBox.w;
-      const bw = (bd.image.width || bd.width) * s, bh = (bd.image.height || bd.height) * s;
-      c.drawImage(bd.image, F.rectL.x - bd.artBox.x * s, F.rectL.y - bd.artBox.y * s, bw, bh);
-    }
-    c.restore();
-    const img = c.getImageData(0, 0, F.W, F.H);
-    const body = BODY[F.look] || BODY.embroidered;
-    geo = buildBase(img, { ppm, look: F.look, stitched: F.hasBg && F.look === 'embroidered', band: uncut ? null : bandFor(F),
-      roll: body.roll, thick: Math.min(body.roll, body.thick * 0.5) * F.relief });
-    baseGeoCache.set(gkey, geo);
+  const body = BODY[F.look] || BODY.embroidered;
+  // albedo (fabric piece, base colour, drawn backdrop)
+  const cv = makeCanvas(F.W, F.H), ac = ctx2d(cv, { willReadFrequently: true });
+  if (uncut) { ac.fillStyle = F.fabricHex; ac.fillRect(fb.x, fb.y, fb.w, fb.h); }
+  ac.save();
+  ac.beginPath(); tracePath(ac, F.poly); ac.clip();
+  ac.fillStyle = F.baseHex; ac.fillRect(pb.x - 2, pb.y - 2, pb.w + 4, pb.h + 4);
+  if (F.backdrop) {
+    const bd = F.backdrop, s = F.rectL.w / bd.artBox.w;
+    const bw = (bd.image.width || bd.width) * s, bh = (bd.image.height || bd.height) * s;
+    ac.drawImage(bd.image, F.rectL.x - bd.artBox.x * s, F.rectL.y - bd.artBox.y * s, bw, bh);
   }
+  ac.restore();
+  // crop the lighting pass to the patch (+ fabric piece)
+  const bx0 = Math.max(0, Math.floor((uncut ? fb.x : pb.x) - 2)), by0 = Math.max(0, Math.floor((uncut ? fb.y : pb.y) - 2));
+  const bx1 = Math.min(F.W, Math.ceil((uncut ? fb.x + fb.w : pb.x + pb.w) + 2)), by1 = Math.min(F.H, Math.ceil((uncut ? fb.y + fb.h : pb.y + pb.h) + 2));
+  const img = ac.getImageData(bx0, by0, bx1 - bx0, by1 - by0);
+  const tile = baseTile(F.look, F.hasBg, ppm);
+  const band = uncut ? null : bandFor(F);
+  const tb = now();
+  shadeBase(img.data, img.width, img.height, tile, F.light, band ? cropBand(band, F.W, bx0, by0, img.width) : null,
+    { roll: body.roll, thick: Math.min(body.roll, body.thick * 0.5) * F.relief, ppm });
+  PT('baseBuild', tb);
+  ac.putImageData(img, bx0, by0);
+  if (!F.shadow) return underCache.set(key, cv);
   const out = makeCanvas(F.W, F.H), c = ctx2d(out);
-  if (F.shadow) {
-    // contact shadow + soft cast shadow, both following the light
-    const body = BODY[F.look] || BODY.embroidered;
-    const [L0, L1, L2] = F.light.L;
-    const t = body.thick * ppm * (uncut ? 0.4 : 1), k = 1 / Math.max(0.3, L2 / Math.hypot(L0, L1, L2));
-    const sx = -L0 * k * t * 0.55, sy = -L1 * k * t * 0.55;
-    const shape = () => { c.beginPath(); if (uncut) c.rect(fb.x, fb.y, fb.w, fb.h); else tracePath(c, F.poly); };
-    c.save();
-    c.shadowColor = `rgba(18,24,38,${0.16 + body.shadowA * 0.22})`; c.shadowBlur = t * 2.2 + ppm * 1.5; c.shadowOffsetX = sx * 1.6; c.shadowOffsetY = sy * 1.6 + ppm * 0.3;
-    shape(); c.fillStyle = '#000'; c.fill();
-    c.shadowColor = `rgba(10,14,24,${0.25 + body.shadowA * 0.3})`; c.shadowBlur = Math.max(1.5, ppm * 0.45); c.shadowOffsetX = sx * 0.35; c.shadowOffsetY = sy * 0.35;
-    shape(); c.fill();
-    c.restore();
-  }
-  const lit = makeCanvas(F.W, F.H), lc = ctx2d(lit);
-  const id = lc.createImageData(F.W, F.H);
-  shadeGeo(geo, F.light, id.data, { specTint: 0.3 });
-  lc.putImageData(id, 0, 0);
-  c.drawImage(lit, 0, 0);
+  // contact shadow + soft cast shadow, both following the light
+  const [L0, L1, L2] = F.light.L;
+  const t = body.thick * ppm * (uncut ? 0.4 : 1), k = 1 / Math.max(0.3, L2 / Math.hypot(L0, L1, L2));
+  const sx = -L0 * k * t * 0.55, sy = -L1 * k * t * 0.55;
+  const shape = () => { c.beginPath(); if (uncut) c.rect(fb.x, fb.y, fb.w, fb.h); else tracePath(c, F.poly); };
+  c.save();
+  c.shadowColor = `rgba(18,24,38,${0.16 + body.shadowA * 0.22})`; c.shadowBlur = t * 2.2 + ppm * 1.5; c.shadowOffsetX = sx * 1.6; c.shadowOffsetY = sy * 1.6 + ppm * 0.3;
+  shape(); c.fillStyle = '#000'; c.fill();
+  c.shadowColor = `rgba(10,14,24,${0.25 + body.shadowA * 0.3})`; c.shadowBlur = Math.max(1.5, ppm * 0.45); c.shadowOffsetX = sx * 0.35; c.shadowOffsetY = sy * 0.35;
+  shape(); c.fill();
+  c.restore();
+  c.drawImage(cv, 0, 0);
   return underCache.set(key, out);
+}
+
+/** Band field re-indexed into a crop of the frame. */
+function cropBand(b, W, x0, y0, w) {
+  if (!x0 && !y0 && w === W) return b;
+  const idx = new Int32Array(b.n);
+  for (let m = 0; m < b.n; m++) { const i = b.idx[m], x = i % W, y = (i - x) / W; idx[m] = (y - y0) * w + (x - x0); }
+  return Object.assign({}, b, { idx });
 }
 
 /** Lit border (+ its shadow on the patch) and small border details. */
 function overLayer(F) {
+  const t0 = now();
+  const r = overLayer0(F);
+  PT('over', t0);
+  return r;
+}
+function overLayer0(F) {
   const key = ['o', F.look, F.W, F.H, F.ppm.toFixed(3), F.polyKey, F.baseHex, F.fabricHex, F.edgeHex, JSON.stringify(F.edge), F.relief, F.light.key].join('#');
   const hit = overCache.get(key);
   if (hit) return hit;
@@ -408,9 +433,13 @@ function overLayer(F) {
   const band = bandFor(F);
   const tmp = makeCanvas(F.W, F.H), tc = ctx2d(tmp);
   const id = tc.createImageData(F.W, F.H);
-  const r = litEdge(id.data, F.W, F.H, band, F.ppm, F.edge, {
-    edgeHex: F.edgeHex, fabricHex: F.baseHex, technique: F.look, engraveHex: F.engraveHex, relief: F.relief,
-  }, F.light);
+  const gkey = ['e', F.look, F.W, F.H, F.ppm.toFixed(3), F.polyKey, F.baseHex, F.edgeHex, JSON.stringify(F.edge), F.relief].join('#');
+  let eg = edgeGeoCache.get(gkey);
+  if (!eg) {
+    eg = edgeGeo(F.W, F.H, band, F.ppm, F.edge, { edgeHex: F.edgeHex, fabricHex: F.baseHex, technique: F.look, engraveHex: F.engraveHex, relief: F.relief });
+    edgeGeoCache.set(gkey, eg);
+  }
+  const r = shadeEdge(eg, F.light, id.data);
   tc.putImageData(id, 0, 0);
   if (F.edge.style !== 'laser') {
     const [L0, L1, L2] = F.light.L;

@@ -13,9 +13,10 @@
  * buildBase(...) does the same for the patch body (twill, stitched background, felt, leather grain, ...).
  * Heights are in layer px (mm × px/mm); light.js#finishGeo turns them into normals.
  */
-import { newGeo, finishGeo, glossByte } from './light.js';
+import { newGeo, finishGeo, glossByte, GLOSS } from './light.js';
 import { regionDistance, alphaLabels, blurGrid } from './field.js';
 import { analyzeComponents, chooseModes } from './stylize.js';
+import { now } from './util.js';
 
 let PROF = null;
 function prof() {
@@ -66,12 +67,15 @@ export function buildLayer(img, look, o) {
     if (look === 'embroidered') comps = chooseModes(analyzeComponents(labels), step / ppm, 7);
   }
   let dist = null, S = null, mmCell = 1;
+  const _t = now();
   if (needDist) {
     dist = blurGrid(regionDistance(labels), labels, 2);
+    PT('dist', _t);
     S = sampler(labels.width, labels.height, W, H);
     mmCell = (W / labels.width) / ppm;
   }
   const ctx = { g, W, H, ppm, relief, dist, S, mmCell, labels, comps, o };
+  const _t2 = now();
   switch (look) {
     case 'embroidered': embroidery(ctx); break;
     case 'woven': woven(ctx); break;
@@ -81,8 +85,13 @@ export function buildLayer(img, look, o) {
     case 'sublimated': fabricPrint(ctx, 'poly'); break;
     default: fabricPrint(ctx, 'twill'); break;
   }
-  return finishGeo(g, look === 'woven' || look === 'printed' || look === 'sublimated' ? 1 : 1.25);
+  PT('kernel', _t2);
+  const _t3 = now();
+  const r = finishGeo(g, look === 'woven' || look === 'printed' || look === 'sublimated' ? 1 : 1.25);
+  PT('finish', _t3);
+  return r;
 }
+function PT(k, t) { const P = globalThis.__bpsProf; if (P) P[k] = (P[k] || 0) + now() - t; }
 
 function distAt(ctx, x, y) {
   const { S, dist } = ctx;
@@ -202,38 +211,56 @@ function woven(ctx) {
 
 /* ------------------------------ chenille ------------------------------ */
 
+const pileTiles = new Map();
+/** Seamless tile of chenille loops: height (dome + fibre streaks) and cavity. */
+function pileTile(loop) {
+  const n = 12, T = Math.max(24, Math.round(loop * n)), L = T / n;
+  const key = T;
+  let t = pileTiles.get(key);
+  if (t) return t;
+  const h = new Float32Array(T * T), cav = new Float32Array(T * T);
+  for (let y = 0; y < T; y++) for (let x = 0; x < T; x++) {
+    const gx = Math.floor(x / L), gy = Math.floor(y / L), fx = x / L - gx, fy = y / L - gy;
+    const bx = fx < 0.5 ? gx - 1 : gx, by = fy < 0.5 ? gy - 1 : gy;
+    let best = 9, bh = 0;
+    for (let oy = 0; oy <= 1; oy++) for (let ox = 0; ox <= 1; ox++) {
+      const cx = bx + ox, cy = by + oy, wx = ((cx % n) + n) % n, wy = ((cy % n) + n) % n;
+      const hs = ((wx * 73856093) ^ (wy * 19349663)) >>> 0;
+      const px = (cx + 0.5 + ((hs & 255) / 255 - 0.5) * 0.8) * L, py = (cy + 0.5 + (((hs >> 8) & 255) / 255 - 0.5) * 0.8) * L;
+      const dd = ((x - px) * (x - px) + (y - py) * (y - py)) / (L * L);
+      if (dd < best) { best = dd; bh = hs; }
+    }
+    const dome = Math.max(0, 1 - best * 2.2);
+    const ang = (bh & 1023) / 1023 * Math.PI;
+    const fs = Math.sin((x * Math.cos(ang) + y * Math.sin(ang)) * 2.1 + (bh >> 10)) * 0.5 + (hashI(x, y * 31) - 0.5) * 0.9;
+    h[y * T + x] = dome * 0.16 + fs * 0.07;
+    cav[y * T + x] = (0.8 + 0.2 * dome) * (0.92 + 0.08 * fs);
+  }
+  t = { T, h, cav };
+  pileTiles.set(key, t);
+  return t;
+}
+
 function chenille(ctx) {
   const { g, W, H, ppm, relief } = ctx;
   const D = g.alb, hg = g.hgt, sp = g.spec, gl = g.gloss, ao = g.ao;
-  const loop = Math.max(2.2, 0.95 * ppm);
-  const pile = 1.1 * ppm * relief, domeA = 0.16 * ppm, fibA = 0.07 * ppm;
+  const tile = pileTile(Math.max(2.2, 0.95 * ppm)), T = tile.T, th = tile.h, tc = tile.cav;
+  const pile = 1.1 * ppm * relief;
   const glC = glossByte(0, false);
   for (let y = 0; y < H; y++) {
-    const row = y * W, gy = Math.floor(y / loop), fy = y / loop - gy;
-    for (let x = 0; x < W; x++) {
+    const row = y * W, tr = (y % T) * T;
+    let tx = 0;
+    for (let x = 0; x < W; x++, tx++) {
+      if (tx === T) tx = 0;
       const i = row + x, p = i * 4;
       if (!D[p + 3]) continue;
       const d = distAt(ctx, x, y);
-      const gx = Math.floor(x / loop), fx = x / loop - gx;
-      // nearest of the 2×2 closest jittered loop centres
-      let best = 9, bh = 0;
-      const bx = fx < 0.5 ? gx - 1 : gx, by = fy < 0.5 ? gy - 1 : gy;
-      for (let oy = 0; oy <= 1; oy++) for (let ox = 0; ox <= 1; ox++) {
-        const cx = bx + ox, cy = by + oy;
-        const hs = ((cx * 73856093) ^ (cy * 19349663)) >>> 0;
-        const px = (cx + 0.5 + ((hs & 255) / 255 - 0.5) * 0.8) * loop, py = (cy + 0.5 + (((hs >> 8) & 255) / 255 - 0.5) * 0.8) * loop;
-        const dd = ((x - px) * (x - px) + (y - py) * (y - py)) / (loop * loop);
-        if (dd < best) { best = dd; bh = hs; }
-      }
-      const dome = Math.max(0, 1 - best * 2.2);
-      // fibres: fine streaks in a random direction per loop
-      const ang = (bh & 1023) / 1023 * Math.PI;
-      const fs = Math.sin((x * Math.cos(ang) + y * Math.sin(ang)) * 2.1 + (bh >> 10)) * 0.5 + (hashI(x, y * 31) - 0.5) * 0.9;
+      const k = tr + tx;
       const edge = smooth(d / 1.8);
-      hg[i] = pile * Math.sqrt(edge) + domeA * dome + fibA * fs;
-      ao[i] = 255 * (0.8 + 0.2 * dome) * (0.78 + 0.22 * smooth(d / 0.6)) * (0.92 + 0.08 * fs);
+      hg[i] = pile * Math.sqrt(edge) + th[k] * ppm;
+      ao[i] = 255 * tc[k] * (0.78 + 0.22 * smooth(d / 0.6));
       sp[i] = 18; gl[i] = glC;
-      const f = 0.97 + fs * 0.08;
+      const f = 0.97 + th[k] * 0.6;
       D[p] = Math.min(255, D[p] * f); D[p + 1] = Math.min(255, D[p + 1] * f); D[p + 2] = Math.min(255, D[p + 2] * f);
     }
   }
@@ -311,96 +338,205 @@ function fabricPrint(ctx, kind) {
   }
 }
 
-/* ------------------------------ patch base ------------------------------ */
+/* ------------------------------ patch base (periodic lit tile) ------------------------------ */
+
+const tileCache = new Map();
+
+function baseKind(look, stitched) {
+  if (look === 'embroidered' && stitched) return 'tatami';
+  if (look === 'woven') return 'weave';
+  if (look === 'chenille') return 'felt';
+  if (look === 'leather') return 'grain';
+  if (look === 'pvc') return 'pvc';
+  if (look === 'sublimated') return 'poly';
+  return 'twill';
+}
 
 /**
- * Patch body (fabric under the design) for a look.
- * @param {{width:number,height:number,data:Uint8ClampedArray}} img  albedo of the patch body (alpha = coverage)
- * @param {object} o  {ppm, look, stitched (background fully embroidered), band (bandField of the outline),
- *                    roll (mm of rounded patch edge), relief, uncut}
+ * Seamless material tile for the patch body: normals, thread tangent, gloss, cavity and albedo factor.
+ * Periods are snapped so the tile wraps exactly (twill ribs, tatami rows with 1/3 brick offset, 5-shed
+ * weave, wrapping value noise for felt / leather grain / PVC).
  */
-export function buildBase(img, o) {
+export function baseTile(look, stitched, ppm) {
+  const kind = baseKind(look, stitched);
+  const q = Math.max(0.5, Math.round(ppm * 8) / 8);
+  const key = kind + '|' + q;
+  let t = tileCache.get(key);
+  if (t) return t;
   const P = prof();
-  const W = img.width, H = img.height;
-  const g = newGeo(W, H, img.data);
-  const D = g.alb, hg = g.hgt, tan = g.tan, sp = g.spec, gl = g.gloss, ao = g.ao;
-  const ppm = Math.max(0.3, o.ppm), look = o.look;
-  let kind = 'twill';
-  if (look === 'embroidered' && o.stitched) kind = 'tatami';
-  else if (look === 'woven') kind = 'weave';
-  else if (look === 'chenille') kind = 'felt';
-  else if (look === 'leather') kind = 'grain';
-  else if (look === 'pvc') kind = 'pvc';
-  else if (look === 'sublimated') kind = 'poly';
-  const pitch = Math.max(1.8, (kind === 'poly' ? 0.32 : kind === 'weave' ? 0.19 : kind === 'tatami' ? 0.42 : 0.62) * ppm);
-  const inv = 1 / pitch, fade = smooth((pitch - 1.5) / 2);
-  const ampT = (kind === 'tatami' ? 0.07 : kind === 'poly' ? 0.025 : kind === 'weave' ? 0.03 : 0.06) * ppm * fade + 0.2;
-  const stitchInv = 1 / Math.max(5, 2.8 * ppm);
-  const glT = glossByte(kind === 'tatami' ? 3 : kind === 'poly' ? 3 : 1, kind === 'tatami' || kind === 'poly' || kind === 'weave');
-  const ks = { tatami: 140, poly: 70, weave: 80, twill: 22, felt: 10, grain: 40, pvc: 110 }[kind];
-  const glossIdx = kind === 'grain' ? glossByte(2, false) : kind === 'pvc' ? glossByte(5, false) : kind === 'felt' ? glossByte(0, false) : glT;
-  // value noise for felt/grain/pvc
-  const N = 64, grid = new Float32Array(N * N);
-  for (let i = 0; i < grid.length; i++) grid[i] = hashI(i, 77);
-  const cellPx = kind === 'grain' ? Math.max(3, ppm * 1.1) : Math.max(2, ppm * 0.5);
-  const noise = (x, y) => {
-    const u = x / cellPx, v = y / cellPx, x0 = Math.floor(u), y0 = Math.floor(v), fx = u - x0, fy = v - y0;
-    const gg = (a, b) => grid[((b & (N - 1)) * N) + (a & (N - 1))];
-    const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
-    return (gg(x0, y0) * (1 - sx) + gg(x0 + 1, y0) * sx) * (1 - sy) + (gg(x0, y0 + 1) * (1 - sx) + gg(x0 + 1, y0 + 1) * sx) * sy;
-  };
-  const C = 0.7071, Sn = 0.7071; // tatami background at 45°
-  for (let y = 0; y < H; y++) {
-    const row = y * W;
-    for (let x = 0; x < W; x++) {
-      const i = row + x, p = i * 4;
-      if (!D[p + 3]) continue;
-      let h = 0, f = 1, cav = 1;
-      if (kind === 'twill' || kind === 'poly') {
-        const u = (x + y) * inv, t = u - Math.floor(u), pr = P[(t * 256) | 0];
-        h = ampT * pr; cav = 0.86 + 0.14 * pr;
-        if (kind === 'poly') { tan[i * 2] = 90; tan[i * 2 + 1] = -90; }
-        f = 0.97 + 0.04 * pr;
-      } else if (kind === 'tatami') {
-        const v = (-x * Sn + y * C) * inv, rI = Math.floor(v), t = v - rI;
-        const q = (x * C + y * Sn) * stitchInv + rI * 0.37, tq = q - Math.floor(q);
-        const pr = P[(t * 256) | 0];
-        h = ampT * pr - (tq < 0.06 ? ampT * 0.8 : 0); cav = (0.82 + 0.18 * pr) * (tq < 0.06 ? 0.85 : 1);
-        tan[i * 2] = C * 127; tan[i * 2 + 1] = Sn * 127;
-        f = 0.95 + 0.07 * pr + (hashI(rI, 5) - 0.5) * 0.04;
-      } else if (kind === 'weave') {
-        const v = y * inv, rI = Math.floor(v), t = v - rI, pr = P[(t * 256) | 0];
-        const cpos = x * inv + rI * 2, ci = Math.floor(cpos), tie = ((ci % 5) + 5) % 5 === 0;
-        if (tie) { const pc = P[((cpos - ci) * 256) | 0]; h = ampT * 0.6 * pc; tan[i * 2 + 1] = 127; f = 0.84 + 0.1 * pc; }
-        else { h = ampT * pr; tan[i * 2] = 127; f = 0.94 + 0.08 * pr; }
-        cav = 0.9 + 0.1 * pr;
-      } else if (kind === 'felt') {
-        const nz = noise(x, y), fib = hashI(x, y * 31) - 0.5;
-        h = (nz * 0.12 + fib * 0.05) * ppm; f = 0.93 + nz * 0.08 + fib * 0.1; cav = 0.85 + 0.15 * nz;
+  let T, fn;
+  if (kind === 'twill' || kind === 'poly') {
+    const pitch = Math.max(1.8, (kind === 'poly' ? 0.32 : 0.62) * q);
+    const n = Math.max(1, Math.round(48 / pitch));
+    T = Math.max(8, Math.round(n * pitch));
+    const a = n / T, fade = smooth((T / n - 1.5) / 2);
+    const amp = (kind === 'poly' ? 0.025 : 0.06) * q * fade + 0.2;
+    fn = (x, y, o) => {
+      const u = (x + y) * a, tt = u - Math.floor(u), pr = P[(tt * 256) | 0];
+      o.h = amp * pr; o.cav = 0.86 + 0.14 * pr; o.f = 0.97 + 0.04 * pr;
+      if (kind === 'poly') { o.tx = 0.7071; o.ty = -0.7071; }
+    };
+  } else if (kind === 'tatami') {
+    const pitch = Math.max(1.6, 0.42 * q), stitch = Math.max(5, 2.8 * q);
+    const m = Math.max(1, Math.round(72 / (Math.SQRT2 * stitch)));
+    T = Math.max(12, Math.round(Math.SQRT2 * stitch * m));
+    const nr = Math.max(3, 3 * Math.round(T / (Math.SQRT2 * pitch) / 3));
+    const a = nr / T, b = m / T;
+    const fade = smooth((T / nr / Math.SQRT2 * 2 - 1.5) / 2);
+    const amp = 0.07 * q * fade + 0.2;
+    fn = (x, y, o) => {
+      const v = (y - x) * a, rI = Math.floor(v), tt = v - rI;
+      const qq = (x + y) * b + rI / 3, tq = qq - Math.floor(qq);
+      const pr = P[(tt * 256) | 0];
+      o.h = amp * pr - (tq < 0.06 ? amp * 0.8 : 0); o.cav = (0.82 + 0.18 * pr) * (tq < 0.06 ? 0.85 : 1);
+      o.tx = 0.7071; o.ty = 0.7071; o.f = 0.95 + 0.07 * pr + (hashI(((rI % nr) + nr) % nr, 5) - 0.5) * 0.04;
+    };
+  } else if (kind === 'weave') {
+    const pitch = Math.max(2, 0.19 * q);
+    const k = Math.max(1, Math.round(64 / (5 * pitch)));
+    T = Math.max(10, Math.round(5 * k * pitch));
+    const inv = 5 * k / T, amp = 0.03 * q * smooth((T / (5 * k) - 1.6) / 1.6) + 0.15;
+    fn = (x, y, o) => {
+      const v = y * inv, rI = Math.floor(v), tt = v - rI, pr = P[(tt * 256) | 0];
+      const cpos = x * inv + rI * 2, ci = Math.floor(cpos), tie = ((ci % 5) + 5) % 5 === 0;
+      if (tie) { const pc = P[((cpos - ci) * 256) | 0]; o.h = amp * 0.6 * pc; o.tx = 0; o.ty = 1; o.f = 0.84 + 0.1 * pc; }
+      else { o.h = amp * pr; o.tx = 1; o.ty = 0; o.f = 0.94 + 0.08 * pr; }
+      o.cav = 0.9 + 0.1 * pr;
+    };
+  } else {
+    // wrapping value noise
+    const cell0 = kind === 'grain' ? Math.max(3, q * 1.1) : kind === 'felt' ? Math.max(2, q * 0.5) : Math.max(4, q * 1.5);
+    const N = Math.max(4, Math.round(320 / cell0));
+    T = Math.max(16, Math.round(N * cell0));
+    const cell = T / N;
+    const grid = new Float32Array(N * N);
+    for (let i = 0; i < grid.length; i++) grid[i] = hashI(i, kind.length * 77);
+    const gg = (a, b) => grid[(((b % N) + N) % N) * N + (((a % N) + N) % N)];
+    const noise = (x, y, c, N2) => {
+      const u = x / c, v = y / c, x0 = Math.floor(u), y0 = Math.floor(v), fx = u - x0, fy = v - y0;
+      const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
+      const g2 = N2 ? (a, b) => grid[(((b % N2) + N2) % N2) * N + (((a % N2) + N2) % N2)] : gg;
+      return (g2(x0, y0) * (1 - sx) + g2(x0 + 1, y0) * sx) * (1 - sy) + (g2(x0, y0 + 1) * (1 - sx) + g2(x0 + 1, y0 + 1) * sx) * sy;
+    };
+    fn = (x, y, o) => {
+      if (kind === 'felt') {
+        const nz = noise(x, y, cell), fib = hashI(x, y * 31) - 0.5;
+        o.h = (nz * 0.12 + fib * 0.05) * q; o.f = 0.93 + nz * 0.08 + fib * 0.1; o.cav = 0.85 + 0.15 * nz;
       } else if (kind === 'grain') {
-        const a1 = noise(x, y), a2 = noise(x * 2.3 + 17, y * 2.3 + 5);
+        const a1 = noise(x, y, cell), a2 = noise(x, y, cell / 2, N * 2 <= N ? 0 : 0);
         const ridge = Math.abs(a1 - 0.5) * 2;
-        h = (-(ridge < 0.14 ? (0.14 - ridge) * 0.9 : 0) + (a2 - 0.5) * 0.05) * ppm;
-        f = 0.95 + (a2 - 0.5) * 0.12 - (ridge < 0.1 ? 0.06 : 0); cav = ridge < 0.12 ? 0.82 : 1;
-      } else if (kind === 'pvc') {
-        const nz = noise(x * 0.5, y * 0.5);
-        h = (nz - 0.5) * 0.03 * ppm; f = 0.99 + (nz - 0.5) * 0.03;
+        o.h = (-(ridge < 0.14 ? (0.14 - ridge) * 0.9 : 0) + (a2 - 0.5) * 0.05) * q;
+        o.f = 0.95 + (a2 - 0.5) * 0.12 - (ridge < 0.1 ? 0.06 : 0); o.cav = ridge < 0.12 ? 0.82 : 1;
+      } else {
+        const nz = noise(x, y, cell);
+        o.h = (nz - 0.5) * 0.03 * q; o.f = 0.99 + (nz - 0.5) * 0.03; o.cav = 1;
       }
-      hg[i] = h; ao[i] = cav * 255; sp[i] = ks; gl[i] = glossIdx;
-      D[p] = Math.min(255, D[p] * f); D[p + 1] = Math.min(255, D[p + 1] * f); D[p + 2] = Math.min(255, D[p + 2] * f);
+    };
+  }
+  const n = T * T;
+  const hgt = new Float32Array(n), tx = new Int8Array(n), ty = new Int8Array(n), f = new Float32Array(n), ao = new Float32Array(n);
+  const o = {};
+  for (let y = 0; y < T; y++) for (let x = 0; x < T; x++) {
+    o.h = 0; o.cav = 1; o.f = 1; o.tx = 0; o.ty = 0;
+    fn(x, y, o);
+    const i = y * T + x;
+    hgt[i] = o.h; f[i] = o.f; ao[i] = o.cav; tx[i] = o.tx * 127; ty[i] = o.ty * 127;
+  }
+  const nx = new Float32Array(n), ny = new Float32Array(n), nz = new Float32Array(n);
+  const k = 1.2;
+  for (let y = 0; y < T; y++) for (let x = 0; x < T; x++) {
+    const i = y * T + x;
+    const gx = (hgt[y * T + (x + 1) % T] - hgt[y * T + (x + T - 1) % T]) * 0.5 * k;
+    const gy = (hgt[((y + 1) % T) * T + x] - hgt[((y + T - 1) % T) * T + x]) * 0.5 * k;
+    const l = 1 / Math.sqrt(gx * gx + gy * gy + 1);
+    nx[i] = -gx * l; ny[i] = -gy * l; nz[i] = l;
+  }
+  const ks = { tatami: 150, poly: 70, weave: 80, twill: 22, felt: 10, grain: 40, pvc: 110 }[kind] / 255;
+  const gIdx = { tatami: 3, poly: 3, weave: 3, twill: 1, felt: 0, grain: 2, pvc: 5 }[kind];
+  const aniso = kind === 'tatami' || kind === 'poly' || kind === 'weave';
+  t = { kind, T, nx, ny, nz, tx, ty, f, ao, ks, gIdx, aniso, lit: new Map() };
+  tileCache.set(key, t);
+  if (tileCache.size > 24) tileCache.delete(tileCache.keys().next().value);
+  return t;
+}
+
+/** Shade one normal with a tile's material (returns [diffuse, specular]). */
+function shadeN(t, i, nx, ny, nz, light, out) {
+  const [lx, ly, lz] = light.L, [hx, hy, hz] = light.H;
+  const amb = 0.42, kd = (1 - amb) / lz;
+  const ndl = Math.max(0, nx * lx + ny * ly + nz * lz);
+  out[0] = (amb + kd * ndl) * t.ao[i];
+  let sp = 0;
+  const ndh = nx * hx + ny * hy + nz * hz;
+  if (ndh > 0) {
+    const p = GLOSS[t.gIdx];
+    if (t.aniso) {
+      const th = (t.tx[i] * hx + t.ty[i] * hy) / 127;
+      sp = Math.pow(1 - th * th, p) * Math.pow(ndh, 4);
+    } else sp = Math.pow(ndh, p);
+  }
+  out[1] = sp * t.ks * t.ao[i] * 255;
+  return out;
+}
+
+function litTile(t, light) {
+  let L = t.lit.get(light.key);
+  if (L) return L;
+  const n = t.T * t.T, dif = new Float32Array(n), spc = new Float32Array(n), o = [0, 0];
+  for (let i = 0; i < n; i++) {
+    shadeN(t, i, t.nx[i], t.ny[i], t.nz[i], light, o);
+    dif[i] = o[0] * t.f[i]; spc[i] = o[1];
+  }
+  L = { dif, spc };
+  t.lit.set(light.key, L);
+  if (t.lit.size > 12) t.lit.delete(t.lit.keys().next().value);
+  return L;
+}
+
+/**
+ * Light the patch body: albedo (RGBA, W×H) × tile lighting, plus the rolled edge (band) with its own slope.
+ * @param {Uint8ClampedArray} alb  in/out (lit in place)
+ * @param {object} tile  baseTile()
+ * @param {object|null} band  bandField() of the outline
+ * @param {{roll:number, thick:number, ppm:number}} o  roll / thick in mm
+ */
+export function shadeBase(alb, W, H, tile, light, band, o) {
+  const T = tile.T, L = litTile(tile, light), dif = L.dif, spc = L.spc;
+  const tint = 0.3;
+  for (let y = 0; y < H; y++) {
+    const row = y * W, tr = (y % T) * T;
+    let tx = 0;
+    for (let x = 0; x < W; x++, tx++) {
+      if (tx === T) tx = 0;
+      const p = (row + x) * 4;
+      if (!alb[p + 3]) continue;
+      const k = tr + tx, d = dif[k], s = spc[k];
+      const r = alb[p], g = alb[p + 1], b = alb[p + 2];
+      alb[p] = r * d + s * (1 - tint + tint * r / 255);
+      alb[p + 1] = g * d + s * (1 - tint + tint * g / 255);
+      alb[p + 2] = b * d + s * (1 - tint + tint * b / 255);
     }
   }
-  // rounded patch edge (body thickness rolls down towards the cut)
-  const B = o.band;
-  if (B && o.roll > 0) {
-    const roll = o.roll * ppm, th = (o.thick || 0.8) * ppm;
-    for (let k = 0; k < B.n; k++) {
-      const d = B.d[k];
-      if (d < 0 || d > roll) continue;
-      const i = B.idx[k];
-      const q = d / roll;
-      hg[i] += th * (Math.sqrt(1 - (1 - q) * (1 - q)) - 1);
-    }
+  if (!band || !(o.roll > 0)) return alb;
+  // rolled edge: tilt the tile normal outwards, slope from a quarter-circle profile
+  const roll = o.roll * o.ppm, th = Math.max(0.05, o.thick) / Math.max(0.05, o.roll);
+  const out = [0, 0];
+  for (let m = 0; m < band.n; m++) {
+    const d = band.d[m];
+    if (d < 0 || d > roll) continue;
+    const i = band.idx[m], p = i * 4;
+    if (!alb[p + 3]) continue;
+    const q = d / roll, sl = th * (1 - q) / Math.max(0.2, Math.sqrt(1 - (1 - q) * (1 - q)));
+    const s = Math.min(2.2, sl);
+    const ox = band.ty[m] * band.sgn, oy = -band.tx[m] * band.sgn;
+    const x = i % W, y = (i - x) / W, k = (y % T) * T + (x % T);
+    let nx = tile.nx[k] + ox * s, ny = tile.ny[k] + oy * s, nz = tile.nz[k];
+    const l = 1 / Math.hypot(nx, ny, nz); nx *= l; ny *= l; nz *= l;
+    shadeN(tile, k, nx, ny, nz, light, out);
+    const d0 = dif[k] || 1e-3, ratio = (out[0] * tile.f[k]) / d0;
+    // re-light: undo the flat tile lighting on this pixel and apply the tilted one
+    const ds = out[1] - spc[k];
+    for (let c = 0; c < 3; c++) alb[p + c] = Math.max(0, alb[p + c] * ratio + ds);
   }
-  return finishGeo(g, 1.2);
+  return alb;
 }

@@ -42,13 +42,16 @@ function grainTile(kind) {
  */
 export function drawBackdrop(c, W, H, light, kind) {
   const k = SCENES[kind] ? kind : 'studio';
-  const key = [k, W, H, light.key].join('#');
+  // the light pool only follows the light coarsely (8 directions): cheap while the pointer moves
+  const oct = Math.round(light.az / (Math.PI / 4));
+  const key = [k, W, H, oct].join('#');
   let cv = cache.get(key);
   if (!cv) {
     cv = makeCanvas(W, H);
     const s = ctx2d(cv), def = SCENES[k];
     // light pool on the side of the light, falling off towards the opposite corner
-    const lx = W / 2 + light.L[0] * W * 0.45, ly = H / 2 + light.L[1] * H * 0.45;
+    const a = oct * Math.PI / 4;
+    const lx = W / 2 + Math.cos(a) * W * 0.32, ly = H / 2 + Math.sin(a) * H * 0.32;
     const g = s.createRadialGradient(lx, ly, Math.min(W, H) * 0.04, W / 2, H / 2, Math.hypot(W, H) * 0.62);
     g.addColorStop(0, def.top); g.addColorStop(0.55, def.mid); g.addColorStop(1, def.low);
     s.fillStyle = g; s.fillRect(0, 0, W, H);

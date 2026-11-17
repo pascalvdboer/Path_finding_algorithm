@@ -60,6 +60,53 @@ export function edt(feature, w, h) {
 }
 
 /**
+ * Fast approximate Euclidean distance (two-pass 5×5 chamfer, weights 1 / √2 / √5): within ~2 % of the
+ * true distance, smooth enough after blurGrid() for domes and bevels.
+ */
+export function chamfer(feature, w, h) {
+  const d = new Float32Array(w * h);
+  for (let i = 0; i < w * h; i++) d[i] = feature[i] ? 0 : 1e9;
+  const A = 1, B = Math.SQRT2, C = Math.sqrt(5);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = y * w + x; let v = d[i]; if (!v) continue;
+    if (x > 0 && d[i - 1] + A < v) v = d[i - 1] + A;
+    if (y > 0) {
+      const u = i - w;
+      if (d[u] + A < v) v = d[u] + A;
+      if (x > 0 && d[u - 1] + B < v) v = d[u - 1] + B;
+      if (x < w - 1 && d[u + 1] + B < v) v = d[u + 1] + B;
+      if (x > 1 && d[u - 2] + C < v) v = d[u - 2] + C;
+      if (x < w - 2 && d[u + 2] + C < v) v = d[u + 2] + C;
+      if (y > 1) {
+        const u2 = u - w;
+        if (x > 0 && d[u2 - 1] + C < v) v = d[u2 - 1] + C;
+        if (x < w - 1 && d[u2 + 1] + C < v) v = d[u2 + 1] + C;
+      }
+    }
+    d[i] = v;
+  }
+  for (let y = h - 1; y >= 0; y--) for (let x = w - 1; x >= 0; x--) {
+    const i = y * w + x; let v = d[i]; if (!v) continue;
+    if (x < w - 1 && d[i + 1] + A < v) v = d[i + 1] + A;
+    if (y < h - 1) {
+      const u = i + w;
+      if (d[u] + A < v) v = d[u] + A;
+      if (x < w - 1 && d[u + 1] + B < v) v = d[u + 1] + B;
+      if (x > 0 && d[u - 1] + B < v) v = d[u - 1] + B;
+      if (x < w - 2 && d[u + 2] + C < v) v = d[u + 2] + C;
+      if (x > 1 && d[u - 2] + C < v) v = d[u - 2] + C;
+      if (y < h - 2) {
+        const u2 = u + w;
+        if (x < w - 1 && d[u2 + 1] + C < v) v = d[u2 + 1] + C;
+        if (x > 0 && d[u2 - 1] + C < v) v = d[u2 - 1] + C;
+      }
+    }
+    d[i] = v;
+  }
+  return d;
+}
+
+/**
  * Distance (in label cells) from each labelled cell to the border of its own region.
  * Border cells (a 4-neighbour with another label, or the grid edge) get 0.5.
  */
@@ -74,7 +121,7 @@ export function regionDistance(labels) {
       if (x === 0 || y === 0 || x === w - 1 || y === h - 1 || L[i - 1] !== c || L[i + 1] !== c || L[i - w] !== c || L[i + w] !== c) feat[i] = 1;
     }
   }
-  const d = edt(feat, w, h);
+  const d = chamfer(feat, w, h);
   for (let i = 0; i < w * h; i++) d[i] = L[i] === 255 ? 0 : d[i] + 0.5;
   return d;
 }
@@ -114,7 +161,7 @@ export function bandField(poly, W, H, inPx, outPx, inside) {
     dx[i] = ex / l; dy[i] = ey / l; len[i] = l; cum[i] = total; total += l;
   }
   const R = Math.max(inPx, outPx) + 1;
-  const cs = Math.max(8, Math.ceil(R));
+  const cs = Math.max(6, Math.ceil(R / 3));
   const gw = Math.ceil(W / cs) + 1, gh = Math.ceil(H / cs) + 1;
   const cells = new Array(gw * gh);
   for (let i = 0; i < n; i++) {
@@ -155,8 +202,12 @@ export function bandField(poly, W, H, inPx, outPx, inside) {
         let ins;
         if (inside) ins = inside[y * W + x] === 1;
         else {
-          const qx = fx - ax[bi], qy = fy - ay[bi];
-          ins = (dx[bi] * qy - dy[bi] * qx) * sgn > 0;
+          // outward (pseudo) normal of the nearest feature: segment, or the mean of both segments at a vertex
+          let ox = dy[bi], oy = -dx[bi];
+          if (bt <= 1e-4) { const j = (bi + n - 1) % n; ox += dy[j]; oy -= dx[j]; }
+          else if (bt >= len[bi] - 1e-4) { const j = (bi + 1) % n; ox += dy[j]; oy -= dx[j]; }
+          const qx = fx - ax[bi] - dx[bi] * bt, qy = fy - ay[bi] - dy[bi] * bt;
+          ins = (qx * ox + qy * oy) * sgn < 0;
         }
         const sd = ins ? dist : -dist;
         if (sd > inPx || sd < -outPx) continue;
@@ -170,7 +221,7 @@ export function bandField(poly, W, H, inPx, outPx, inside) {
       }
     }
   }
-  return { n: m, idx, d: D, s: S, tx: TX, ty: TY, total };
+  return { n: m, idx, d: D, s: S, tx: TX, ty: TY, total, sgn };
 }
 
 /** Coverage mask (1 inside) from canvas RGBA alpha. */

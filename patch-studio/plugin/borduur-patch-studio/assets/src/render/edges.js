@@ -188,7 +188,7 @@ export function edgeCoverMm(edge) {
  * buffer (height, thread tangent, gloss) and lit with the same light as the rest of the patch, so the
  * merrow tube and satin wraps get real volume and their sheen travels around the patch with the light.
  * ====================================================================================== */
-import { newGeo, finishGeo, shadeGeo, glossByte } from './light.js';
+import { shadeGeo, glossByte } from './light.js';
 import { rgbOf } from './util.js';
 
 const sm = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
@@ -206,23 +206,22 @@ export function edgeBandMm(edge) {
 }
 
 /**
- * Lit border into `out` (RGBA, W×H, transparent elsewhere).
+ * Light-independent border geometry, compact over the band pixels it covers.
  * @param {object} band   bandField() in frame px
  * @param {number} ppm
  * @param {{style:string,widthMm:number,fray?:boolean}} edge
  * @param {{edgeHex:string, fabricHex:string, technique:string, engraveHex?:string, relief?:number}} o
- * @param {object} light  light.js#normLight()
- * @returns {{maxHmm:number}}
  */
-export function litEdge(out, W, H, band, ppm, edge, o, light) {
+export function edgeGeo(W, H, band, ppm, edge, o) {
   const style = edge.style || 'satin';
-  if (style === 'laser') return { maxHmm: 0.1, ...hotCut(out, W, band, ppm, o, light) };
-  const g = newGeo(W, H);
-  const D = g.alb, hg = g.hgt, tan = g.tan, sp = g.spec, gl = g.gloss, ao = g.ao;
+  if (style === 'laser') return { laser: true, band, ppm, o, maxHmm: 0.1, W };
+  const N = band.n;
+  const sel = new Int32Array(N), hmap = new Float32Array(W * H);
+  const alb = new Uint8ClampedArray(N * 4), tan = new Int8Array(N * 2), spec = new Uint8Array(N), gloss = new Uint8Array(N), ao = new Uint8Array(N);
   const [er, eg, eb] = rgbOf(o.edgeHex || '#222222');
   const relief = o.relief || 1;
   const px = 1 / ppm;
-  let maxHmm = 0.5;
+  let n = 0, maxHmm = 0.5;
   if (style === 'satin' || style === 'uncut' || style === 'merrow') {
     const merrow = style === 'merrow';
     const bw = Math.max(merrow ? 3 : 2, edge.widthMm || (merrow ? 3 : 2.5));
@@ -230,72 +229,99 @@ export function litEdge(out, W, H, band, ppm, edge, o, light) {
     const c = (lo + hi) / 2, R = (hi - lo) / 2;
     const pitchMm = merrow ? 0.62 : 0.4;
     const nW = Math.max(12, Math.round(band.total / (pitchMm * ppm)));
-    const pitch = band.total / nW, inv = 1 / pitch;
+    const inv = nW / band.total;
     const slant = merrow ? 0.85 : 0.22;
     const fade = sm((pitchMm * ppm - 1.3) / 2);
     const tube = (merrow ? 0.85 * R : 0.42) * ppm * relief;
     const rip = (merrow ? 0.16 : 0.07) * ppm * fade;
     maxHmm = (merrow ? 0.85 * R : 0.42) * relief;
     const glE = glossByte(merrow ? 3 : 4, true);
-    for (let k = 0; k < band.n; k++) {
+    for (let k = 0; k < N; k++) {
       const dmm = band.d[k] * px;
       if (dmm < lo - px || dmm > hi + px) continue;
-      const i = band.idx[k], p = i * 4;
-      const q = (dmm - c) / R;
-      const aq = Math.abs(q);
-      // anti-aliased band ends
+      const q = (dmm - c) / R, aq = Math.abs(q);
       const cover = Math.max(0, Math.min(1, (1 - aq) * R * ppm + 0.5));
       if (cover <= 0) continue;
       const tx = band.tx[k], ty = band.ty[k];
-      const u = (band.s[k] + band.d[k] * slant) * inv, ui = Math.floor(u), t = u - ui;
+      const u = (band.s[k] + band.d[k] * slant * band.sgn) * inv, ui = Math.floor(u), t = u - ui;
       const pr = Math.sin(Math.PI * t);
       const prof = merrow ? Math.sqrt(Math.max(0, 1 - q * q)) : Math.pow(Math.max(0, Math.cos(q * Math.PI / 2)), 0.7);
-      hg[i] = tube * prof + rip * (merrow ? Math.sqrt(pr) : pr) * prof;
+      hmap[band.idx[k]] = tube * prof + rip * (merrow ? Math.sqrt(pr) : pr) * prof;
       // thread direction: across the band, slanted along the outline
       let ax = -ty + tx * slant, ay = tx + ty * slant;
       const al = Math.hypot(ax, ay) || 1; ax /= al; ay /= al;
-      tan[i * 2] = ax * 127; tan[i * 2 + 1] = ay * 127;
-      const v = 0.94 + 0.08 * pr + (h01(ui, 11) - 0.5) * 0.08;
-      D[p] = er * v; D[p + 1] = eg * v; D[p + 2] = eb * v; D[p + 3] = 255 * cover;
-      ao[i] = 255 * (merrow ? 0.5 + 0.5 * Math.sqrt(pr) : 0.78 + 0.22 * pr) * (0.7 + 0.3 * sm((1 - aq) * 3));
-      sp[i] = 215; gl[i] = glE;
+      const v = 0.94 + 0.08 * pr + (h01(((ui % nW) + nW) % nW, 11) - 0.5) * 0.08;
+      sel[n] = k; tan[n * 2] = ax * 127; tan[n * 2 + 1] = ay * 127;
+      alb[n * 4] = er * v; alb[n * 4 + 1] = eg * v; alb[n * 4 + 2] = eb * v; alb[n * 4 + 3] = 255 * cover;
+      ao[n] = 255 * (merrow ? 0.5 + 0.5 * Math.sqrt(pr) : 0.78 + 0.22 * pr) * (0.7 + 0.3 * sm((1 - aq) * 3));
+      spec[n] = 215; gloss[n] = glE; n++;
     }
   } else if (style === 'molded') {
     const bw = Math.max(1.2, edge.widthMm || 1.5);
     maxHmm = 0.7 * relief;
     const glM = glossByte(5, false);
-    for (let k = 0; k < band.n; k++) {
+    for (let k = 0; k < N; k++) {
       const dmm = band.d[k] * px;
       if (dmm < -px || dmm > bw + px) continue;
-      const i = band.idx[k], p = i * 4;
       const q = Math.max(0, Math.min(1, dmm / bw));
-      hg[i] = ppm * relief * (0.25 + 0.45 * Math.pow(Math.sin(Math.PI * q), 0.8));
+      hmap[band.idx[k]] = ppm * relief * (0.25 + 0.45 * Math.pow(Math.sin(Math.PI * q), 0.8));
       const cover = Math.max(0, Math.min(1, dmm * ppm + 0.5)) * Math.max(0, Math.min(1, (bw - dmm) * ppm + 0.5));
-      D[p] = er; D[p + 1] = eg; D[p + 2] = eb; D[p + 3] = 255 * cover;
-      ao[i] = 255 * (0.75 + 0.25 * Math.sin(Math.PI * q));
-      sp[i] = 120; gl[i] = glM;
+      sel[n] = k;
+      alb[n * 4] = er; alb[n * 4 + 1] = eg; alb[n * 4 + 2] = eb; alb[n * 4 + 3] = 255 * cover;
+      ao[n] = 255 * (0.75 + 0.25 * Math.sin(Math.PI * q));
+      spec[n] = 120; gloss[n] = glM; n++;
     }
   } else if (style === 'felt') {
     const bw = Math.max(3, edge.widthMm || 4);
     maxHmm = 0.6;
     const glF = glossByte(0, false);
-    for (let k = 0; k < band.n; k++) {
+    for (let k = 0; k < N; k++) {
       const dmm = band.d[k] * px;
       if (dmm < -px || dmm > bw) continue;
-      const i = band.idx[k], p = i * 4;
+      const i = band.idx[k];
       const fib = h01(i, 7) - 0.5, nz = h01((band.s[k] * 0.4) | 0, (band.d[k] * 0.4) | 0);
       const q = Math.max(0, Math.min(1, dmm / bw));
-      hg[i] = ppm * (0.35 * Math.sqrt(Math.sin(Math.PI * Math.min(1, q * 1.6 + 0.05))) + 0.05 * fib + 0.04 * nz);
+      hmap[i] = ppm * (0.35 * Math.sqrt(Math.sin(Math.PI * Math.min(1, q * 1.6 + 0.05))) + 0.05 * fib + 0.04 * nz);
       const v = 0.93 + fib * 0.12 + nz * 0.05;
       const cover = Math.max(0, Math.min(1, dmm * ppm + 0.5 + fib));
-      D[p] = er * v; D[p + 1] = eg * v; D[p + 2] = eb * v; D[p + 3] = 255 * cover;
-      ao[i] = 255 * (0.8 + 0.2 * nz);
-      sp[i] = 10; gl[i] = glF;
+      sel[n] = k;
+      alb[n * 4] = er * v; alb[n * 4 + 1] = eg * v; alb[n * 4 + 2] = eb * v; alb[n * 4 + 3] = 255 * cover;
+      ao[n] = 255 * (0.8 + 0.2 * nz);
+      spec[n] = 10; gloss[n] = glF; n++;
     }
   }
-  finishGeo(g, 1.25);
-  shadeGeo(g, light, out, { specTint: 0.4 });
-  return { maxHmm };
+  // normals from the height map (central differences, k = 1.25 relief exaggeration)
+  const idx = new Int32Array(n), nrm = new Int8Array(n * 2);
+  for (let m = 0; m < n; m++) {
+    const i = band.idx[sel[m]];
+    idx[m] = i;
+    const x = i % W;
+    const gx = ((x < W - 1 ? hmap[i + 1] : 0) - (x > 0 ? hmap[i - 1] : 0)) * 0.625;
+    const gy = ((i + W < W * H ? hmap[i + W] : 0) - (i >= W ? hmap[i - W] : 0)) * 0.625;
+    const il = 127 / Math.sqrt(gx * gx + gy * gy + 1);
+    nrm[m * 2] = -gx * il; nrm[m * 2 + 1] = -gy * il;
+  }
+  return { n, idx, alb: alb.subarray(0, n * 4), nrm, tan: tan.subarray(0, n * 2), spec: spec.subarray(0, n), gloss: gloss.subarray(0, n), ao: ao.subarray(0, n), maxHmm, w: n, h: 1 };
+}
+
+/**
+ * Light a border geometry into `out` (RGBA, W×H frame).
+ * @returns {{maxHmm:number}}
+ */
+export function shadeEdge(eg, light, out) {
+  if (eg.laser) { hotCut(out, eg.W, eg.band, eg.ppm, eg.o, light); return { maxHmm: eg.maxHmm }; }
+  const tmp = new Uint8ClampedArray(eg.n * 4);
+  shadeGeo(eg, light, tmp, { specTint: 0.4 });
+  for (let m = 0; m < eg.n; m++) {
+    const p = eg.idx[m] * 4, q = m * 4;
+    out[p] = tmp[q]; out[p + 1] = tmp[q + 1]; out[p + 2] = tmp[q + 2]; out[p + 3] = tmp[q + 3];
+  }
+  return { maxHmm: eg.maxHmm };
+}
+
+/** One-shot helper: build + light. */
+export function litEdge(out, W, H, band, ppm, edge, o, light) {
+  return shadeEdge(edgeGeo(W, H, band, ppm, edge, o), light, out);
 }
 
 /** Hot-cut / laser edge: thin melted bead (polyester) or burnt edge (leather), shading only. */
@@ -311,7 +337,7 @@ function hotCut(out, W, band, ppm, o, light) {
     const i = band.idx[k], p = i * 4;
     // bead rolls down towards the cut: slope along the inward normal
     const q = Math.max(0, dmm) / w, slope = (1 - q) * (leather ? 0.9 : 0.7);
-    const nx = band.ty[k], ny = -band.tx[k]; // outward normal (clockwise outline)
+    const nx = band.ty[k] * band.sgn, ny = -band.tx[k] * band.sgn; // outward normal
     const nn = Math.hypot(nx, ny) || 1;
     const sx = (nx / nn) * slope, sy = (ny / nn) * slope, l = Math.hypot(sx, sy, 1);
     const ndl = (sx * lx + sy * ly + lz) / l / lz;
