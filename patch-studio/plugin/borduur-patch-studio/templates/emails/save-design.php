@@ -29,7 +29,7 @@ do_action( 'woocommerce_email_header', $email_heading, $email );
 <p>
 	<?php
 	/* translators: %s: design reference */
-	echo esc_html( sprintf( __( 'Hier is je patch-ontwerp %s. Je kunt er op elk moment mee verder gaan: alles staat nog zoals je het achterliet.', 'borduur-patch-studio' ), $design['ref'] ) );
+	echo esc_html( sprintf( __( 'Hier is je patch-ontwerp %s. Je kan er op elk moment mee verder gaan: alles staat nog zoals je het achterliet.', 'borduur-patch-studio' ), $design['ref'] ) );
 	?>
 </p>
 

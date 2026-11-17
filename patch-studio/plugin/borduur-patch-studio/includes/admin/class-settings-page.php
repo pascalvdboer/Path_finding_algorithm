@@ -223,7 +223,7 @@ final class Settings_Page {
 		echo '<h2 id="bps-qs-title">' . esc_html__( 'Snel aan de slag', 'borduur-patch-studio' ) . '</h2>';
 		echo '<ol class="bps-quickstart__steps">';
 		echo '<li><strong>' . esc_html__( 'Maak de ontwerppagina.', 'borduur-patch-studio' ) . '</strong> ';
-		echo esc_html__( 'We maken de pagina "Ontwerp je patch" met de tool erop. Je kunt ze daarna gewoon in Elementor verder opmaken.', 'borduur-patch-studio' );
+		echo esc_html__( 'We maken de pagina "Ontwerp je patch" met de tool erop. Je kan ze daarna gewoon in Elementor verder opmaken.', 'borduur-patch-studio' );
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="bps-inline-form">';
 		echo '<input type="hidden" name="action" value="bps_create_page">';
 		wp_nonce_field( 'bps_create_page' );

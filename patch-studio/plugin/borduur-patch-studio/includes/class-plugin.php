@@ -376,7 +376,7 @@ final class Plugin {
 		}
 		if ( ! self::woocommerce_active() ) {
 			echo '<div class="notice notice-warning"><p><strong>' . esc_html__( 'Patch Studio heeft WooCommerce nodig.', 'borduur-patch-studio' ) . '</strong> ';
-			echo esc_html__( 'Activeer WooCommerce om patches te laten bestellen. De instellingen kun je intussen al bekijken.', 'borduur-patch-studio' ) . '</p></div>';
+			echo esc_html__( 'Activeer WooCommerce om patches te laten bestellen. De instellingen kan je intussen al bekijken.', 'borduur-patch-studio' ) . '</p></div>';
 		}
 
 		if ( get_transient( self::ACTIVATED_TRANSIENT ) ) {

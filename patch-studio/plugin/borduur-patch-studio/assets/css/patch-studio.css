@@ -272,6 +272,14 @@ body:has(.bps-studio) .bsb-mob-balk { display: none; }
 .bps-studio .bps-preview__chip { margin: 8px auto 0; text-align: center; font-size: .85rem; color: var(--bps-muted); }
 .bps-studio .bps-side__disc { text-align: center; font-size: .78rem; margin-top: 6px; }
 
+/* gsm/tablet: from step 2 on the advice matters more than a full-width preview, so keep it smaller (review-ux open punt 3) */
+@media (max-width: 1024px) {
+  .bps-studio[data-step="2"] .bps-preview__stage,
+  .bps-studio[data-step="3"] .bps-preview__stage,
+  .bps-studio[data-step="4"] .bps-preview__stage,
+  .bps-studio[data-step="5"] .bps-preview__stage { max-width: min(100%, 36vh); }
+}
+
 /* arrange */
 .bps-studio .bps-arrange__btns { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin-top: 12px; }
 .bps-studio .bps-pad { display: grid; justify-items: center; gap: 2px; }

@@ -131,7 +131,7 @@ final class Emails {
 		}
 		$text = $first . ' ' . __( 'Pas na jouw akkoord starten we de productie. Je patch wordt op maat gemaakt; daarom geldt het herroepingsrecht niet.', 'borduur-patch-studio' );
 		if ( Config::path( 'promises.cancelUntilProof', false ) ) {
-			$text .= ' ' . __( 'Tot je de proef goedkeurt, kun je je bestelling kosteloos annuleren.', 'borduur-patch-studio' );
+			$text .= ' ' . __( 'Tot je de proef goedkeurt, kan je je bestelling kosteloos annuleren.', 'borduur-patch-studio' );
 		}
 		return $text;
 	}

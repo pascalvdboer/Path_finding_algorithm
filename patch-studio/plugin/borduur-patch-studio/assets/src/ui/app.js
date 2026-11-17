@@ -133,6 +133,7 @@ export function createApp(root, config) {
     side.hidden = !(has && ctx.step > 0);
     stepNav.hidden = !(has && ctx.step > 0);
     root.classList.toggle('is-empty', !(has && ctx.step > 0));
+    root.dataset.step = String(has ? ctx.step : 0);
     steps.forEach((st, i) => { if (st) st.el.hidden = i !== ctx.step; });
     stepBtns.forEach((b, i) => {
       const n = i + 1;
@@ -357,6 +358,15 @@ export function createApp(root, config) {
     }
     let s1 = { ...s0, ...patch };
     if (!s0.techniquePicked) {
+      // Start from the neutral default technique: a technique left over from a previous design (e.g. sublimated
+      // after a photo, which forces a white fabric) must not bias the advice for a new file.
+      const t0 = initialState(config).technique;
+      if (t0 && t0 !== s1.technique && config.techniques[t0] && config.techniques[t0].enabled) {
+        patch.technique = t0;
+        patch.options = reconcileOptions(config, t0, s1.options);
+        patch.qty = normalizeQty(config, t0, s1.qty);
+        s1 = { ...s0, ...patch };
+      }
       // Follow the advice until it is stable (the recommendation may depend on the current technique).
       for (let i = 0; i < 3; i++) {
         const rec = derive(s1, a, config, ctx.tweaks).advice.recommended;

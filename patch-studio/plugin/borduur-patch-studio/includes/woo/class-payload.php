@@ -101,7 +101,7 @@ final class Payload {
 			'shape'      => $shape,
 			'qty'        => $qty,
 			'options'    => $options,
-			'fabric'     => self::fabric( $raw['fabric'] ?? null, $c ),
+			'fabric'     => self::fabric( $raw['fabric'] ?? null, $c, (string) ( $tech['render'] ?? '' ) ),
 			'edgeColor'  => self::thread_ref( $raw['edgeColor'] ?? null ),
 			'threads'    => self::threads( $raw['threads'] ?? array() ),
 			'texts'      => self::texts( $raw['texts'] ?? array(), $c ),
@@ -135,9 +135,21 @@ final class Payload {
 	 * @param mixed $v Fabric.
 	 * @param array $c Config.
 	 */
-	private static function fabric( $v, array $c ): array {
+	private static function fabric( $v, array $c, string $render = '' ): array {
 		$v   = is_array( $v ) ? $v : array();
 		$id  = self::str( $v['id'] ?? 'auto', 40 );
+		// Sublimation only works on white polyester (same rule as ui/derive.js fabricList()).
+		if ( 'sublimated' === $render ) {
+			foreach ( (array) ( $c['fabrics'] ?? array() ) as $f ) {
+				if ( isset( $f['id'] ) && ( 'white' === $f['id'] || '#ffffff' === strtolower( (string) ( $f['hex'] ?? '' ) ) ) ) {
+					return array(
+						'id'    => (string) $f['id'],
+						'hex'   => self::hex( (string) ( $f['hex'] ?? '#ffffff' ) ),
+						'label' => self::str( is_array( $f['label'] ?? null ) ? (string) ( $f['label']['nl'] ?? '' ) : (string) ( $f['label'] ?? '' ), 60 ),
+					);
+				}
+			}
+		}
 		$ids = array( 'auto' );
 		foreach ( array_merge( (array) ( $c['fabrics'] ?? array() ), (array) ( $c['leathers'] ?? array() ) ) as $f ) {
 			if ( isset( $f['id'] ) ) {

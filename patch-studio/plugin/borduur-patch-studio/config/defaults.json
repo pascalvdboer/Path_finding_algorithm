@@ -577,12 +577,12 @@
   "_threadsNote": "De garenlijst zelf staat in config/thread-palette.json (eigenaar: colors) en wordt door Settings/buildPublicConfig in config.threads gezet.",
 
   "fonts": [
-    { "id": "Sora", "label": "Sora (strak)", "weight": 700, "fallback": "sans-serif", "thin": false, "file": "sora-700.woff2" },
-    { "id": "Oswald", "label": "Oswald (smal en sterk)", "weight": 600, "fallback": "sans-serif", "thin": false, "file": "oswald-600.woff2" },
-    { "id": "Graduate", "label": "Graduate (college)", "weight": 400, "fallback": "serif", "thin": false, "file": "graduate-400.woff2" },
-    { "id": "Roboto Slab", "label": "Roboto Slab (schreef)", "weight": 700, "fallback": "serif", "thin": false, "serif": true, "file": "roboto-slab-700.woff2" },
-    { "id": "Cinzel", "label": "Cinzel (klassiek)", "weight": 700, "fallback": "serif", "thin": true, "serif": true, "file": "cinzel-700.woff2" },
-    { "id": "Pacifico", "label": "Pacifico (handschrift)", "weight": 400, "fallback": "cursive", "thin": true, "script": true, "file": "pacifico-400.woff2" }
+    { "id": "Sora", "label": { "nl": "Sora (strak)", "fr": "Sora (net)" }, "weight": 700, "fallback": "sans-serif", "thin": false, "file": "sora-700.woff2" },
+    { "id": "Oswald", "label": { "nl": "Oswald (smal en sterk)", "fr": "Oswald (étroit et fort)" }, "weight": 600, "fallback": "sans-serif", "thin": false, "file": "oswald-600.woff2" },
+    { "id": "Graduate", "label": { "nl": "Graduate (college)", "fr": "Graduate (college)" }, "weight": 400, "fallback": "serif", "thin": false, "file": "graduate-400.woff2" },
+    { "id": "Roboto Slab", "label": { "nl": "Roboto Slab (schreef)", "fr": "Roboto Slab (à empattements)" }, "weight": 700, "fallback": "serif", "thin": false, "serif": true, "file": "roboto-slab-700.woff2" },
+    { "id": "Cinzel", "label": { "nl": "Cinzel (klassiek)", "fr": "Cinzel (classique)" }, "weight": 700, "fallback": "serif", "thin": true, "serif": true, "file": "cinzel-700.woff2" },
+    { "id": "Pacifico", "label": { "nl": "Pacifico (handschrift)", "fr": "Pacifico (manuscrite)" }, "weight": 400, "fallback": "cursive", "thin": true, "script": true, "file": "pacifico-400.woff2" }
   ],
   "text": { "maxLayers": 10, "maxChars": 60, "minHeightMm": 3, "maxHeightMm": 40, "defaultHeightMm": 6 },
 

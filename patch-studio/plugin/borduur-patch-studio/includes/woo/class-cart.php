@@ -115,6 +115,7 @@ final class Cart {
 				'height_mm'   => (float) ( $p['heightMm'] ?? 0 ),
 				'shape'       => (string) $p['shape'],
 				'options'     => array_values( array_map( 'strval', (array) $p['options'] ) ),
+				'texts'       => self::texts_brief( (array) ( $p['texts'] ?? array() ) ),
 				'preview_url' => (string) $design['preview_url'],
 				'locale'      => (string) ( $p['locale'] ?? 'nl-BE' ),
 				'rights'      => array(
@@ -589,7 +590,52 @@ final class Cart {
 		if ( '' !== $finish ) {
 			$rows[] = array( __( 'Afwerking', 'borduur-patch-studio' ), $finish );
 		}
+		$texts = self::texts_text( (array) ( $b['texts'] ?? array() ), $lang );
+		if ( '' !== $texts ) {
+			$rows[] = array( __( 'Tekst', 'borduur-patch-studio' ), $texts );
+		}
 		return $rows;
+	}
+
+	/**
+	 * Short copy of the text layers for the cart line (eigenaar: tekst toevoegen). The full placement
+	 * (offset, angle, inset) stays in the design payload and the order meta _bps_payload.
+	 *
+	 * @param array $texts Payload text layers (already sanitised by Payload).
+	 * @return array<int,array{text:string,font:string,heightMm:float,path:string}>
+	 */
+	public static function texts_brief( array $texts ): array {
+		$out = array();
+		foreach ( array_slice( $texts, 0, 10 ) as $t ) {
+			if ( ! is_array( $t ) || '' === trim( (string) ( $t['text'] ?? '' ) ) ) {
+				continue;
+			}
+			$out[] = array(
+				'text'     => function_exists( 'mb_substr' ) ? mb_substr( (string) $t['text'], 0, 60 ) : substr( (string) $t['text'], 0, 60 ),
+				'font'     => substr( (string) ( $t['font'] ?? '' ), 0, 40 ),
+				'heightMm' => round( (float) ( $t['heightMm'] ?? 0 ), 1 ),
+				'path'     => substr( (string) ( $t['path'] ?? 'straight' ), 0, 12 ),
+			);
+		}
+		return $out;
+	}
+
+	/**
+	 * Text layers as one readable line: “IRON CRUSADERS” (Oswald, 6 mm, boog boven) · “2026” (Sora, 5 mm, recht).
+	 *
+	 * @param array  $texts Text layers (texts_brief or payload format).
+	 * @param string $lang  'nl' | 'fr'.
+	 */
+	public static function texts_text( array $texts, string $lang ): string {
+		$paths = 'fr' === $lang
+			? array( 'straight' => 'droit', 'arc_top' => 'arc en haut', 'arc_bottom' => 'arc en bas' )
+			: array( 'straight' => 'recht', 'arc_top' => 'boog boven', 'arc_bottom' => 'boog onder' );
+		$parts = array();
+		foreach ( self::texts_brief( $texts ) as $t ) {
+			$h       = rtrim( rtrim( number_format( (float) $t['heightMm'], 1, ',', '' ), '0' ), ',' );
+			$parts[] = '“' . $t['text'] . '” (' . implode( ', ', array_filter( array( $t['font'], $h . ' mm', $paths[ $t['path'] ] ?? '' ) ) ) . ')';
+		}
+		return implode( ' · ', $parts );
 	}
 
 	/**

@@ -139,7 +139,7 @@ export function stepDesign(ctx) {
       fld('text', t('ui.text.value'), h('input.bps-input', { id: id('text'), 'data-fk': id('text'), type: 'text', maxlength: T.maxChars || 60, value: l.text, autocomplete: 'off', oninput: (e) => set({ text: e.target.value.slice(0, T.maxChars || 60) }) })),
       h('div.bps-field-row',
         fld('font', t('ui.text.font'), h('select.bps-select', { id: id('font'), 'data-fk': id('font'), onchange: (e) => { set({ font: e.target.value }); ctx.loadFont(e.target.value); } },
-          fonts.map((f) => h('option', { value: f.id, selected: f.id === l.font }, f.label || f.id)))),
+          fonts.map((f) => h('option', { value: f.id, selected: f.id === l.font }, L(f.label) || f.id)))),
         fld('height', t('ui.text.height'), h('input.bps-input', { id: id('height'), 'data-fk': id('height'), type: 'number', inputmode: 'decimal', min: T.minHeightMm || 3, max: T.maxHeightMm || 40, step: 0.5, value: l.heightMm,
           onchange: (e) => { const v = Math.min(T.maxHeightMm || 40, Math.max(T.minHeightMm || 3, Number(String(e.target.value).replace(',', '.')) || 6)); e.target.value = v; set({ heightMm: v }); } }))),
       fld('color', t('ui.text.color'), h('select.bps-select', { id: id('color'), 'data-fk': id('color'), onchange: (e) => set({ threadCode: e.target.value }) },

@@ -57,6 +57,10 @@ final class Order {
 		if ( '' !== $finish ) {
 			$item->add_meta_data( 'bps_finish', $finish, true );
 		}
+		$texts = Cart::texts_text( (array) ( $b['texts'] ?? array() ), $lang );
+		if ( '' !== $texts ) {
+			$item->add_meta_data( 'bps_texts', $texts, true );
+		}
 
 		$rights = isset( $b['rights'] ) && is_array( $b['rights'] ) ? $b['rights'] : array();
 		if ( ! empty( $rights['at'] ) ) {
@@ -133,6 +137,8 @@ final class Order {
 				return __( 'Vorm', 'borduur-patch-studio' );
 			case 'bps_finish':
 				return __( 'Afwerking', 'borduur-patch-studio' );
+			case 'bps_texts':
+				return __( 'Tekst', 'borduur-patch-studio' );
 			case 'bps_rights':
 				return __( 'Rechtenverklaring', 'borduur-patch-studio' );
 			case 'bps_file_removed':

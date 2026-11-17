@@ -422,7 +422,7 @@ final class Routes {
 		$id    = (int) $r['id'];
 		$token = (string) $r->get_param( 'token' );
 		if ( ! Designs::verify_token( $id, $token ) ) {
-			return self::error( 'bps_forbidden', __( 'Deze link naar je ontwerp werkt niet (meer). Misschien is hij verlopen; je kunt gewoon opnieuw beginnen.', 'borduur-patch-studio' ), 403 );
+			return self::error( 'bps_forbidden', __( 'Deze link naar je ontwerp werkt niet (meer). Misschien is hij verlopen; je kan gewoon opnieuw beginnen.', 'borduur-patch-studio' ), 403 );
 		}
 		$d = Designs::get( $id );
 		if ( ! $d ) {

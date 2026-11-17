@@ -652,7 +652,7 @@ final class Order_Production {
 			$font    = self::font( (string) ( $tx['font'] ?? '' ) );
 			$ti      = self::thread_info( (string) ( $tx['threadCode'] ?? '' ) );
 			$parts   = array(
-				$font ? (string) ( $font['label'] ?? $font['id'] ) : (string) ( $tx['font'] ?? '' ),
+				$font ? self::label( $font['label'] ?? $font['id'] ) : (string) ( $tx['font'] ?? '' ),
 				/* translators: %s: letter height in mm */
 				sprintf( __( '%s mm hoog', 'borduur-patch-studio' ), self::num( (float) ( $tx['heightMm'] ?? 0 ) ) ),
 				self::path_label( (string) ( $tx['path'] ?? 'straight' ) ),

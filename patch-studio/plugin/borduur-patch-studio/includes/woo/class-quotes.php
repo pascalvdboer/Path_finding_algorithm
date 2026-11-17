@@ -258,6 +258,7 @@ final class Quotes {
 				'height_mm' => (float) ( $p['heightMm'] ?? 0 ),
 				'shape'     => (string) ( $p['shape'] ?? '' ),
 				'options'   => (array) ( $p['options'] ?? array() ),
+				'texts'     => (array) ( $p['texts'] ?? array() ),
 			),
 			$lang
 		);

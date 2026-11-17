@@ -24,7 +24,7 @@ echo '= ' . esc_html( wp_strip_all_tags( $email_heading ) ) . " =\n\n";
 esc_html_e( 'Hallo,', 'borduur-patch-studio' );
 echo "\n\n";
 /* translators: %s: design reference */
-echo esc_html( sprintf( __( 'Hier is je patch-ontwerp %s. Je kunt er op elk moment mee verder gaan: alles staat nog zoals je het achterliet.', 'borduur-patch-studio' ), $design['ref'] ) ) . "\n\n";
+echo esc_html( sprintf( __( 'Hier is je patch-ontwerp %s. Je kan er op elk moment mee verder gaan: alles staat nog zoals je het achterliet.', 'borduur-patch-studio' ), $design['ref'] ) ) . "\n\n";
 foreach ( $design_rows as $row ) {
 	echo esc_html( $row[0] . ': ' . $row[1] ) . "\n";
 }
