@@ -19,7 +19,7 @@
   body { font-family: "Assistant", system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 16px; line-height: 1.5; -webkit-text-size-adjust: 100%; }
   *, *::before, *::after { box-sizing: border-box; }
   .demo-bar { background: var(--demo-navy); color: #fff; font-size: 14px; padding: 8px 16px; }
-  .demo-bar__in { max-width: 1240px; margin: 0 auto; display: flex; gap: 8px 16px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+  .demo-bar__in { max-width: 1600px; margin: 0 auto; display: flex; gap: 8px 16px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
   .demo-bar a { color: #fff; font-weight: 600; }
   .demo-bar strong { font-family: "Sora", system-ui, sans-serif; letter-spacing: .02em; }
   .demo-hero { background: linear-gradient(90deg, #0b2444 0%, #2a6ea3 60%, #9cc7e1 100%); color: #fff; padding: 32px 16px 40px; }
@@ -28,18 +28,20 @@
   .demo-hero p { margin: 8px 0 0; max-width: 760px; font-size: clamp(16px, 1.6vw, 19px); opacity: .95; }
   .demo-usps { list-style: none; margin: 16px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 18px; font-weight: 600; }
   .demo-usps li::before { content: "✓ "; color: #52d7b4; }
-  .demo-try { max-width: 1240px; margin: 18px auto 0; padding: 0 16px; }
-  .demo-try__title { font-family: "Sora", system-ui, sans-serif; font-weight: 700; font-size: 17px; margin: 0 0 4px; }
-  .demo-try__hint { margin: 0 0 10px; color: #555; font-size: 15px; }
-  .demo-try__list { display: flex; flex-wrap: wrap; gap: 10px; margin: 0; padding: 0; list-style: none; }
+  .demo-try { max-width: 1600px; margin: 14px auto 0; padding: 0 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
+  .demo-try__title, .demo-try__hint { flex: none; }
+  .demo-try__title { font-family: "Sora", system-ui, sans-serif; font-weight: 700; font-size: 15px; margin: 0; }
+  .demo-try__hint { margin: 0; color: #555; font-size: 14px; }
+  @media (max-width: 899px) { .demo-try__hint { display: none; } }
+  .demo-try__list { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
   .demo-try__btn { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 6px 14px 6px 6px; border: 1px solid #8a8a8a; border-radius: 10px; background: #fff; color: var(--demo-ink); font: inherit; font-weight: 600; cursor: pointer; text-align: left; max-width: 100%; }
   .demo-try__btn:hover { border-color: var(--demo-cta); background: #f3f9fd; }
   .demo-try__btn:focus-visible { outline: 3px solid #5926c5; outline-offset: 2px; }
   .demo-try__btn img { width: 36px; height: 36px; object-fit: cover; border-radius: 6px; flex: none; background: #f5f5f5; }
   .demo-try__btn small { display: block; font-weight: 500; color: #555; font-size: 13px; }
-  .demo-main { padding: 8px 0 32px; }
-  .demo-foot { border-top: 1px solid var(--demo-line); background: #fcfcfc; color: #555; font-size: 14px; padding: 20px 16px 96px; }
-  .demo-foot__in { max-width: 1240px; margin: 0 auto; }
+  .demo-main { padding: 4px 0 32px; }
+  .demo-foot { border-top: 1px solid var(--demo-line); background: #fcfcfc; color: #555; font-size: 14px; padding: 20px 16px 40px; }
+  .demo-foot__in { max-width: 1600px; margin: 0 auto; }
   .demo-foot p { margin: 0 0 6px; }
   .demo-err { max-width: 900px; margin: 24px auto; padding: 16px; border: 2px solid #b42318; border-radius: 8px; color: #b42318; white-space: pre-wrap; }
   @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
@@ -52,17 +54,6 @@
     <span><a href="?lang=nl" hreflang="nl" lang="nl">Nederlands</a> · <a href="?lang=fr" hreflang="fr" lang="fr">Français</a></span>
   </div>
 </div>
-<header class="demo-hero">
-  <div class="demo-hero__in">
-    <h1 data-demo-t="h1">Patches laten maken</h1>
-    <p data-demo-t="lead">Upload je logo, tekening of een gsm-foto van een bestaande patch. Je ziet meteen welke techniek het mooist wordt, waarom, en wat het kost.</p>
-    <ul class="demo-usps">
-      <li data-demo-t="u1">Vanaf 1 stuk</li>
-      <li data-demo-t="u2">Digitale proef vóór productie</li>
-      <li data-demo-t="u3">Eigen atelier in Kalmthout</li>
-    </ul>
-  </div>
-</header>
 
 <section class="demo-try" aria-labelledby="demo-try-title">
   <h2 class="demo-try__title" id="demo-try-title" data-demo-t="tryTitle">Geen bestand bij de hand? Probeer een voorbeeld</h2>

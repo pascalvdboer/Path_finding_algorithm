@@ -40,7 +40,7 @@ export function createAssistant(ctx) {
   const notes = h('ul.bps-notes');
   const adviceBox = h('section.bps-advice', { 'aria-live': 'off' },
     h('p.bps-advice__src', h('span.bps-avatar', { 'aria-hidden': 'true' }, icon('spark')), h('span', t('advice.source', { city }))),
-    headline, body, notes);
+    headline, body);
   const cards = h('div.bps-cards');
   const more = h('div.bps-cards.bps-cards--more', { id: uid('bps-more'), hidden: true });
   const moreBtn = h('button.bps-btn.bps-btn--link', { type: 'button', 'aria-expanded': 'false', 'aria-controls': more.id, onclick: () => { ctx.ui.showAllTech = !ctx.ui.showAllTech; ctx.refresh(); } });
@@ -52,7 +52,7 @@ export function createAssistant(ctx) {
   const noAnalysis = h('p.bps-notice.bps-notice--info', { hidden: true }, icon('info'), h('span', t('ui.s2.noAnalysis')));
   const el = h('section.bps-panel.bps-step.bps-assist', { dataset: { panel: 'advice' }, 'aria-labelledby': ctx.uidBase + '-p-advice', hidden: true },
     h('header.bps-panel__head', h('h2.bps-panel__title', { id: ctx.uidBase + '-p-advice', tabindex: '-1' }, icon('spark'), t('ui.panel.advice'))),
-    h('div.bps-panel__body', noAnalysis, adviceBox, compare, tips,
+    h('div.bps-panel__body', noAnalysis, adviceBox, compare, h('section.bps-seen', h('h3.bps-h3', t('ui.assist.seen')), notes), tips,
       h('p.bps-disclaimer', t('advice.disclaimer'), ' ', t('ui.s2.disclaimer'))),
     h('div.bps-step__nav', h('button.bps-btn.bps-btn--primary.bps-btn--block', { type: 'button', onclick: () => ctx.openPanel('size', { focus: true }) }, t('ui.s2.next'), icon('arrow'))));
 
@@ -134,13 +134,13 @@ export function createAssistant(ctx) {
         out.push({ k: 'ok', txt: t('ui.s1.cutAsk') + (mock ? ' ' + t('ui.a.original') : ''), acts: [ctx.file ? act(t('ui.s1.adjust'), () => ctx.openAdjust()) : null] });
       } else if (a.shape && a.shape.fillsPatch && a.shape.type && !s.shapePicked) {
         const unsure = (a.shape.confidence || 0) < ((config.analysis && config.analysis.shapeMinConfidence) || 0.75);
-        out.push({ k: unsure ? 'warn' : 'ok', txt: unsure ? t('ui.s1.shapeAsk') : t('ui.s1.shapeFound', { shape: shapeName }), acts: [act(t('ui.s1.otherShape'), () => ctx.openPanel('shape', { focus: true })), ctx.file ? act(t('ui.s1.adjust'), () => ctx.openAdjust()) : null] });
+        out.push({ k: unsure ? 'warn' : 'ok', txt: (unsure ? t('ui.s1.shapeAsk') : t('ui.s1.shapeFound', { shape: shapeName })) + (warns.some((w) => /mockup/.test(w.key || '')) ? ' ' + t('ui.a.original') : ''), acts: [act(t('ui.s1.otherShape'), () => ctx.openPanel('shape', { focus: true })), ctx.file ? act(t('ui.s1.adjust'), () => ctx.openAdjust()) : null] });
       }
       const bg = (d.analysis && d.analysis.background) || {};
       if (d.keepBg) out.push({ k: 'ok', txt: t('ui.s1.keepBg') });
       else if (bg.type === 'white' && !a.isPatchPhoto) out.push({ k: 'ok', txt: t('ui.s1.whiteBg', { fabric: L(d.fabric.label).toLowerCase() }), acts: [act(t('ui.s1.otherFabric'), () => ctx.openPanel('colors', { focus: true }))] });
       for (const w of warns) {
-        if (/patch_photo_cut|mockup/.test(w.key || '') && a.isPatchPhoto) continue;
+        if (/patch_photo_cut|mockup/.test(w.key || '') && (a.isPatchPhoto || (a.shape && a.shape.fillsPatch && !s.shapePicked))) continue;
         if (/shape_uncertain/.test(w.key || '') && a.shape && a.shape.fillsPatch && !s.shapePicked) continue;
         out.push({ k: 'warn', txt: w.text });
       }
@@ -163,8 +163,8 @@ export function createAssistant(ctx) {
       const parts = (adv.summary && adv.summary.text && (adv.summary.text.parts || [adv.summary.text])) || [];
       keyed(body, parts.map((p) => p.text).join('|'), () => parts.map((p) => h('p', p.text)));
       const nl = noteList(s, d);
-      keyed(notes, JSON.stringify(nl.map((n) => n.k + n.txt)), () => nl.map((n) => h('li.bps-note.bps-note--' + n.k, icon(n.k === 'warn' ? 'warn' : n.k === 'info' ? 'info' : 'ok'), h('span.bps-note__txt', n.txt, (n.acts || []).filter(Boolean).length ? [' ', ...n.acts.filter(Boolean)] : null))));
-      notes.hidden = !nl.length;
+      keyed(notes, JSON.stringify(nl.map((n) => n.k + n.txt)), () => nl.map((n) => h('li.bps-note.bps-note--' + n.k, icon(n.k === 'warn' ? 'warn' : n.k === 'info' ? 'info' : 'ok'), h('span.bps-note__txt', n.txt, (n.acts || []).filter(Boolean).length ? h('span.bps-note__acts', n.acts.filter(Boolean)) : null))));
+      notes.parentNode.hidden = !nl.length;
 
       const ranking = adv.ranking || [];
       const top = ranking.slice(0, 4);

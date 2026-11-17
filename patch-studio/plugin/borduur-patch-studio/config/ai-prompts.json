@@ -156,32 +156,38 @@
     "circle": {
       "en": "a round (circular) patch",
       "composition": "fit the whole design inside a circle; nothing touches the circle edge",
-      "size": "1024x1024"
+      "size": "1024x1024",
+      "noun": "round"
     },
     "oval": {
       "en": "an oval patch (wider than tall)",
       "composition": "fit the design inside a horizontal oval; nothing touches the edge",
-      "size": "1536x1024"
+      "size": "1536x1024",
+      "noun": "oval"
     },
     "rect": {
       "en": "a rectangular patch (landscape)",
       "composition": "fit the design inside a horizontal rectangle with even margins",
-      "size": "1536x1024"
+      "size": "1536x1024",
+      "noun": "rectangular"
     },
     "rounded": {
       "en": "a rectangle patch with rounded corners",
       "composition": "fit the design inside a rounded rectangle with even margins",
-      "size": "1536x1024"
+      "size": "1536x1024",
+      "noun": "rounded-rectangle"
     },
     "shield": {
       "en": "a heraldic shield-shaped patch",
       "composition": "fit the design inside a shield silhouette (flat top, pointed bottom); keep the lower tip free of detail",
-      "size": "1024x1024"
+      "size": "1024x1024",
+      "noun": "shield-shaped"
     },
     "contour": {
       "en": "a die-cut patch that follows the outline of the design",
       "composition": "make the design one compact, closed silhouette without holes or thin protruding parts, so it can be cut along its outline",
-      "size": "1024x1024"
+      "size": "1024x1024",
+      "noun": "die-cut outline"
     }
   },
   "textPlacements": {
@@ -994,7 +1000,21 @@
       "cartes a jouer": "playing cards",
       "kogel": "bullet",
       "pistool": "pistol",
-      "geweer": "rifle"
+      "geweer": "rifle",
+      "hopbel": "hop cone",
+      "hopbellen": "hop cones",
+      "bril": "glasses",
+      "boek": "book",
+      "boeken": "books",
+      "livre": "book",
+      "livres": "books",
+      "lunettes": "glasses",
+      "miel": "honey jar",
+      "honing": "honey jar",
+      "taart": "cake",
+      "gateau": "cake",
+      "verjaardagstaart": "birthday cake",
+      "gateau d anniversaire": "birthday cake"
     },
     "group": {
       "motorclub": "motorcycle club",
@@ -1057,7 +1077,13 @@
       "rugby": "rugby team",
       "basketbalclub": "basketball club",
       "tennisclub": "tennis club",
-      "golfclub": "golf club"
+      "golfclub": "golf club",
+      "fietsclub": "cycling club",
+      "verjaardag": "birthday",
+      "anniversaire": "birthday",
+      "imkers": "beekeepers",
+      "apiculteurs": "beekeepers",
+      "imkersvereniging": "beekeepers association"
     },
     "adj": {
       "boos": "angry",
@@ -1175,7 +1201,21 @@
       "scherper": "sharper",
       "zachter": "softer",
       "rond": "round",
-      "ronde": "round"
+      "ronde": "round",
+      "groter": "larger",
+      "kleiner": "smaller",
+      "plus grand": "larger",
+      "plus petit": "smaller",
+      "marin": "nautical",
+      "maritiem": "nautical",
+      "slapend": "sleeping",
+      "qui dort": "sleeping",
+      "endormi": "sleeping",
+      "gespreide vleugels": "spread wings",
+      "ailes deployees": "spread wings",
+      "aux ailes deployees": "with spread wings",
+      "plus feroce": "fiercer",
+      "feroce": "fierce"
     },
     "color": {
       "zwart": "black",
@@ -1361,5 +1401,40 @@
     "outputFormat": "png",
     "n": 3,
     "refineN": 2
+  },
+  "shapeSegments": {
+    "_doc": "Een los, door komma's gescheiden stukje dat alleen een vorm noemt (bv. '..., schild') is de patchvorm, niet een voorwerp in het ontwerp.",
+    "schild": "shield",
+    "een schild": "shield",
+    "in schild": "shield",
+    "blason": "shield",
+    "ecu": "shield",
+    "bouclier": "shield",
+    "en ecusson": "shield",
+    "rond": "circle",
+    "ronde": "circle",
+    "ovaal": "oval",
+    "ovale": "oval",
+    "rechthoek": "rect",
+    "rectangle": "rect",
+    "vierkant": "rect",
+    "carre": "rect",
+    "uitgesneden": "contour",
+    "decoupe": "contour",
+    "decoupee": "contour"
+  },
+  "ambiguous": {
+    "_doc": "'rond' gevolgd door een lidwoord betekent 'rond(om)', geen vorm.",
+    "rond": {
+      "before": [
+        "een",
+        "de",
+        "het",
+        "om",
+        "zijn",
+        "haar"
+      ],
+      "en": "around"
+    }
   }
 }

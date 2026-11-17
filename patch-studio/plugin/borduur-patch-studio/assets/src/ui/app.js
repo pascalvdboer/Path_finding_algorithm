@@ -202,7 +202,7 @@ export function createApp(root, config) {
       emit(root, EV.STEP, { step: 1 });
       if (!ctx.isMobile() && focus) {
         const r = ws.getBoundingClientRect();
-        if (r.top < 0 || r.top > window.innerHeight * 0.4) ws.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+        if (r.top < -2 || r.bottom > window.innerHeight + 2) ws.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
       }
     }
   }
@@ -540,7 +540,7 @@ export function createApp(root, config) {
         if (my !== job) return;
         ctx.analysis = result;
         ctx.analysisState = { status: 'done', stage: 'done', message: '' };
-        ctx.dragTarget = 'art';
+        ctx.dragTarget = null;
         applyAutoChoices(first);
         Promise.resolve().then(() => history.reset());
         emit(root, EV.ANALYSIS_DONE, { result });

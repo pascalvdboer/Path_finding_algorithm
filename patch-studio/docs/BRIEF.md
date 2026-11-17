@@ -103,3 +103,7 @@ tegen betaling. Dan verdienen we daar ook een beetje geld aan. Diensten leveren 
    als patch op pet/muts, op hoodie/jas genaaid, als PVC- of lederen sleutelhanger/tassenlabel, of ingekaderd als cadeau
    (kader/schaduwdoos met gelaserd naamplaatje). Realistische mockups, eerlijk geprijsd (digitaliseren al gedaan = voordeel),
    alleen tonen wat technisch past bij het ontwerp. Alles instelbaar als WooCommerce-producten.
+
+## EISEN VAN DE EIGENAAR (17-11, avond) — zie docs/STUDIO-REDESIGN.md "HARDE EISEN VAN DE EIGENAAR (17-11, avond)"
+Proactief tonen wat ze kunnen maken (galerij, sjablonen, suggesties), veel kunnen aanpassen (progressief), en bij borduren
+altijd werken met de echte Madeira Polyneon-kleuren (nummer + naam, volledige kaart van 411 kleuren, automatische omzetting).

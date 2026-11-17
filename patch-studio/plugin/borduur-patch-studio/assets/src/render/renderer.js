@@ -15,7 +15,7 @@ import { bandField, absorbSmall } from './field.js';
 import { drawBackdrop } from './scene.js';
 import { drawTextLayer, fontFor, fontReady, loadFont } from './text.js';
 import { drawGarment, placePatch } from './garment.js';
-import { makeCanvas, ctx2d, Lru, idOf, now, shade, rgbOf, lum, clamp } from './util.js';
+import { makeCanvas, ctx2d, Lru, idOf, now, shade, rgbOf, lum, clamp, softShadow } from './util.js';
 
 const LABEL_LOOKS = { embroidered: 1, woven: 1, chenille: 1, pvc: 1 };
 const artCache = new Lru(6);
@@ -249,7 +249,7 @@ function litCanvas(geo, light, shadow, ppm, extraPad = 0) {
   const blur = shadow[1] * ppm + hpx * 0.6;
   const pad = Math.ceil(Math.abs(ox) + Math.abs(oy) + blur * 1.5 + 2 + extraPad);
   const out = makeCanvas(w + 2 * pad, h + 2 * pad), oc = ctx2d(out);
-  oc.shadowColor = `rgba(0,0,0,${shadow[0]})`; oc.shadowBlur = blur; oc.shadowOffsetX = ox; oc.shadowOffsetY = oy;
+  softShadow(oc, cv, pad, pad, ox, oy, blur, shadow[0]);
   oc.drawImage(cv, pad, pad);
   return { canvas: out, pad };
 }
@@ -268,10 +268,12 @@ function artLayer(art, look, rect, ppm, o) {
   const lkey = key + '#' + o.light.key;
   const hit = litCache.get(lkey);
   if (hit) { artLatest.set(prefix, lkey); return hit; }
-  if (o.quality === 'fast') {
+  if (o.quality === 'fast' && !geoCache.get(key)) {
+    // same geometry at this size: only the light moved → relight below (the glint follows the pointer);
+    // otherwise reuse the last layer at another size while dragging / zooming
     const lk = artLatest.get(prefix);
     const prev = lk && litCache.get(lk);
-    if (prev) return prev; // reuse at another size / light while dragging, zooming or moving the light
+    if (prev) return prev;
     lw = Math.max(1, lw >> 1); lh = Math.max(1, lh >> 1); key = prefix + '#' + lw + 'x' + lh;
   }
   let geo = geoCache.get(key);
@@ -399,13 +401,8 @@ function underLayer0(F) {
   const [L0, L1, L2] = F.light.L;
   const t = body.thick * ppm * (uncut ? 0.4 : 1), k = 1 / Math.max(0.3, L2 / Math.hypot(L0, L1, L2));
   const sx = -L0 * k * t * 0.55, sy = -L1 * k * t * 0.55;
-  const shape = () => { c.beginPath(); if (uncut) c.rect(fb.x, fb.y, fb.w, fb.h); else tracePath(c, F.poly); };
-  c.save();
-  c.shadowColor = `rgba(18,24,38,${0.16 + body.shadowA * 0.22})`; c.shadowBlur = t * 2.2 + ppm * 1.5; c.shadowOffsetX = sx * 1.6; c.shadowOffsetY = sy * 1.6 + ppm * 0.3;
-  shape(); c.fillStyle = '#000'; c.fill();
-  c.shadowColor = `rgba(10,14,24,${0.25 + body.shadowA * 0.3})`; c.shadowBlur = Math.max(1.5, ppm * 0.45); c.shadowOffsetX = sx * 0.35; c.shadowOffsetY = sy * 0.35;
-  shape(); c.fill();
-  c.restore();
+  softShadow(c, cv, 0, 0, sx * 1.6, sy * 1.6 + ppm * 0.3, t * 2.2 + ppm * 1.5, 0.16 + body.shadowA * 0.22, '18,24,38');
+  softShadow(c, cv, 0, 0, sx * 0.35, sy * 0.35, Math.max(1.5, ppm * 0.45), 0.25 + body.shadowA * 0.3, '10,14,24');
   c.drawImage(cv, 0, 0);
   return underCache.set(key, out);
 }
@@ -444,10 +441,8 @@ function overLayer0(F) {
   if (F.edge.style !== 'laser') {
     const [L0, L1, L2] = F.light.L;
     const hpx = r.maxHmm * F.ppm, k = Math.min(2.5, 0.8 / Math.max(0.25, L2));
-    c.save();
-    c.shadowColor = 'rgba(0,0,0,0.5)'; c.shadowBlur = hpx * 0.8 + F.ppm * 0.3; c.shadowOffsetX = -L0 * k * hpx; c.shadowOffsetY = -L1 * k * hpx;
+    softShadow(c, tmp, 0, 0, -L0 * k * hpx, -L1 * k * hpx, hpx * 0.8 + F.ppm * 0.3, 0.5);
     c.drawImage(tmp, 0, 0);
-    c.restore();
   } else c.drawImage(tmp, 0, 0);
   edgeDecor(c, F.poly, F.ppm, F.edge, { fabricHex: F.baseHex, edgeHex: F.edgeHex, seed: 1 + F.polyKey });
   return overCache.set(key, cv);
@@ -457,14 +452,16 @@ function overLayer0(F) {
 function frameLayer(kind, F, build) {
   const prefix = [kind, F.look, F.polyKey, F.baseHex, F.fabricHex, F.edgeHex, JSON.stringify(F.edge), F.relief, F.shadow ? 1 : 0,
     F.backdrop ? idOf(F.backdrop.image) : '', F.hasBg ? 1 : 0].join('#');
-  const sizeKey = [F.W, F.H, F.ppm.toFixed(3), F.light.key].join('#');
+  const geomKey = [F.W, F.H, F.ppm.toFixed(3)].join('#'), sizeKey = geomKey + '#' + F.light.key;
   if (F.quality === 'fast') {
     const prev = frameLatest.get(prefix);
-    if (prev && prev.sizeKey !== sizeKey) return prev.layer;
+    // fast: reuse the cached layer at another scale; when only the light moved, relight the (cheap) border
+    // and keep the patch body as it is
+    if (prev && prev.sizeKey !== sizeKey && !(kind === 'o' && prev.geomKey === geomKey)) return prev.layer;
   }
   const canvas = build(F);
   const layer = { canvas, ppm: F.ppm, lx: F.lx, ly: F.ly };
-  frameLatest.set(prefix, { sizeKey, layer });
+  frameLatest.set(prefix, { sizeKey, geomKey, layer });
   if (frameLatest.size > 24) frameLatest.delete(frameLatest.keys().next().value);
   return layer;
 }
@@ -514,10 +511,12 @@ export function paintPatch(c, o, g) {
   c.save();
   c.beginPath(); tracePath(c, transformPolygon(g.polyMm, ppm, g.ox, g.oy)); c.clip();
   if (art && art.image && rectL && rectL.w > 0 && rectL.h > 0) {
+    const tal = now();
     const L = artLayer(art, look, layout.artRectMm, ppm, { reduced: o.reduced !== false, quality: o.quality, engraveHex, light, relief, pvcDepth });
     const sx = rectL.w / L.w, sy = rectL.h / L.h;
     const r = { x: fx + rectL.x - L.pad * sx, y: fy + rectL.y - L.pad * sy, w: rectL.w + 2 * L.pad * sx, h: rectL.h + 2 * L.pad * sy };
     drawArtImage(c, null, r, design && design.art ? design.art.rotation : 0, L.canvas);
+    PT('artTotal', tal);
   }
   const texts = (design && design.texts || []).filter((t) => t && String(t.text || '').trim());
   if (texts.length) {
@@ -613,7 +612,9 @@ export function drawScene(c, W, H, opts, config, pendingFonts) {
   let fx = bx + bw / 2, fy = by + bh / 2;
   if (zoom > 1 && opts.zoomCenterMm) { fx = Number(opts.zoomCenterMm.x) || fx; fy = Number(opts.zoomCenterMm.y) || fy; }
   const ox = W / 2 - fx * ppm, oy = H / 2 - fy * ppm;
+  const tbd = now();
   if (!opts.transparent) drawBackdrop(c, W, H, light, opts.scene);
+  PT('backdrop', tbd);
   paintPatch(c, o, { look: P.look, ppm, ox, oy, polyMm: P.polyMm, polyKey: P.polyKey, art: P.art, shadow: !opts.transparent, pendingFonts, light });
   return { ms: now() - t0, pxPerMm: ppm, originPx: { x: ox, y: oy }, view, light: { azimuthDeg: Math.round(light.az * 180 / Math.PI), elevationDeg: Math.round(light.el * 180 / Math.PI) } };
 }

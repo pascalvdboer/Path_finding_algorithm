@@ -118,3 +118,31 @@ export function now() {
 }
 
 export function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+
+/**
+ * Cheap soft shadow of `src` (its alpha) drawn into `c` at (x+ox, y+oy): downscale → tint → upscale.
+ * Much faster than ctx.shadowBlur on large layers (no blur kernel), visually equivalent for soft shadows.
+ */
+export function softShadow(c, src, x, y, ox, oy, blurPx, alpha, rgb = '0,0,0') {
+  const w = src.width, h = src.height;
+  const s = Math.max(1, Math.min(12, blurPx / 1.6));
+  const sw = Math.max(2, Math.ceil(w / s) + 2), sh = Math.max(2, Math.ceil(h / s) + 2);
+  const small = makeCanvas(sw, sh), sc = ctx2d(small);
+  sc.imageSmoothingEnabled = true;
+  sc.drawImage(src, 1, 1, sw - 2, sh - 2);
+  sc.globalCompositeOperation = 'source-in';
+  sc.fillStyle = `rgb(${rgb})`; sc.fillRect(0, 0, sw, sh);
+  if (s > 2.5) {
+    // second pass: one more halving for a rounder falloff
+    const s2 = makeCanvas(Math.max(2, sw >> 1), Math.max(2, sh >> 1)), c2 = ctx2d(s2);
+    c2.imageSmoothingEnabled = true; c2.drawImage(small, 0, 0, s2.width, s2.height);
+    sc.globalCompositeOperation = 'copy'; sc.drawImage(s2, 0, 0, sw, sh);
+  }
+  c.save();
+  c.imageSmoothingEnabled = true;
+  try { c.imageSmoothingQuality = 'high'; } catch (e) { /* older engines */ }
+  c.globalAlpha *= alpha;
+  const kx = w / (sw - 2), ky = h / (sh - 2);
+  c.drawImage(small, x + ox - kx, y + oy - ky, sw * kx, sh * ky);
+  c.restore();
+}

@@ -31,6 +31,30 @@ Acceptatietest (Playwright, iPhone 13 + kleine Android): na upload en bij het op
 ligt de volledige patch binnen het zichtbare scherm (getBoundingClientRect binnen window.visualViewport), en
 document.scrollingElement.scrollTop blijft 0. Maak screenshots van elk paneel als bewijs.
 
+
+## HARDE EISEN VAN DE EIGENAAR (17-11, avond)
+"UI moet proactief weergeven wat ze kunnen maken. Ze moeten veel kunnen aanpassen, en bij borduren al werken met de kleuren van Polyneon."
+1. **Proactief tonen wat kan** — de klant hoeft niets te weten of te zoeken:
+   - Bij openen (vóór upload): een inspirerende galerij/startpunten met echte, mooie voorbeelden van wat ze kunnen maken:
+     per techniek (geborduurd, 3D-puff, geweven, bedrukt, chenille, PVC, leder), per toepassing (club, bedrijf, werkkleding,
+     motorclub, jeugdbeweging, evenement, naamstrook, cadeau) en per vorm. Klik = start met dat sjabloon, meteen aanpasbaar.
+   - Startsjablonen (embleem met boogtekst, schild, banner, naamstrook, rond logo, vintage badge, ...) die je met eigen tekst/logo vult.
+   - Tijdens het ontwerpen: contextuele suggesties ("Probeer een metallic garen voor de rand", "Dit ontwerp kan ook als 3D-puff",
+     "Ook als sleutelhanger of op een pet") — alleen als het technisch past, nooit opdringerig.
+2. **Veel kunnen aanpassen** (maar overzichtelijk, progressieve onthulling: eenvoudig standaard, "Meer opties" voor wie wil):
+   per element kleur wijzigen (klik op een kleurvlak in het ontwerp → kies garenkleur), tekst (font, grootte, letterafstand,
+   boog, contour/omlijning, schaduw), vormen (rond, ovaal, rechthoek, afgeronde rechthoek, schild, ster, contour rond ontwerp,
+   eigen vorm), rand (merrow, satijnrand, hot-cut, laser, randdikte, randkleur), achtergrond (stofkleur, twill, volledig
+   geborduurd), garensoorten (standaard, metallic goud/zilver, glow, reflecterend, 3D-puff — alleen wat het atelier aanbiedt via
+   instellingen), lagen (volgorde, vergrendelen, verbergen), uitlijnen/centreren, spiegelen/draaien, undo/redo.
+3. **Borduren = Polyneon-garenkleuren.** Bij borduren kiest de klant ALTIJD uit de echte Madeira Polyneon-kleuren met nummer en
+   naam (volledige kaart: docs/research/01-garenkleuren-polyneon.json, 411 kleuren; de config/thread-palette.json is een
+   selectie). Kleurkiezer: eerst de populaire/aanbevolen kleuren, zoeken op nummer of naam, groeperen per kleurfamilie, "toon alle
+   411". Kleuren uit een geüpload ontwerp worden automatisch omgezet naar de dichtstbijzijnde Polyneon-kleur (ΔE2000) en zo
+   getoond ("Rood → Polyneon 1747 …"), klant kan elke toewijzing aanpassen. Het voorbeeld rendert in die exacte garenkleuren.
+   Polyneon-nummers komen mee in winkelwagen, bestelling en productiefiche. Bij andere technieken (bedrukt, PVC, …) een passend
+   palet of vrije kleur.
+
 ## Doel van versie 2
 Een klant moet bij het openen denken "wauw". De patch is de held: groot, fotorealistisch, met licht en diepte,
 draaibaar/zoombaar, en meteen op een kledingstuk te zien. De studio voelt als een premium creatief product.

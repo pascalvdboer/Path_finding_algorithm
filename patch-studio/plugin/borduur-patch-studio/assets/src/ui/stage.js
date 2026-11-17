@@ -294,10 +294,12 @@ export function createStage(ctx) {
     const ww = wrap.clientWidth, wh = wrap.clientHeight;
     const bw = ctxbar.offsetWidth || 200, bh = ctxbar.offsetHeight || 44;
     const extent = Math.max(w, hh) / 2;
+    const minY = views.hidden ? 8 : views.offsetTop + views.offsetHeight + 8;
     let y = c.y - (b.rot ? extent : hh / 2) - bh - 12;
-    if (y < 8) y = Math.min(wh - bh - 8, c.y + (b.rot ? extent : hh / 2) + 12);
+    if (y < minY) y = Math.min(wh - bh - 64, c.y + (b.rot ? extent : hh / 2) + 12);
+    if (y < minY) y = minY;
     ctxbar.style.left = clamp(c.x - bw / 2, 8, Math.max(8, ww - bw - 8)) + 'px';
-    ctxbar.style.top = clamp(y, 8, Math.max(8, wh - bh - 8)) + 'px';
+    ctxbar.style.top = Math.max(minY, Math.min(y, wh - bh - 8)) + 'px';
   }
 
   function tbtn(name, lbl, fn, extra = {}) {
