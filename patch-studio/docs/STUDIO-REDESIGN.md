@@ -14,6 +14,23 @@ Gewenst gevoel: **Ontwerpstudio** — groot canvas centraal, alles live aanpasba
 - Geen voorbeeld op een kledingstuk dat indruk maakt. Pijltjesknoppen-kruis en schuifbalken ogen als een admin-paneel.
 - Prijsblok domineert; de patch zelf moet de held zijn.
 
+
+## HARDE EIS VAN DE EIGENAAR (gsm) — gaat boven alles
+"Op de telefoon zie ik het ontwerp niet eens, want ik moet naar beneden scrollen om aanpassingen te doen."
+Op gsm moet de patch ALTIJD zichtbaar blijven terwijl je iets aanpast. Concreet, op 390x844 en 360x740:
+- Het voorbeeld staat bovenaan en blijft vast in beeld (sticky of vaste layout), ±40-50% van de schermhoogte.
+- Alle bediening zit eronder in een vaste onderste tabbalk (Ontwerp, Tekst, Vorm, Kleuren, Techniek, Prijs) die een
+  compacte bottom sheet opent, zó laag dat het voorbeeld er volledig boven zichtbaar blijft. Nooit de pagina laten
+  scrollen om een knop te bereiken; als een paneel meer inhoud heeft, scrollt alleen het paneel.
+- Elke wijziging (grootte, slepen, tekst typen, kleur, vorm, techniek) is meteen zichtbaar in het voorbeeld zonder scrollen.
+- Tijdens tekst typen (toetsenbord open!) moet het voorbeeld nog zichtbaar zijn: verklein het voorbeeld i.p.v. het weg te duwen
+  (gebruik visualViewport / dvh).
+- Slepen met één vinger op de patch verplaatst; knijpen (pinch) vergroot/verkleint; de pagina zelf scrollt dan niet mee.
+- Prijs en "Bestellen" altijd zichtbaar in een smalle balk.
+Acceptatietest (Playwright, iPhone 13 + kleine Android): na upload en bij het openen van ELK paneel en tijdens tekstinvoer
+ligt de volledige patch binnen het zichtbare scherm (getBoundingClientRect binnen window.visualViewport), en
+document.scrollingElement.scrollTop blijft 0. Maak screenshots van elk paneel als bewijs.
+
 ## Doel van versie 2
 Een klant moet bij het openen denken "wauw". De patch is de held: groot, fotorealistisch, met licht en diepte,
 draaibaar/zoombaar, en meteen op een kledingstuk te zien. De studio voelt als een premium creatief product.
