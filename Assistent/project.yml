@@ -32,3 +32,5 @@ targets:
         NSSpeechRecognitionUsageDescription: "Je spraak wordt omgezet naar tekst zodat de assistent je begrijpt."
         NSCalendarsFullAccessUsageDescription: "De assistent leest en maakt afspraken in je agenda."
         NSRemindersFullAccessUsageDescription: "De assistent leest en maakt herinneringen voor je."
+        NSContactsUsageDescription: "De assistent zoekt contacten op zodat hij mensen kan bellen, appen en mailen."
+        NSLocationWhenInUseUsageDescription: "De assistent gebruikt je locatie voor routes, weer en dingen in de buurt."

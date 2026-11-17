@@ -1,13 +1,12 @@
 import Foundation
 import Security
 
-/// Bewaart de Claude API-sleutel veilig in de iOS-sleutelhanger.
+/// Bewaart geheimen (Claude API-sleutel, Google-token) veilig in de iOS-sleutelhanger.
 enum Keychain {
-    private static let service = "assistent.anthropic.apikey"
-    private static let account = "default"
+    private static let service = "assistent.secrets"
 
-    static func save(_ value: String) {
-        delete()
+    static func save(_ value: String, account: String = "anthropic") {
+        delete(account: account)
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -18,7 +17,7 @@ enum Keychain {
         SecItemAdd(query as CFDictionary, nil)
     }
 
-    static func load() -> String? {
+    static func load(account: String = "anthropic") -> String? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -29,12 +28,12 @@ enum Keychain {
         var item: CFTypeRef?
         guard SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess,
               let data = item as? Data,
-              let key = String(data: data, encoding: .utf8),
-              !key.isEmpty else { return nil }
-        return key
+              let value = String(data: data, encoding: .utf8),
+              !value.isEmpty else { return nil }
+        return value
     }
 
-    static func delete() {
+    static func delete(account: String = "anthropic") {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,

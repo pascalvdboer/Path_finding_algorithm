@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 
 struct ContentView: View {
     @EnvironmentObject private var vm: AssistantViewModel
@@ -26,33 +27,51 @@ struct ContentView: View {
             }
             .sheet(isPresented: $showSettings) { SettingsView() }
             .sheet(item: $vm.pendingEmail) { draft in
-                MailComposer(draft: draft) { vm.pendingEmail = nil }
-                    .ignoresSafeArea()
+                MailComposer(draft: draft) { vm.pendingEmail = nil }.ignoresSafeArea()
+            }
+            .sheet(item: $vm.pendingMessage) { draft in
+                MessageComposer(draft: draft) { vm.pendingMessage = nil }.ignoresSafeArea()
+            }
+            .alert(vm.pendingConfirmation?.title ?? "",
+                   isPresented: Binding(
+                       get: { vm.pendingConfirmation != nil },
+                       set: { if !$0 { vm.resolveConfirmation(false) } }),
+                   presenting: vm.pendingConfirmation) { request in
+                Button(request.action) { vm.resolveConfirmation(true) }
+                Button("Annuleren", role: .cancel) { vm.resolveConfirmation(false) }
+            } message: { request in
+                Text(request.message)
             }
             .task {
                 speechObserver.bind(vm.speech)
                 await vm.onAppear()
-                if !vm.hasApiKey { showSettings = true }
+                if !vm.hasApiKey { showSettings = true } else { startListeningIfRequested() }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .startListening)) { _ in
+                startListeningIfRequested()
             }
         }
+    }
+
+    private func startListeningIfRequested() {
+        guard ListenRequest.pending else { return }
+        ListenRequest.pending = false
+        if !speechObserver.isRecording && !vm.isThinking { vm.toggleListening() }
     }
 
     private var messageList: some View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 12) {
-                    if vm.messages.isEmpty {
-                        emptyState
-                    }
+                    if vm.messages.isEmpty { emptyState }
                     ForEach(vm.messages) { message in
                         MessageBubble(message: message).id(message.id)
                     }
                     if vm.isThinking {
                         HStack(spacing: 8) {
                             ProgressView()
-                            Text("Even denken…").foregroundStyle(.secondary)
+                            Text("Even bezig…").foregroundStyle(.secondary)
                         }
-                        .id("thinking")
                     }
                 }
                 .padding()
@@ -68,18 +87,38 @@ struct ContentView: View {
             Text("Tik op de microfoon en vraag bijvoorbeeld:")
                 .font(.headline)
             ForEach([
+                "Heb ik belangrijke mail? Lees de laatste van Jan voor.",
+                "Antwoord hem dat donderdag goed is.",
+                "Bel mama.",
+                "App Lisa dat ik over tien minuten thuis ben.",
                 "Wat staat er morgen in mijn agenda?",
-                "Zet vrijdag om 10 uur een afspraak met de tandarts.",
-                "Herinner me vanavond om 8 uur aan de vuilnisbak.",
-                "Mail Jan dat ik later kom.",
-                "Wat voor weer wordt het morgen in Utrecht?",
+                "Zet de wekker op 7 uur.",
+                "Navigeer naar het station.",
+                "Welke wijn past bij risotto?",
             ], id: \.self) { Text("• \($0)").foregroundStyle(.secondary) }
+            Text("Je kunt ook een foto of schermafbeelding meesturen met 📎.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .padding(.top, 8)
         }
-        .padding(.top, 40)
+        .padding(.top, 30)
     }
 
     private var inputBar: some View {
         VStack(spacing: 10) {
+            if let image = vm.attachedImage {
+                HStack {
+                    Image(uiImage: image)
+                        .resizable().scaledToFill()
+                        .frame(width: 56, height: 56)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                    Button { vm.attachedImage = nil; vm.pickedPhoto = nil } label: {
+                        Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
+                    }
+                    .accessibilityLabel("Foto verwijderen")
+                    Spacer()
+                }
+            }
             if speechObserver.isRecording {
                 Text(speechObserver.transcript.isEmpty ? "Ik luister…" : speechObserver.transcript)
                     .font(.callout)
@@ -87,11 +126,15 @@ struct ContentView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             HStack(spacing: 12) {
+                PhotosPicker(selection: $vm.pickedPhoto, matching: .images) {
+                    Image(systemName: "paperclip").font(.title2)
+                }
+                .accessibilityLabel("Foto toevoegen")
                 TextField("Typ een vraag…", text: $vm.input, axis: .vertical)
                     .textFieldStyle(.roundedBorder)
                     .lineLimit(1...4)
                     .onSubmit { vm.sendTyped() }
-                if !vm.input.isEmpty {
+                if !vm.input.isEmpty || vm.attachedImage != nil {
                     Button { vm.sendTyped() } label: {
                         Image(systemName: "arrow.up.circle.fill").font(.title)
                     }
@@ -112,7 +155,7 @@ struct ContentView: View {
     }
 }
 
-/// Doorgeeflik zodat de view meeverandert met de SpeechManager (genest ObservableObject).
+/// Zorgt dat de view meeverandert met de SpeechManager (genest ObservableObject).
 @MainActor
 final class SpeechManagerObserver: ObservableObject {
     @Published var isRecording = false
@@ -136,11 +179,21 @@ struct MessageBubble: View {
     var body: some View {
         HStack {
             if message.role == .user { Spacer(minLength: 40) }
-            Text(message.text)
-                .textSelection(.enabled)
-                .padding(12)
-                .background(background, in: RoundedRectangle(cornerRadius: 16))
-                .foregroundStyle(message.role == .user ? .white : .primary)
+            VStack(alignment: message.role == .user ? .trailing : .leading, spacing: 6) {
+                if let image = message.image {
+                    Image(uiImage: image)
+                        .resizable().scaledToFit()
+                        .frame(maxWidth: 200, maxHeight: 200)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                if !message.text.isEmpty {
+                    Text(message.text)
+                        .textSelection(.enabled)
+                        .padding(12)
+                        .background(background, in: RoundedRectangle(cornerRadius: 16))
+                        .foregroundStyle(message.role == .user ? .white : .primary)
+                }
+            }
             if message.role != .user { Spacer(minLength: 40) }
         }
     }
