@@ -10,7 +10,7 @@ struct AssistentApp: App {
             RootView()
                 .environmentObject(viewModel)
         }
-        .onChange(of: scenePhase) {
+        .onChange(of: scenePhase, initial: true) {
             if scenePhase == .active {
                 RecordingStore.shared.resumePending()
             }

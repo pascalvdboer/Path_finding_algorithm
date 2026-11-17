@@ -3,6 +3,7 @@ import SwiftUI
 struct RecordingsView: View {
     @ObservedObject private var store = RecordingStore.shared
     @ObservedObject private var recorder = MeetingRecorder.shared
+    @EnvironmentObject private var vm: AssistantViewModel
     @State private var error: String?
 
     var body: some View {
@@ -25,7 +26,8 @@ struct RecordingsView: View {
                                 .disabled(rec.status == .recording)
                         }
                         .onDelete { offsets in
-                            for i in offsets { store.delete(store.recordings[i].id) }
+                            let ids = offsets.map { store.recordings[$0] }.filter { $0.status != .recording }.map(\.id)
+                            for id in ids { store.delete(id) }
                         }
                     }
                 }
@@ -47,6 +49,9 @@ struct RecordingsView: View {
     }
 
     private func start() {
+        // Zorg dat de assistent niet meepraat of meeluistert in de opname.
+        vm.speech.stopSpeaking()
+        if vm.speech.isRecording { vm.speech.stopRecording() }
         Task {
             do { try await recorder.start() }
             catch { self.error = error.localizedDescription }

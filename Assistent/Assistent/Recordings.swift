@@ -28,6 +28,8 @@ struct Recording: Codable, Identifiable {
     var speakerNames: [String: String] = [:]
     var summary: String?
 
+    /// Tijdens opnemen: CAF (blijft leesbaar als de app onverwacht stopt). Daarna omgezet naar M4A.
+    var rawFileName: String { "\(id.uuidString).caf" }
     var fileName: String { "\(id.uuidString).m4a" }
 
     func name(of speaker: String) -> String {
@@ -57,7 +59,7 @@ struct Recording: Codable, Identifiable {
     var statusText: String {
         switch status {
         case .recording: return "Bezig met opnemen…"
-        case .recorded: return "Wacht op uitschrijven"
+        case .recorded: return errorMessage ?? "Wacht op uitschrijven"
         case .uploading: return "Uploaden…"
         case .transcribing: return "Uitschrijven met sprekers…"
         case .summarizing: return "Samenvatten…"
@@ -111,14 +113,54 @@ final class RecordingStore: ObservableObject {
             recordings = list
         }
         // Een opname die nog op "recording" staat, is onderbroken doordat de app werd afgesloten.
+        // Het CAF-bestand is dan nog bruikbaar: we redden wat er is opgenomen.
         for i in recordings.indices where recordings[i].status == .recording {
-            recordings[i].status = .failed
-            recordings[i].errorMessage = "Opname onderbroken (app afgesloten)."
+            recordings[i].status = .recorded
+            recordings[i].title += " (hersteld)"
+            recordings[i].errorMessage = nil
         }
+        save()
     }
 
+    /// Het M4A-bestand als dat er is, anders de ruwe CAF-opname.
     func audioURL(for recording: Recording) -> URL {
-        directory.appendingPathComponent(recording.fileName)
+        let m4a = directory.appendingPathComponent(recording.fileName)
+        return FileManager.default.fileExists(atPath: m4a.path) ? m4a
+            : directory.appendingPathComponent(recording.rawFileName)
+    }
+
+    func rawURL(for recording: Recording) -> URL {
+        directory.appendingPathComponent(recording.rawFileName)
+    }
+
+    /// Zet de CAF-opname om naar een compact M4A-bestand (ook bij een half afgebroken opname).
+    private func prepareUploadFile(_ rec: Recording) async throws -> URL {
+        let m4a = directory.appendingPathComponent(rec.fileName)
+        if FileManager.default.fileExists(atPath: m4a.path) { return m4a }
+        let raw = rawURL(for: rec)
+        guard FileManager.default.fileExists(atPath: raw.path) else {
+            throw AssemblyAI.AAIError.failed("audiobestand ontbreekt")
+        }
+        let asset = AVURLAsset(url: raw)
+        if let duration = try? await asset.load(.duration), duration.seconds.isFinite, duration.seconds > 0 {
+            update(rec.id) { $0.duration = duration.seconds }
+        }
+        guard let export = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetAppleM4A) else {
+            return raw
+        }
+        let tmp = directory.appendingPathComponent("\(rec.id.uuidString)-tmp.m4a")
+        try? FileManager.default.removeItem(at: tmp)
+        export.outputURL = tmp
+        export.outputFileType = .m4a
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            export.exportAsynchronously { continuation.resume() }
+        }
+        guard export.status == .completed else {
+            return raw // omzetten mislukt: upload dan het ruwe bestand
+        }
+        try FileManager.default.moveItem(at: tmp, to: m4a)
+        try? FileManager.default.removeItem(at: raw)
+        return m4a
     }
 
     func recording(_ id: UUID) -> Recording? { recordings.first { $0.id == id } }
@@ -138,7 +180,10 @@ final class RecordingStore: ObservableObject {
     }
 
     func delete(_ id: UUID) {
-        if let rec = recording(id) { try? FileManager.default.removeItem(at: audioURL(for: rec)) }
+        if let rec = recording(id) {
+            try? FileManager.default.removeItem(at: directory.appendingPathComponent(rec.fileName))
+            try? FileManager.default.removeItem(at: rawURL(for: rec))
+        }
         recordings.removeAll { $0.id == id }
         save()
     }
@@ -164,21 +209,23 @@ final class RecordingStore: ObservableObject {
             return
         }
         processing.insert(id)
-        var taskID = UIBackgroundTaskIdentifier.invalid
-        taskID = UIApplication.shared.beginBackgroundTask(withName: "transcribe") {
-            UIApplication.shared.endBackgroundTask(taskID)
-            taskID = .invalid
+        // Referentie-box: de expiration handler is @Sendable en mag geen captured var muteren.
+        let bgTask = BackgroundTaskBox()
+        bgTask.id = UIApplication.shared.beginBackgroundTask(withName: "transcribe") {
+            UIApplication.shared.endBackgroundTask(bgTask.id)
+            bgTask.id = .invalid
         }
         defer {
             processing.remove(id)
-            if taskID != .invalid { UIApplication.shared.endBackgroundTask(taskID) }
+            if bgTask.id != .invalid { UIApplication.shared.endBackgroundTask(bgTask.id) }
         }
 
         do {
             var transcriptID = rec.transcriptID
             if transcriptID == nil {
                 update(id) { $0.status = .uploading; $0.errorMessage = nil }
-                let uploadURL = try await AssemblyAI.upload(file: audioURL(for: rec), key: key)
+                let file = try await prepareUploadFile(rec)
+                let uploadURL = try await AssemblyAI.upload(file: file, key: key)
                 transcriptID = try await AssemblyAI.requestTranscript(audioURL: uploadURL, key: key)
                 update(id) { $0.transcriptID = transcriptID }
             }
@@ -194,6 +241,9 @@ final class RecordingStore: ObservableObject {
                 }
             }
             update(id) { $0.status = .done }
+        } catch is URLError {
+            // Geen verbinding of app in de achtergrond: automatisch verder bij de volgende keer openen.
+            update(id) { $0.status = .recorded; $0.errorMessage = "Wacht op verbinding, gaat vanzelf verder." }
         } catch {
             update(id) { $0.status = .failed; $0.errorMessage = error.localizedDescription }
         }
@@ -273,6 +323,10 @@ final class RecordingStore: ObservableObject {
     }()
 }
 
+private final class BackgroundTaskBox: @unchecked Sendable {
+    var id = UIBackgroundTaskIdentifier.invalid
+}
+
 // MARK: - AssemblyAI
 
 enum AssemblyAI {
@@ -322,8 +376,18 @@ enum AssemblyAI {
 
     /// Wacht tot het transcript klaar is (kan bij uren audio enkele minuten duren).
     static func waitForTranscript(id: String, key: String) async throws -> [Utterance] {
+        var networkFailures = 0
         while true {
-            let json = try await call("/v2/transcript/\(id)", key: key)
+            let json: [String: Any]
+            do {
+                json = try await call("/v2/transcript/\(id)", key: key)
+                networkFailures = 0
+            } catch is URLError where networkFailures < 30 {
+                // Bijv. verbinding verbroken doordat de app in de achtergrond werd gepauzeerd: gewoon opnieuw proberen.
+                networkFailures += 1
+                try await Task.sleep(nanoseconds: 4_000_000_000)
+                continue
+            }
             switch json["status"] as? String {
             case "completed":
                 let list = json["utterances"] as? [[String: Any]] ?? []
@@ -394,6 +458,7 @@ final class MeetingRecorder: NSObject, ObservableObject {
         guard await AVAudioApplication.requestRecordPermission() else {
             throw ToolExecutor.ToolError.denied("de microfoon")
         }
+        guard !isRecording else { return }   // dubbele tik: andere start was ons voor tijdens de await
         let session = AVAudioSession.sharedInstance()
         try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .allowBluetooth])
         try session.setActive(true)
@@ -406,7 +471,7 @@ final class MeetingRecorder: NSObject, ObservableObject {
             AVEncoderBitRateKey: 32_000,
             AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue,
         ]
-        let recorder = try AVAudioRecorder(url: RecordingStore.shared.audioURL(for: rec), settings: settings)
+        let recorder = try AVAudioRecorder(url: RecordingStore.shared.rawURL(for: rec), settings: settings)
         recorder.isMeteringEnabled = true
         guard recorder.record() else {
             RecordingStore.shared.delete(rec.id)
@@ -419,9 +484,11 @@ final class MeetingRecorder: NSObject, ObservableObject {
         userPaused = false
         elapsed = 0
 
-        timer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: 0.25, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.tick() }
         }
+        RunLoop.main.add(timer, forMode: .common)   // blijft lopen tijdens scrollen
+        self.timer = timer
     }
 
     func togglePause() {
@@ -449,6 +516,7 @@ final class MeetingRecorder: NSObject, ObservableObject {
         isRecording = false
         isPaused = false
         level = 0
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         RecordingStore.shared.update(id) { $0.duration = duration; $0.status = .recorded }
         Task { await RecordingStore.shared.process(id) }
     }
