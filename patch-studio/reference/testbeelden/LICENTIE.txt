@@ -1,0 +1,7 @@
+Foto's (.webp) uit het WordPress-thema Twenty Twenty-Four (downloads.wordpress.org/theme/twentytwentyfour.zip).
+Licentie volgens readme.txt van het thema: CC0 (https://creativecommons.org/publicdomain/zero/1.0/), bron rawpixel.com:
+- tourist-and-building.webp  https://www.rawpixel.com/image/5928004/
+- art-gallery.webp           https://www.rawpixel.com/image/3286187/
+- green-staircase.webp       https://www.rawpixel.com/image/430558/
+- abstract-geometric-art.webp https://www.rawpixel.com/image/3283970/
+Gebruikt als testbeelden voor de beeldanalyse (zie docs/research/07-beeldanalyse.md).

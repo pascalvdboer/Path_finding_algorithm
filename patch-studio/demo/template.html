@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="nl-BE">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Patch Studio · demo</title>
+<meta name="robots" content="noindex">
+<meta name="description" content="Demo van Patch Studio: ontwerp je patch, krijg eerlijk vakadvies en zie meteen je prijs.">
+<style>
+/*__FONTFACES__*/
+</style>
+<style>
+/*__CSS__*/
+</style>
+<style>
+  /* Demo frame only (not part of the plugin): imitates the site around the shortcode. */
+  :root { --demo-ink: #1e1b1b; --demo-blue: #21a9e2; --demo-cta: #0b74a6; --demo-navy: #0a1f44; --demo-line: #e3ebf2; }
+  html, body { margin: 0; background: #fff; color: var(--demo-ink); }
+  body { font-family: "Assistant", system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 16px; line-height: 1.5; -webkit-text-size-adjust: 100%; }
+  *, *::before, *::after { box-sizing: border-box; }
+  .demo-bar { background: var(--demo-navy); color: #fff; font-size: 14px; padding: 8px 16px; }
+  .demo-bar__in { max-width: 1240px; margin: 0 auto; display: flex; gap: 8px 16px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+  .demo-bar a { color: #fff; font-weight: 600; }
+  .demo-bar strong { font-family: "Sora", system-ui, sans-serif; letter-spacing: .02em; }
+  .demo-hero { background: linear-gradient(90deg, #0b2444 0%, #2a6ea3 60%, #9cc7e1 100%); color: #fff; padding: 32px 16px 40px; }
+  .demo-hero__in { max-width: 1240px; margin: 0 auto; }
+  .demo-hero h1 { margin: 0; font-family: "Sora", system-ui, sans-serif; font-weight: 700; font-size: clamp(26px, 4.4vw, 42px); line-height: 1.15; }
+  .demo-hero p { margin: 8px 0 0; max-width: 760px; font-size: clamp(16px, 1.6vw, 19px); opacity: .95; }
+  .demo-usps { list-style: none; margin: 16px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 18px; font-weight: 600; }
+  .demo-usps li::before { content: "✓ "; color: #52d7b4; }
+  .demo-try { max-width: 1240px; margin: 18px auto 0; padding: 0 16px; }
+  .demo-try__title { font-family: "Sora", system-ui, sans-serif; font-weight: 700; font-size: 17px; margin: 0 0 4px; }
+  .demo-try__hint { margin: 0 0 10px; color: #555; font-size: 15px; }
+  .demo-try__list { display: flex; flex-wrap: wrap; gap: 10px; margin: 0; padding: 0; list-style: none; }
+  .demo-try__btn { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 6px 14px 6px 6px; border: 1px solid #8a8a8a; border-radius: 10px; background: #fff; color: var(--demo-ink); font: inherit; font-weight: 600; cursor: pointer; text-align: left; max-width: 100%; }
+  .demo-try__btn:hover { border-color: var(--demo-cta); background: #f3f9fd; }
+  .demo-try__btn:focus-visible { outline: 3px solid #5926c5; outline-offset: 2px; }
+  .demo-try__btn img { width: 36px; height: 36px; object-fit: cover; border-radius: 6px; flex: none; background: #f5f5f5; }
+  .demo-try__btn small { display: block; font-weight: 500; color: #555; font-size: 13px; }
+  .demo-main { padding: 8px 0 32px; }
+  .demo-foot { border-top: 1px solid var(--demo-line); background: #fcfcfc; color: #555; font-size: 14px; padding: 20px 16px 96px; }
+  .demo-foot__in { max-width: 1240px; margin: 0 auto; }
+  .demo-foot p { margin: 0 0 6px; }
+  .demo-err { max-width: 900px; margin: 24px auto; padding: 16px; border: 2px solid #b42318; border-radius: 8px; color: #b42318; white-space: pre-wrap; }
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+<div class="demo-bar" role="note">
+  <div class="demo-bar__in">
+    <span><strong>Patch Studio</strong> · <span data-demo-t="bar">demo zonder webshop: er wordt niets besteld of verstuurd.</span></span>
+    <span><a href="?lang=nl" hreflang="nl" lang="nl">Nederlands</a> · <a href="?lang=fr" hreflang="fr" lang="fr">Français</a></span>
+  </div>
+</div>
+<header class="demo-hero">
+  <div class="demo-hero__in">
+    <h1 data-demo-t="h1">Patches laten maken</h1>
+    <p data-demo-t="lead">Upload je logo, tekening of een gsm-foto van een bestaande patch. Je ziet meteen welke techniek het mooist wordt, waarom, en wat het kost.</p>
+    <ul class="demo-usps">
+      <li data-demo-t="u1">Vanaf 1 stuk</li>
+      <li data-demo-t="u2">Digitale proef vóór productie</li>
+      <li data-demo-t="u3">Eigen atelier in Kalmthout</li>
+    </ul>
+  </div>
+</header>
+
+<section class="demo-try" aria-labelledby="demo-try-title">
+  <h2 class="demo-try__title" id="demo-try-title" data-demo-t="tryTitle">Geen bestand bij de hand? Probeer een voorbeeld</h2>
+  <p class="demo-try__hint" data-demo-t="tryHint">Elk voorbeeld toont ander advies. Je eigen bestand uploaden kan ook, hieronder.</p>
+  <ul class="demo-try__list" id="demo-try"></ul>
+</section>
+
+<main class="demo-main">
+  <div class="bps-studio" id="studio" data-bps-root data-bps-version="1.0.0" lang="nl-BE">
+    <div class="bps-skeleton" data-bps-skeleton>
+      <h2 class="bps-skeleton__title">Ontwerp je patch</h2>
+      <p class="bps-skeleton__subtitle">Upload je logo, tekening of zelfs een foto van een bestaande patch. Wij kijken meteen of het te borduren is.</p>
+      <label class="bps-skeleton__dropzone" for="demo-file">
+        <span class="bps-skeleton__drop-main"><strong>Sleep je bestand hierheen</strong> of <em>kies een bestand</em></span>
+        <span class="bps-skeleton__drop-hint">PNG, JPG, SVG of PDF · max. 25 MB</span>
+        <input class="bps-skeleton__input" id="demo-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,application/pdf,.ai,.eps,.psd" data-bps-skeleton-input>
+      </label>
+      <noscript><p class="bps-skeleton__noscript">Je browser ondersteunt de ontwerptool niet.</p></noscript>
+    </div>
+  </div>
+</main>
+
+<footer class="demo-foot">
+  <div class="demo-foot__in">
+    <p data-demo-t="f1">Dit is een losse demo van de WordPress-plugin Patch Studio voor borduurservicebelgie.be. De analyse gebeurt volledig in je browser: je bestand verlaat je toestel niet.</p>
+    <p data-demo-t="f2">Prijzen zijn de voorbeeldprijzen uit de standaardinstellingen (incl. 21 % btw) en zijn in WordPress aan te passen. In de echte winkel gaat "Bestellen" naar de winkelmand en krijg je eerst een digitale proef.</p>
+    <p data-demo-t="f3">Voorbeeldfoto: CC0 (rawpixel, via het WordPress-thema Twenty Twenty-Four). Lettertypes: SIL Open Font License / Apache 2.0.</p>
+  </div>
+</footer>
+
+<script type="application/json" id="demo-defaults">/*__DEFAULTS__*/</script>
+<script type="application/json" id="demo-palette">/*__PALETTE__*/</script>
+<script type="application/json" id="demo-fonts">/*__FONTS__*/</script>
+<script type="application/json" id="demo-samples">/*__SAMPLES__*/</script>
+<script type="text/plain" id="demo-worker">/*__WORKER__*/</script>
+<script>window.BPS_NO_AUTOMOUNT = true;</script>
+<script>/*__APP__*/</script>
+<script>
+(function () {
+  'use strict';
+  var q = new URLSearchParams(location.search);
+  var fr = q.get('lang') === 'fr';
+  var locale = fr ? 'fr-BE' : 'nl-BE';
+  var root = document.getElementById('studio');
+  var json = function (id) { return JSON.parse(document.getElementById(id).textContent); };
+
+  var T = {
+    nl: {},
+    fr: {
+      bar: 'démo sans boutique : rien n’est commandé ni envoyé.',
+      h1: 'Faire réaliser des écussons',
+      lead: 'Téléchargez votre logo, un dessin ou une photo prise au téléphone d’un écusson existant. Vous voyez tout de suite quelle technique donnera le plus beau résultat, pourquoi, et combien cela coûte.',
+      u1: 'Dès 1 pièce', u2: 'Épreuve numérique avant production', u3: 'Notre propre atelier à Kalmthout',
+      tryTitle: 'Pas de fichier sous la main ? Essayez un exemple',
+      tryHint: 'Chaque exemple donne un autre conseil. Vous pouvez aussi télécharger votre propre fichier ci-dessous.',
+      f1: 'Ceci est une démo autonome du plugin WordPress Patch Studio pour borduurservicebelgie.be. L’analyse se fait entièrement dans votre navigateur : votre fichier ne quitte pas votre appareil.',
+      f2: 'Les prix sont les prix d’exemple des réglages par défaut (TVA 21 % incluse) et sont modifiables dans WordPress. Dans la vraie boutique, « Commander » mène au panier et vous recevez d’abord une épreuve numérique.',
+      f3: 'Photo d’exemple : CC0 (rawpixel, via le thème WordPress Twenty Twenty-Four). Polices : SIL Open Font License / Apache 2.0.',
+    },
+  };
+  document.documentElement.lang = locale;
+  root.setAttribute('lang', locale);
+  if (fr) {
+    document.title = 'Patch Studio · démo';
+    document.querySelectorAll('[data-demo-t]').forEach(function (el) {
+      var k = el.getAttribute('data-demo-t');
+      if (T.fr[k]) el.textContent = T.fr[k];
+    });
+  }
+
+  try {
+    if (!window.BPS) throw new Error('Patch Studio kon niet laden.');
+    // Text-layer fonts: registered from inline data, so nothing is fetched.
+    var fonts = json('demo-fonts');
+    Object.keys(fonts).forEach(function (id) {
+      try {
+        var f = fonts[id];
+        var face = new FontFace(id, 'url(' + f.data + ') format("woff2")', { weight: String(f.weight), display: 'swap' });
+        document.fonts.add(face);
+        face.load().catch(function () {});
+      } catch (e) { /* fallback font */ }
+    });
+    var workerUrl = URL.createObjectURL(new Blob([document.getElementById('demo-worker').textContent], { type: 'text/javascript' }));
+    var strings = {
+      nl: {
+        'ui.dev.title': 'Dit is een demo',
+        'ui.dev.text': 'In de echte winkel gaat je patch nu naar je winkelmand en reken je af. Daarna krijg je eerst je digitale proef. Deze gegevens zouden naar ons atelier gaan:',
+      },
+      fr: {
+        'ui.dev.title': 'Ceci est une démo',
+        'ui.dev.text': 'Dans la vraie boutique, votre écusson irait maintenant dans votre panier pour le paiement. Vous recevriez ensuite d’abord votre épreuve numérique. Voici ce qui serait transmis à notre atelier :',
+      },
+    };
+    var config = BPS.buildPublicConfig(json('demo-defaults'), json('demo-palette'), {
+      locale: locale,
+      rest: null,
+      assets: { workerUrl: workerUrl, fontsUrl: '', version: 'demo' },
+      strings: strings,
+      page: { technique: '', sizeCm: null, qty: null, shape: 'auto', compact: false },
+    });
+    var app = BPS.mount(root, config);
+    window.BPS_DEMO = { config: config, app: app };
+    root.addEventListener('bps:quote', function (e) { window.BPS_DEMO.lastQuote = e.detail && e.detail.quote; });
+    root.addEventListener('bps:advice', function (e) { window.BPS_DEMO.lastAdvice = e.detail && e.detail.advice; });
+
+    // Extra example files, loaded exactly as if the customer uploaded them.
+    var samples = json('demo-samples');
+    var list = document.getElementById('demo-try');
+    samples.forEach(function (s) {
+      var li = document.createElement('li');
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'demo-try__btn';
+      var img = document.createElement('img');
+      img.src = s.data; img.alt = ''; img.width = 36; img.height = 36;
+      var span = document.createElement('span');
+      span.textContent = fr ? s.fr : s.nl;
+      var small = document.createElement('small');
+      small.textContent = fr ? s.frHint : s.nlHint;
+      span.appendChild(small);
+      b.appendChild(img); b.appendChild(span);
+      b.addEventListener('click', function () { loadSample(s); });
+      li.appendChild(b); list.appendChild(li);
+    });
+
+    function loadSample(s) {
+      fetch(s.data).then(function (r) { return r.blob(); }).then(function (blob) {
+        var file = new File([blob], s.file, { type: s.type });
+        var input = root.querySelector('input[type=file]');
+        if (!input) return;
+        var dt = new DataTransfer();
+        dt.items.add(file);
+        input.files = dt.files;
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+        root.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+      }).catch(function (e) { console.warn('[demo] sample failed', e); });
+    }
+  } catch (e) {
+    var pre = document.createElement('pre');
+    pre.className = 'demo-err';
+    pre.textContent = String(e && e.message || e);
+    document.body.appendChild(pre);
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,962 @@
+{
+ "_doc": "Garenpalet voor Patch Studio (eigenaar: colors-bouwer, SPEC §7.3). Selectie van gangbare kleuren uit het eigen assortiment op borduurservicebelgie.be (docs/research/01-garenkleuren-polyneon.json): code + schermkleur van de site, eigen neutrale NL/FR-namen. Gekozen met een dekkingsalgoritme (ΔE2000) over het volledige assortiment én typische ontwerpkleuren. Fluo-reeks bewust weggelaten (hexwaarden op de site zijn foutief). Aan/uit per code via de beheerpagina (threadsDisabled); 'stock': false = niet leverbaar. Schermkleuren zijn benaderingen.",
+ "brand": "Madeira Polyneon",
+ "source": "https://borduurservicebelgie.be/beschikbare-kleuren-garen/",
+ "version": "2026-11-16",
+ "threads": [
+  {
+   "code": "1801",
+   "name": {
+    "nl": "Wit",
+    "fr": "Blanc"
+   },
+   "hex": "#e5e8f4",
+   "family": "white"
+  },
+  {
+   "code": "1803",
+   "name": {
+    "nl": "Crèmewit",
+    "fr": "Blanc crème"
+   },
+   "hex": "#eeeee0",
+   "family": "white"
+  },
+  {
+   "code": "1592",
+   "name": {
+    "nl": "Muntwit",
+    "fr": "Blanc menthe"
+   },
+   "hex": "#dceced",
+   "family": "white"
+  },
+  {
+   "code": "1886",
+   "name": {
+    "nl": "Lichtgrijs",
+    "fr": "Gris clair"
+   },
+   "hex": "#beb9b9",
+   "family": "grey"
+  },
+  {
+   "code": "1810",
+   "name": {
+    "nl": "Zilvergrijs",
+    "fr": "Gris argent"
+   },
+   "hex": "#adb0ae",
+   "family": "grey"
+  },
+  {
+   "code": "1718",
+   "name": {
+    "nl": "Wolkengrijs",
+    "fr": "Gris nuage"
+   },
+   "hex": "#909ba2",
+   "family": "grey"
+  },
+  {
+   "code": "1575",
+   "name": {
+    "nl": "Staalgrijs",
+    "fr": "Gris acier"
+   },
+   "hex": "#7d888f",
+   "family": "grey"
+  },
+  {
+   "code": "1741",
+   "name": {
+    "nl": "Middengrijs",
+    "fr": "Gris moyen"
+   },
+   "hex": "#747573",
+   "family": "grey"
+  },
+  {
+   "code": "1544",
+   "name": {
+    "nl": "Leigrijs",
+    "fr": "Gris ardoise"
+   },
+   "hex": "#5b6a76",
+   "family": "grey"
+  },
+  {
+   "code": "1640",
+   "name": {
+    "nl": "Loodgrijs",
+    "fr": "Gris plomb"
+   },
+   "hex": "#5f6263",
+   "family": "grey"
+  },
+  {
+   "code": "1739",
+   "name": {
+    "nl": "Antraciet",
+    "fr": "Anthracite"
+   },
+   "hex": "#4e4a4a",
+   "family": "grey"
+  },
+  {
+   "code": "1574",
+   "name": {
+    "nl": "Donker leisteen",
+    "fr": "Ardoise foncé"
+   },
+   "hex": "#203234",
+   "family": "grey"
+  },
+  {
+   "code": "1800",
+   "name": {
+    "nl": "Zwart",
+    "fr": "Noir"
+   },
+   "hex": "#2e3032",
+   "family": "black"
+  },
+  {
+   "code": "1589",
+   "name": {
+    "nl": "Nachtzwart",
+    "fr": "Noir nuit"
+   },
+   "hex": "#191d29",
+   "family": "black"
+  },
+  {
+   "code": "1623",
+   "name": {
+    "nl": "Citroengeel",
+    "fr": "Jaune citron"
+   },
+   "hex": "#f3e250",
+   "family": "yellow"
+  },
+  {
+   "code": "1924",
+   "name": {
+    "nl": "Zonnegeel",
+    "fr": "Jaune soleil"
+   },
+   "hex": "#f9d408",
+   "family": "yellow"
+  },
+  {
+   "code": "1526",
+   "name": {
+    "nl": "Vanillegeel",
+    "fr": "Jaune vanille"
+   },
+   "hex": "#f2d485",
+   "family": "yellow"
+  },
+  {
+   "code": "1626",
+   "name": {
+    "nl": "Perzikgeel",
+    "fr": "Jaune pêche"
+   },
+   "hex": "#f9c678",
+   "family": "yellow"
+  },
+  {
+   "code": "1724",
+   "name": {
+    "nl": "Goudgeel",
+    "fr": "Jaune doré"
+   },
+   "hex": "#deae37",
+   "family": "yellow"
+  },
+  {
+   "code": "1792",
+   "name": {
+    "nl": "Oudgoud",
+    "fr": "Vieil or"
+   },
+   "hex": "#b38937",
+   "family": "yellow"
+  },
+  {
+   "code": "1771",
+   "name": {
+    "nl": "Honinggeel",
+    "fr": "Jaune miel"
+   },
+   "hex": "#e1a342",
+   "family": "orange"
+  },
+  {
+   "code": "1955",
+   "name": {
+    "nl": "Oranje",
+    "fr": "Orange"
+   },
+   "hex": "#f38b20",
+   "family": "orange"
+  },
+  {
+   "code": "1965",
+   "name": {
+    "nl": "Felloranje",
+    "fr": "Orange vif"
+   },
+   "hex": "#f26827",
+   "family": "orange"
+  },
+  {
+   "code": "1521",
+   "name": {
+    "nl": "Roestoranje",
+    "fr": "Orange rouille"
+   },
+   "hex": "#bd5727",
+   "family": "orange"
+  },
+  {
+   "code": "1778",
+   "name": {
+    "nl": "Koraal",
+    "fr": "Corail"
+   },
+   "hex": "#e8603e",
+   "family": "orange"
+  },
+  {
+   "code": "1987",
+   "name": {
+    "nl": "Helderrood",
+    "fr": "Rouge vif"
+   },
+   "hex": "#e53d25",
+   "family": "red"
+  },
+  {
+   "code": "1508",
+   "name": {
+    "nl": "Kersrood",
+    "fr": "Rouge cerise"
+   },
+   "hex": "#d71e3a",
+   "family": "red"
+  },
+  {
+   "code": "1839",
+   "name": {
+    "nl": "Rood",
+    "fr": "Rouge"
+   },
+   "hex": "#ac1e32",
+   "family": "red"
+  },
+  {
+   "code": "1747",
+   "name": {
+    "nl": "Robijnrood",
+    "fr": "Rouge rubis"
+   },
+   "hex": "#a41c35",
+   "family": "red"
+  },
+  {
+   "code": "1993",
+   "name": {
+    "nl": "Rozerood",
+    "fr": "Rouge rosé"
+   },
+   "hex": "#d72f5d",
+   "family": "red"
+  },
+  {
+   "code": "1638",
+   "name": {
+    "nl": "Steenrood",
+    "fr": "Rouge brique"
+   },
+   "hex": "#852c32",
+   "family": "red"
+  },
+  {
+   "code": "1784",
+   "name": {
+    "nl": "Wijnrood",
+    "fr": "Lie-de-vin"
+   },
+   "hex": "#742d3a",
+   "family": "red"
+  },
+  {
+   "code": "1777",
+   "name": {
+    "nl": "Perzikroze",
+    "fr": "Rose pêche"
+   },
+   "hex": "#ef877d",
+   "family": "pink"
+  },
+  {
+   "code": "1819",
+   "name": {
+    "nl": "Zachtroze",
+    "fr": "Rose doux"
+   },
+   "hex": "#f69e9d",
+   "family": "pink"
+  },
+  {
+   "code": "1713",
+   "name": {
+    "nl": "Poederroze",
+    "fr": "Rose poudré"
+   },
+   "hex": "#f5cbcd",
+   "family": "pink"
+  },
+  {
+   "code": "1815",
+   "name": {
+    "nl": "Lichtroze",
+    "fr": "Rose clair"
+   },
+   "hex": "#f7bdd3",
+   "family": "pink"
+  },
+  {
+   "code": "1909",
+   "name": {
+    "nl": "Snoeproze",
+    "fr": "Rose bonbon"
+   },
+   "hex": "#f285b5",
+   "family": "pink"
+  },
+  {
+   "code": "1990",
+   "name": {
+    "nl": "Roze",
+    "fr": "Rose"
+   },
+   "hex": "#d85f95",
+   "family": "pink"
+  },
+  {
+   "code": "1709",
+   "name": {
+    "nl": "Fuchsia",
+    "fr": "Fuchsia"
+   },
+   "hex": "#cd3594",
+   "family": "pink"
+  },
+  {
+   "code": "1984",
+   "name": {
+    "nl": "Diep roze",
+    "fr": "Rose profond"
+   },
+   "hex": "#b62963",
+   "family": "pink"
+  },
+  {
+   "code": "1941",
+   "name": {
+    "nl": "Oudroze",
+    "fr": "Vieux rose"
+   },
+   "hex": "#bc8c8f",
+   "family": "pink"
+  },
+  {
+   "code": "1942",
+   "name": {
+    "nl": "Rozenhout",
+    "fr": "Bois de rose"
+   },
+   "hex": "#8e5653",
+   "family": "pink"
+  },
+  {
+   "code": "1710",
+   "name": {
+    "nl": "Magenta",
+    "fr": "Magenta"
+   },
+   "hex": "#973172",
+   "family": "purple"
+  },
+  {
+   "code": "1833",
+   "name": {
+    "nl": "Paars",
+    "fr": "Violet"
+   },
+   "hex": "#782c74",
+   "family": "purple"
+  },
+  {
+   "code": "1719",
+   "name": {
+    "nl": "Pruim",
+    "fr": "Prune"
+   },
+   "hex": "#6d3e64",
+   "family": "purple"
+  },
+  {
+   "code": "1983",
+   "name": {
+    "nl": "Aubergine",
+    "fr": "Aubergine"
+   },
+   "hex": "#4e3443",
+   "family": "purple"
+  },
+  {
+   "code": "1831",
+   "name": {
+    "nl": "Heidepaars",
+    "fr": "Violet bruyère"
+   },
+   "hex": "#9a649c",
+   "family": "purple"
+  },
+  {
+   "code": "1834",
+   "name": {
+    "nl": "Grijslila",
+    "fr": "Lilas grisé"
+   },
+   "hex": "#977aa2",
+   "family": "purple"
+  },
+  {
+   "code": "1630",
+   "name": {
+    "nl": "Lichtlila",
+    "fr": "Lilas clair"
+   },
+   "hex": "#9491ba",
+   "family": "purple"
+  },
+  {
+   "code": "1522",
+   "name": {
+    "nl": "Lavendel",
+    "fr": "Lavande"
+   },
+   "hex": "#8575b5",
+   "family": "purple"
+  },
+  {
+   "code": "1832",
+   "name": {
+    "nl": "Blauwpaars",
+    "fr": "Violet bleuté"
+   },
+   "hex": "#6a5696",
+   "family": "purple"
+  },
+  {
+   "code": "1922",
+   "name": {
+    "nl": "Donkerpaars",
+    "fr": "Violet foncé"
+   },
+   "hex": "#4c3176",
+   "family": "purple"
+  },
+  {
+   "code": "1634",
+   "name": {
+    "nl": "Nachtpaars",
+    "fr": "Violet nuit"
+   },
+   "hex": "#3f3459",
+   "family": "purple"
+  },
+  {
+   "code": "1566",
+   "name": {
+    "nl": "Ultramarijn",
+    "fr": "Outremer"
+   },
+   "hex": "#313b97",
+   "family": "blue"
+  },
+  {
+   "code": "1943",
+   "name": {
+    "nl": "Korenbloemblauw",
+    "fr": "Bleu bleuet"
+   },
+   "hex": "#5a71ad",
+   "family": "blue"
+  },
+  {
+   "code": "1555",
+   "name": {
+    "nl": "Marineblauw",
+    "fr": "Bleu marine"
+   },
+   "hex": "#121e47",
+   "family": "blue"
+  },
+  {
+   "code": "1967",
+   "name": {
+    "nl": "Nachtblauw",
+    "fr": "Bleu nuit"
+   },
+   "hex": "#1e3957",
+   "family": "blue"
+  },
+  {
+   "code": "1643",
+   "name": {
+    "nl": "Leiblauw",
+    "fr": "Bleu ardoise"
+   },
+   "hex": "#2c3541",
+   "family": "blue"
+  },
+  {
+   "code": "1964",
+   "name": {
+    "nl": "Rookblauw",
+    "fr": "Bleu fumé"
+   },
+   "hex": "#485b72",
+   "family": "blue"
+  },
+  {
+   "code": "1934",
+   "name": {
+    "nl": "Koningsblauw",
+    "fr": "Bleu roi"
+   },
+   "hex": "#125e9a",
+   "family": "blue"
+  },
+  {
+   "code": "1842",
+   "name": {
+    "nl": "Kobaltblauw",
+    "fr": "Bleu cobalt"
+   },
+   "hex": "#0b5695",
+   "family": "blue"
+  },
+  {
+   "code": "1775",
+   "name": {
+    "nl": "Staalblauw",
+    "fr": "Bleu acier"
+   },
+   "hex": "#407d9e",
+   "family": "blue"
+  },
+  {
+   "code": "1593",
+   "name": {
+    "nl": "Hemelsblauw",
+    "fr": "Bleu ciel"
+   },
+   "hex": "#19a2dc",
+   "family": "blue"
+  },
+  {
+   "code": "1532",
+   "name": {
+    "nl": "Zachtblauw",
+    "fr": "Bleu doux"
+   },
+   "hex": "#7aa2d5",
+   "family": "blue"
+  },
+  {
+   "code": "1874",
+   "name": {
+    "nl": "Lichtblauw",
+    "fr": "Bleu clair"
+   },
+   "hex": "#8fb3d8",
+   "family": "blue"
+  },
+  {
+   "code": "1550",
+   "name": {
+    "nl": "Pastelblauw",
+    "fr": "Bleu pastel"
+   },
+   "hex": "#bec9e6",
+   "family": "blue"
+  },
+  {
+   "code": "1628",
+   "name": {
+    "nl": "Grijsblauw",
+    "fr": "Bleu gris"
+   },
+   "hex": "#7ca7be",
+   "family": "blue"
+  },
+  {
+   "code": "1594",
+   "name": {
+    "nl": "IJsblauw",
+    "fr": "Bleu glacier"
+   },
+   "hex": "#55c9e7",
+   "family": "blue"
+  },
+  {
+   "code": "1695",
+   "name": {
+    "nl": "Petrolblauw",
+    "fr": "Bleu pétrole"
+   },
+   "hex": "#188aa4",
+   "family": "blue"
+  },
+  {
+   "code": "1891",
+   "name": {
+    "nl": "Diep petrol",
+    "fr": "Pétrole profond"
+   },
+   "hex": "#135661",
+   "family": "blue"
+  },
+  {
+   "code": "1890",
+   "name": {
+    "nl": "Petrolgroen",
+    "fr": "Vert pétrole"
+   },
+   "hex": "#097c80",
+   "family": "green"
+  },
+  {
+   "code": "1888",
+   "name": {
+    "nl": "Turkoois",
+    "fr": "Turquoise"
+   },
+   "hex": "#20a1a2",
+   "family": "blue"
+  },
+  {
+   "code": "1892",
+   "name": {
+    "nl": "Aquablauw",
+    "fr": "Bleu aqua"
+   },
+   "hex": "#77c9cc",
+   "family": "blue"
+  },
+  {
+   "code": "1847",
+   "name": {
+    "nl": "Zeegroen",
+    "fr": "Vert d'eau"
+   },
+   "hex": "#39ac93",
+   "family": "green"
+  },
+  {
+   "code": "1845",
+   "name": {
+    "nl": "Munt",
+    "fr": "Menthe"
+   },
+   "hex": "#6cc49f",
+   "family": "green"
+  },
+  {
+   "code": "1849",
+   "name": {
+    "nl": "Jadegroen",
+    "fr": "Vert jade"
+   },
+   "hex": "#1e7c68",
+   "family": "green"
+  },
+  {
+   "code": "1989",
+   "name": {
+    "nl": "Bladgroen",
+    "fr": "Vert feuille"
+   },
+   "hex": "#179b68",
+   "family": "green"
+  },
+  {
+   "code": "1751",
+   "name": {
+    "nl": "Smaragdgroen",
+    "fr": "Vert émeraude"
+   },
+   "hex": "#077c49",
+   "family": "green"
+  },
+  {
+   "code": "1988",
+   "name": {
+    "nl": "Grasgroen",
+    "fr": "Vert gazon"
+   },
+   "hex": "#0f8c44",
+   "family": "green"
+  },
+  {
+   "code": "1749",
+   "name": {
+    "nl": "Felgroen",
+    "fr": "Vert vif"
+   },
+   "hex": "#36a448",
+   "family": "green"
+  },
+  {
+   "code": "1979",
+   "name": {
+    "nl": "Donkergroen",
+    "fr": "Vert foncé"
+   },
+   "hex": "#0e5f44",
+   "family": "green"
+  },
+  {
+   "code": "1902",
+   "name": {
+    "nl": "Dennengroen",
+    "fr": "Vert sapin"
+   },
+   "hex": "#2d4a38",
+   "family": "green"
+  },
+  {
+   "code": "1770",
+   "name": {
+    "nl": "Mosgroen",
+    "fr": "Vert mousse"
+   },
+   "hex": "#46713e",
+   "family": "green"
+  },
+  {
+   "code": "1649",
+   "name": {
+    "nl": "Appelgroen",
+    "fr": "Vert pomme"
+   },
+   "hex": "#75973d",
+   "family": "green"
+  },
+  {
+   "code": "1748",
+   "name": {
+    "nl": "Lichtgroen",
+    "fr": "Vert clair"
+   },
+   "hex": "#abd377",
+   "family": "green"
+  },
+  {
+   "code": "1541",
+   "name": {
+    "nl": "Lichte limoen",
+    "fr": "Citron vert clair"
+   },
+   "hex": "#dfe78b",
+   "family": "green"
+  },
+  {
+   "code": "1940",
+   "name": {
+    "nl": "Limoen",
+    "fr": "Citron vert"
+   },
+   "hex": "#cbca4b",
+   "family": "green"
+  },
+  {
+   "code": "1552",
+   "name": {
+    "nl": "Lichte olijf",
+    "fr": "Olive clair"
+   },
+   "hex": "#adab62",
+   "family": "green"
+  },
+  {
+   "code": "1796",
+   "name": {
+    "nl": "Olijfgroen",
+    "fr": "Vert olive"
+   },
+   "hex": "#5f572e",
+   "family": "green"
+  },
+  {
+   "code": "1969",
+   "name": {
+    "nl": "Grijze olijf",
+    "fr": "Olive grisé"
+   },
+   "hex": "#6c6c59",
+   "family": "green"
+  },
+  {
+   "code": "1798",
+   "name": {
+    "nl": "Donker kaki",
+    "fr": "Kaki foncé"
+   },
+   "hex": "#3f4034",
+   "family": "green"
+  },
+  {
+   "code": "1622",
+   "name": {
+    "nl": "Lichtbeige",
+    "fr": "Beige clair"
+   },
+   "hex": "#eedfbc",
+   "family": "brown"
+  },
+  {
+   "code": "1723",
+   "name": {
+    "nl": "Licht perzik",
+    "fr": "Pêche clair"
+   },
+   "hex": "#f6d1a7",
+   "family": "brown"
+  },
+  {
+   "code": "1927",
+   "name": {
+    "nl": "Zandkleur",
+    "fr": "Sable"
+   },
+   "hex": "#dbb192",
+   "family": "brown"
+  },
+  {
+   "code": "1938",
+   "name": {
+    "nl": "Beige",
+    "fr": "Beige"
+   },
+   "hex": "#baa99a",
+   "family": "brown"
+  },
+  {
+   "code": "1736",
+   "name": {
+    "nl": "Taupe",
+    "fr": "Taupe"
+   },
+   "hex": "#93867b",
+   "family": "brown"
+  },
+  {
+   "code": "1939",
+   "name": {
+    "nl": "Kaki",
+    "fr": "Kaki"
+   },
+   "hex": "#a08b61",
+   "family": "brown"
+  },
+  {
+   "code": "1728",
+   "name": {
+    "nl": "Hazelnoot",
+    "fr": "Noisette"
+   },
+   "hex": "#99806a",
+   "family": "brown"
+  },
+  {
+   "code": "1791",
+   "name": {
+    "nl": "Karamelbruin",
+    "fr": "Brun caramel"
+   },
+   "hex": "#b07a40",
+   "family": "brown"
+  },
+  {
+   "code": "1973",
+   "name": {
+    "nl": "Bronsbruin",
+    "fr": "Brun bronze"
+   },
+   "hex": "#935e34",
+   "family": "brown"
+  },
+  {
+   "code": "1857",
+   "name": {
+    "nl": "Koperbruin",
+    "fr": "Brun cuivré"
+   },
+   "hex": "#8a5336",
+   "family": "brown"
+  },
+  {
+   "code": "1565",
+   "name": {
+    "nl": "Chocoladebruin",
+    "fr": "Brun chocolat"
+   },
+   "hex": "#693f22",
+   "family": "brown"
+  },
+  {
+   "code": "1945",
+   "name": {
+    "nl": "Kastanjebruin",
+    "fr": "Brun châtaigne"
+   },
+   "hex": "#725046",
+   "family": "brown"
+  },
+  {
+   "code": "1999",
+   "name": {
+    "nl": "Roodbruin",
+    "fr": "Brun rouge"
+   },
+   "hex": "#663130",
+   "family": "brown"
+  },
+  {
+   "code": "1744",
+   "name": {
+    "nl": "Grijsbruin",
+    "fr": "Brun grisé"
+   },
+   "hex": "#68584c",
+   "family": "brown"
+  },
+  {
+   "code": "1859",
+   "name": {
+    "nl": "Bittere chocolade",
+    "fr": "Chocolat noir"
+   },
+   "hex": "#4b403e",
+   "family": "brown"
+  }
+ ]
+}

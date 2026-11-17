@@ -1,0 +1,81 @@
+/**
+ * Patch Studio — pricing messages (owner: pricing builder). Prefix: `pricing.`
+ * NL = Flemish Dutch with "je"; FR = "vous".
+ *
+ * NOTE: the line labels used INSIDE a PriceQuote (item / shipping) are NOT taken from this catalogue but
+ * from LINE_LABELS in ./index.js, because the PHP engine (includes/class-pricing.php) must produce byte-identical
+ * labels. This catalogue holds UI texts built on top of a quote (hints, errors, price card wording).
+ */
+export default {
+  nl: {
+    // Price card
+    'pricing.inclVat': 'incl. btw',
+    'pricing.exclVat': 'excl. btw',
+    'pricing.perPiece': '{amount} per stuk',
+    'pricing.perPieceAllIn': '{amount} per stuk, alles inbegrepen',
+    'pricing.allInTotal': '{amount} alles inbegrepen',
+    'pricing.onRequest': 'Prijs op aanvraag',
+    'pricing.oneTime': 'eenmalig',
+    'pricing.included': 'inbegrepen',
+    'pricing.perPieceDelta': '+ {amount}/st.',
+    'pricing.percentDelta': '{sign} {pct} %',
+    'pricing.perLineDelta': '+ {amount} (eenmalig)',
+    'pricing.shippingFree': 'Gratis verzending (België en Nederland)',
+    'pricing.shippingEstimate': 'Verzending: {amount} (schatting)',
+    'pricing.shippingRemaining': 'Nog {amount} tot gratis verzending (België en Nederland).',
+    'pricing.breakdownTitle': 'Hoe is deze prijs opgebouwd?',
+    'pricing.tierDiscount': 'Staffelkorting {pct} % vanaf {min} stuks',
+    'pricing.poolNote': 'De staffel telt alle patches in je winkelmand samen.',
+    'pricing.noTiers': 'Voor deze techniek geldt geen staffelkorting.',
+    // Tier hints (real calculations, see savingHint())
+    'pricing.hint.next': 'Bij {qty} stuks betaal je {unit} per stuk (nu {current}).',
+    'pricing.hint.cheaperTotal': 'Goed om te weten: {qty} stuks kosten samen {total}. Dat is {diff} minder dan je {currentQty} stuks nu ({currentTotal}).',
+    'pricing.hint.sameTotal': 'Goed om te weten: {qty} stuks kosten samen evenveel als je {currentQty} stuks nu ({total}).',
+    'pricing.hint.honest': { one: 'Heb je er maar 1 nodig? Bestel er dan gewoon 1.', other: 'Heb je er maar {n} nodig? Bestel er dan gewoon {n}.' },
+    'pricing.hint.extraCost': { one: 'Voor {diff} meer krijg je 1 patch extra.', other: 'Voor {diff} meer krijg je {n} patches extra.' },
+    // Errors (UI wording for PriceQuote.errors)
+    'pricing.error.unknown_technique': 'Deze techniek is niet beschikbaar.',
+    'pricing.error.quote_only': 'Deze patch maken we op offerte. Vraag vrijblijvend je prijs op maat aan.',
+    'pricing.error.size_too_large': 'Groter dan {max} cm maken we op offerte. Vraag vrijblijvend je prijs aan.',
+    'pricing.error.size_too_small': 'Deze techniek kan vanaf {min} cm. Kies een grotere maat.',
+    'pricing.error.below_min_qty': 'Deze techniek maken we vanaf {min} stuks.',
+    'pricing.error.qty_step': 'Deze techniek bestel je per {step} stuks.',
+    'pricing.error.invalid_option': 'Een gekozen afwerking past niet bij deze techniek.',
+    'pricing.error.missing_required_option': 'Kies nog een optie bij "{group}".',
+    'pricing.error.option_conflict': 'Kies één optie bij "{group}".',
+  },
+  fr: {
+    'pricing.inclVat': 'TVA incl.',
+    'pricing.exclVat': 'hors TVA',
+    'pricing.perPiece': '{amount} par pièce',
+    'pricing.perPieceAllIn': '{amount} par pièce, tout compris',
+    'pricing.allInTotal': '{amount} tout compris',
+    'pricing.onRequest': 'Prix sur demande',
+    'pricing.oneTime': 'unique',
+    'pricing.included': 'inclus',
+    'pricing.perPieceDelta': '+ {amount}/pce',
+    'pricing.percentDelta': '{sign} {pct} %',
+    'pricing.perLineDelta': '+ {amount} (unique)',
+    'pricing.shippingFree': 'Livraison gratuite (Belgique et Pays-Bas)',
+    'pricing.shippingEstimate': 'Livraison : {amount} (estimation)',
+    'pricing.shippingRemaining': 'Plus que {amount} pour la livraison gratuite (Belgique et Pays-Bas).',
+    'pricing.breakdownTitle': 'Comment ce prix est-il calculé ?',
+    'pricing.tierDiscount': 'Remise de quantité {pct} % à partir de {min} pièces',
+    'pricing.poolNote': 'La remise additionne tous les écussons de votre panier.',
+    'pricing.noTiers': 'Pas de remise de quantité pour cette technique.',
+    'pricing.hint.next': 'À partir de {qty} pièces, vous payez {unit} par pièce (actuellement {current}).',
+    'pricing.hint.cheaperTotal': 'Bon à savoir : {qty} pièces coûtent au total {total}, soit {diff} de moins que vos {currentQty} pièces actuelles ({currentTotal}).',
+    'pricing.hint.sameTotal': 'Bon à savoir : {qty} pièces coûtent autant que vos {currentQty} pièces actuelles ({total}).',
+    'pricing.hint.honest': { one: "Vous n'en avez besoin que d'une ? Commandez-en simplement une.", other: "Vous n'en avez besoin que de {n} ? Commandez-en simplement {n}." },
+    'pricing.hint.extraCost': { one: 'Pour {diff} de plus, vous recevez 1 écusson en plus.', other: 'Pour {diff} de plus, vous recevez {n} écussons en plus.' },
+    'pricing.error.unknown_technique': "Cette technique n'est pas disponible.",
+    'pricing.error.quote_only': 'Nous réalisons cet écusson sur devis. Demandez votre prix sur mesure sans engagement.',
+    'pricing.error.size_too_large': 'Au-delà de {max} cm, nous travaillons sur devis. Demandez votre prix sans engagement.',
+    'pricing.error.size_too_small': 'Cette technique est possible à partir de {min} cm. Choisissez une taille plus grande.',
+    'pricing.error.below_min_qty': 'Nous réalisons cette technique à partir de {min} pièces.',
+    'pricing.error.qty_step': 'Cette technique se commande par {step} pièces.',
+    'pricing.error.invalid_option': 'Une finition choisie ne convient pas à cette technique.',
+    'pricing.error.missing_required_option': 'Choisissez encore une option pour « {group} ».',
+    'pricing.error.option_conflict': 'Choisissez une seule option pour « {group} ».',
+  },
+};

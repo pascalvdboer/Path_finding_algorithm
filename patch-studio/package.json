@@ -1,0 +1,25 @@
+{
+  "name": "borduur-patch-studio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Patch Studio: WordPress/WooCommerce-plugin voor borduurservicebelgie.be (build + tests).",
+  "type": "module",
+  "license": "GPL-2.0-or-later",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:dev": "node scripts/build.mjs --dev",
+    "watch": "node scripts/build.mjs --watch",
+    "size": "node scripts/build.mjs --size-only",
+    "dev": "node scripts/serve-dev.mjs",
+    "demo": "node scripts/build.mjs && node scripts/build-demo.mjs",
+    "test": "node --test \"tests/**/*.test.js\"",
+    "test:unit": "node --test \"tests/**/*.test.js\"",
+    "test:php": "php tests/pricing/run-php.php",
+    "test:e2e": "bash tests/e2e/run-e2e.sh",
+    "test:all": "bash tests/run-all.sh"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
+  }
+}
