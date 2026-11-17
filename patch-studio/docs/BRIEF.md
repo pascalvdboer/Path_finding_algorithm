@@ -68,3 +68,9 @@ in bepaald font of vorm etc."
   Ook een patch met alleen tekst (zonder afbeelding).
 - De borduurcheck controleert ook de tekst: minimale letterhoogte per techniek (dunne/script-lettertypes strenger) en tekstkleuren
   tellen mee in het aantal garenkleuren. Zie reference/demo-v2.html voor de werkende aanpak.
+
+## BESLISSING VAN DE EIGENAAR: premium-kwaliteit
+"Dit moet echt een betaalde plug-in worden." Verduidelijking: **premium voor de eigen shop** (borduurservicebelgie.be),
+van dezelfde kwaliteit als een betaalde commerciële plugin. Als hij later toch verkocht wordt, dan via de **eigen WooCommerce-winkel**
+(licentiesleutel + update-server). Bouw dus: geen hardgecodeerde merkgegevens (alles via instellingen), nette
+architectuur, WordPress Coding Standards, en een optionele, standaard uitgeschakelde licentie/update-client zodat verkoop later kan.
