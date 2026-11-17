@@ -92,3 +92,14 @@ tegen betaling. Dan verdienen we daar ook een beetje geld aan. Diensten leveren 
 3. **Diensten op de site verkopen**, slim geïntegreerd in de flow wanneer ze echt helpen, bv.: "Laat onze ontwerper je
    logo hertekenen/vectoriseren", "Digitaliseren van je eigen borduurbestand", spoedlevering, extra proefronde,
    fysiek staal. Alles als instelbare WooCommerce-producten/opties; eerlijk aanbieden (alleen tonen als relevant).
+
+## EXTRA PRODUCTEN GEKOZEN DOOR DE EIGENAAR (17-11)
+1. **Naamstroken & klittenband**: een aparte, supersnelle modus in de studio voor naamstroken en kleine ID-patches
+   (naam, bloedgroep, functie, vlag, rang/afdeling) op klittenband (haak + lus tegenstuk) of opnaai/opstrijk, voor werkkleding,
+   hulpdiensten, beveiliging, airsoft, motorclubs. Standaardformaten (bv. 10x2,5 cm, 12x3 cm, 8x5 cm), stofkleuren (zwart,
+   navy, olijf, coyote, multicam-achtig, wit, fluo), letterkleuren, lettertypes, rand; meerdere namen in één bestelling
+   (lijst plakken/CSV: één regel per persoon), live voorbeeld, prijs per stuk en staffel.
+2. **Zelfde ontwerp, meer producten** (cross-sell): na/tijdens het ontwerpen met één klik hetzelfde ontwerp tonen en bestellen
+   als patch op pet/muts, op hoodie/jas genaaid, als PVC- of lederen sleutelhanger/tassenlabel, of ingekaderd als cadeau
+   (kader/schaduwdoos met gelaserd naamplaatje). Realistische mockups, eerlijk geprijsd (digitaliseren al gedaan = voordeel),
+   alleen tonen wat technisch past bij het ontwerp. Alles instelbaar als WooCommerce-producten.

@@ -14,7 +14,7 @@
  * Heights are in layer px (mm × px/mm); light.js#finishGeo turns them into normals.
  */
 import { newGeo, finishGeo, glossByte } from './light.js';
-import { regionDistance, alphaLabels } from './field.js';
+import { regionDistance, alphaLabels, blurGrid } from './field.js';
 import { analyzeComponents, chooseModes } from './stylize.js';
 
 let PROF = null;
@@ -67,7 +67,7 @@ export function buildLayer(img, look, o) {
   }
   let dist = null, S = null, mmCell = 1;
   if (needDist) {
-    dist = regionDistance(labels);
+    dist = blurGrid(regionDistance(labels), labels, 2);
     S = sampler(labels.width, labels.height, W, H);
     mmCell = (W / labels.width) / ppm;
   }

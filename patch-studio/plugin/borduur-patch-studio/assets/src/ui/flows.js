@@ -6,7 +6,7 @@ import { EV, emit } from '../shared/events.js';
 import { h, icon, uid } from './dom.js';
 import { buildPayload } from './derive.js';
 import { persist } from './state.js';
-import { trustList } from './step-summary.js';
+import { trustList } from './checkout.js';
 
 /** <dialog> with focus management (focus in, Esc closes, focus back to the opener). */
 export function openDialog(ctx, title, build, { wide = false } = {}) {

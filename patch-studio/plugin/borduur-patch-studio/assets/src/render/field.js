@@ -179,3 +179,64 @@ export function maskFromAlpha(rgba, w, h, thr = 127) {
   for (let i = 0, n = w * h; i < n; i++) if (rgba[i * 4 + 3] > thr) m[i] = 1;
   return m;
 }
+
+/**
+ * Merge colour islands smaller than `minCells` into their most common neighbour label (no digitiser
+ * stitches a 0.3 mm speck; in a relief render every speck would become a pit). 255 (empty) is kept.
+ */
+export function absorbSmall(labels, minCells) {
+  const w = labels.width, h = labels.height, src = labels.data, N = w * h;
+  const out = new Uint8Array(src);
+  if (minCells < 2) return { width: w, height: h, data: out };
+  const seen = new Uint8Array(N), stack = new Int32Array(N), members = new Int32Array(N);
+  const votes = new Uint32Array(256);
+  for (let s = 0; s < N; s++) {
+    if (seen[s] || src[s] === 255) continue;
+    const lab = src[s];
+    let sp = 0, m = 0;
+    stack[sp++] = s; seen[s] = 1;
+    let big = false;
+    while (sp) {
+      const i = stack[--sp];
+      if (!big) members[m] = i;
+      m++;
+      if (m >= minCells) big = true;
+      const x = i % w;
+      if (x > 0 && !seen[i - 1] && src[i - 1] === lab) { seen[i - 1] = 1; stack[sp++] = i - 1; }
+      if (x < w - 1 && !seen[i + 1] && src[i + 1] === lab) { seen[i + 1] = 1; stack[sp++] = i + 1; }
+      if (i >= w && !seen[i - w] && src[i - w] === lab) { seen[i - w] = 1; stack[sp++] = i - w; }
+      if (i < N - w && !seen[i + w] && src[i + w] === lab) { seen[i + w] = 1; stack[sp++] = i + w; }
+    }
+    if (big) continue;
+    votes.fill(0);
+    let best = -1, bc = 0;
+    for (let k = 0; k < m; k++) {
+      const i = members[k], x = i % w;
+      const nb = [x > 0 ? i - 1 : -1, x < w - 1 ? i + 1 : -1, i >= w ? i - w : -1, i < N - w ? i + w : -1];
+      for (const j of nb) {
+        if (j < 0) continue;
+        const l = src[j];
+        if (l === lab || l === 255) continue;
+        const v = ++votes[l];
+        if (v > bc) { bc = v; best = l; }
+      }
+    }
+    if (best >= 0) for (let k = 0; k < m; k++) out[members[k]] = best;
+  }
+  return { width: w, height: h, data: out };
+}
+
+/** In-place 3×3 box blur of a distance grid, only where cells are labelled (keeps empty cells at 0). */
+export function blurGrid(d, labels, passes = 1) {
+  const w = labels.width, h = labels.height, L = labels.data;
+  const tmp = new Float32Array(d.length);
+  for (let p = 0; p < passes; p++) {
+    tmp.set(d);
+    for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+      const i = y * w + x;
+      if (L[i] === 255) continue;
+      d[i] = (tmp[i] * 4 + tmp[i - 1] + tmp[i + 1] + tmp[i - w] + tmp[i + w]) / 8;
+    }
+  }
+  return d;
+}
