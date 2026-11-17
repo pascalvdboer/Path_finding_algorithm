@@ -74,3 +74,21 @@ in bepaald font of vorm etc."
 van dezelfde kwaliteit als een betaalde commerciële plugin. Als hij later toch verkocht wordt, dan via de **eigen WooCommerce-winkel**
 (licentiesleutel + update-server). Bouw dus: geen hardgecodeerde merkgegevens (alles via instellingen), nette
 architectuur, WordPress Coding Standards, en een optionele, standaard uitgeschakelde licentie/update-client zodat verkoop later kan.
+
+## WENSEN VAN DE EIGENAAR (17-11): gebruiksvriendelijk + verdienen met diensten
+"Super gebruiksvriendelijk moet het zijn. Misschien ook met een ChatGPT grafische ontwerp sectie die ze kunnen gebruiken
+tegen betaling. Dan verdienen we daar ook een beetje geld aan. Diensten leveren op de site. Slim."
+1. **Gebruiksvriendelijkheid is eis nummer 1** voor alles: een leek moet zonder uitleg binnen 2 minuten een patch kunnen ontwerpen
+   en bestellen, op gsm én desktop. Weinig keuzes tegelijk, slimme standaarden, gewone taal.
+2. **AI-ontwerpstudio (betaald):** de klant beschrijft in gewone woorden wat hij wil ("een wolf met een bijl voor onze
+   motorclub, rond, zwart-rood") en krijgt een paar ontwerpvoorstellen, gemaakt door een beeld-AI (bv. OpenAI's
+   beeldmodel, de motor achter ChatGPT-afbeeldingen; via de API, sleutel blijft op de server). Voorstellen zijn
+   meteen geschikt om te borduren (vlakke kleuren, beperkt palet, dikke lijnen, effen/transparante achtergrond) en
+   gaan met één klik de studio in, inclusief de borduurcheck. Verder verfijnen via chat ("maak de wolf bozer").
+   Verdienmodel (instelbaar): bv. ontwerpkredieten als WooCommerce-product (pakket van X generaties voor €Y), een paar
+   gratis proefgeneraties, en het betaalde bedrag (deels) terug als korting bij een patchbestelling, zodat het de
+   verkoop van patches stimuleert. Kostenbewaking (dag/maandlimiet, kost per generatie gelogd), misbruik- en
+   inhoudsfilter, geen merken/logo's van anderen namaken, duidelijke voorwaarden over gebruiksrechten.
+3. **Diensten op de site verkopen**, slim geïntegreerd in de flow wanneer ze echt helpen, bv.: "Laat onze ontwerper je
+   logo hertekenen/vectoriseren", "Digitaliseren van je eigen borduurbestand", spoedlevering, extra proefronde,
+   fysiek staal. Alles als instelbare WooCommerce-producten/opties; eerlijk aanbieden (alleen tonen als relevant).
