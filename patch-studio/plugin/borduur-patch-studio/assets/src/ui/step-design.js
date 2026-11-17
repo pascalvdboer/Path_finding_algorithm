@@ -101,6 +101,29 @@ export function stepDesign(ctx) {
       fileLabel(ctx, '.bps-btn.bps-btn--ghost', t('ui.s1.newFile')),
       h('button.bps-btn.bps-btn--primary', { type: 'button', onclick: () => ctx.go(2) }, t('ui.s1.next'), icon('arrow'))));
 
+  /* ----- does a text layer fit on the patch? (rough: measured with the canvas, like the renderer) ----- */
+  let measureCtx = null;
+  function textFit(l, L) {
+    if (!L || !l.text || !l.text.trim()) return null;
+    try {
+      if (!measureCtx) measureCtx = document.createElement('canvas').getContext('2d');
+      const f = (config.fonts || []).find((x) => x.id === l.font) || {};
+      measureCtx.font = `${f.weight || 700} 100px "${f.id || 'Sora'}", ${f.fallback || 'sans-serif'}`;
+      const chars = Array.from(l.text);
+      const px = chars.reduce((a, ch) => a + measureCtx.measureText(ch).width, 0) + (Number(l.letterSpacing) || 0) * 100 * Math.max(0, chars.length - 1);
+      const w = (px / 100) * (l.heightMm / 0.71); // cap height ≈ 0.71 × font size (render/text.js)
+      const edge = (L.edge && L.edge.widthMm) || 0;
+      const round = L.shape === 'circle' || L.shape === 'oval';
+      let room;
+      if (l.path !== 'straight' && round) room = Math.PI * (Math.min(L.patchWmm, L.patchHmm) / 2 - edge - Math.max(l.insetMm || 0, 0) - l.heightMm) * 0.9;
+      else if (l.path === 'straight' && round) {
+        const r = Math.min(L.patchWmm, L.patchHmm) / 2 - edge - 1, y = Math.abs(l.offsetMm.y) + l.heightMm / 2;
+        room = 2 * Math.sqrt(Math.max(0, r * r - y * y));
+      } else room = (L.patchWmm - 2 * (edge + 1)) * (L.shape === 'shield' && l.path === 'arc_bottom' ? 0.65 : 1); // the shield narrows to a point
+      return w > room + 0.5 ? { w, room: Math.max(0, room) } : null;
+    } catch (e) { return null; }
+  }
+
   /* ----- text layer editor ----- */
   function layerEditor(l, i, s) {
     const T = config.text || {};
@@ -227,6 +250,12 @@ export function stepDesign(ctx) {
           const ins = box.querySelector('input[type=range][id$="-inset"]');
           if (ins && document.activeElement !== ins) { ins.value = l.insetMm; ins.setAttribute('aria-valuetext', `${String(l.insetMm).replace('.', ',')} mm`); }
           box.classList.toggle('is-active', ctx.dragTarget === l.id);
+          // Eigenaar: alles blijft binnen de rand. Te lange tekst: eerlijk zeggen in plaats van stil bij te snijden.
+          let fit = box.querySelector('.bps-layer__fit');
+          if (!fit) { fit = h('p.bps-help.bps-layer__fit', { role: 'status' }); box.querySelector('.bps-layer__actions').before(fit); }
+          const tl = textFit(l, d.layout);
+          fit.hidden = !tl;
+          text(fit, tl ? t('ui.text.tooLong', { w: ctx.n(tl.w, 0), room: ctx.n(tl.room, 0) }) : '');
         }
         addBtn.hidden = s.texts.length >= max;
         textMax.hidden = s.texts.length < max;

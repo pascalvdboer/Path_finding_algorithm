@@ -72,3 +72,27 @@ test('layout: logo in ronde patch (contain) en ontwerp dat de patch vult', () =>
   assert.equal(requiredSizeCm(6, 3, 4, [4, 6, 8, 10, 12], 12), 8);
   assert.equal(requiredSizeCm(6, 1, 4, [4, 6, 8, 10, 12], 12), null);
 });
+
+test('layout: nooit bijsnijden als ontwerpvorm en patchvorm verschillen (eigenaar)', () => {
+  const c = buildPublicConfig(defaults, palette);
+  const base = { technique: 'embroidered', sizeCm: 8, options: ['cut_from_fabric'], art: { scale: 1, offsetMm: { x: 0, y: 0 } } };
+  const inCircle = (L, x, y) => ((x - L.patchWmm / 2) / (L.patchWmm / 2)) ** 2 + ((y - L.patchHmm / 2) / (L.patchHmm / 2)) ** 2 <= 1 + 1e-6;
+  // Rond ontwerp in ronde patch: vult de patch.
+  const round = { artBox: { x: 0, y: 0, w: 300, h: 300 }, shape: { type: 'circle', fillsPatch: true, aspect: 1 } };
+  assert.deepEqual(layoutPatch({ ...base, shape: 'circle' }, round, c).artRectMm, { x: 0, y: 0, w: 80, h: 80 });
+  // Rechthoekige foto (vult het bestand) in een ronde patch: de hoeken van de foto vallen binnen de cirkel.
+  const photo = { artBox: { x: 0, y: 0, w: 360, h: 240 }, shape: { type: 'rect', fillsPatch: true, aspect: 1.5 } };
+  const L = layoutPatch({ ...base, shape: 'circle', aspect: 1 }, photo, c);
+  const r = L.artRectMm;
+  for (const [x, y] of [[r.x, r.y], [r.x + r.w, r.y], [r.x, r.y + r.h], [r.x + r.w, r.y + r.h]]) assert.ok(inCircle(L, x, y), `hoek ${x},${y}`);
+  assert.ok(r.w > 60, 'niet onnodig klein');
+  // Rond ontwerp in een schild: kleiner, en hoger geplaatst (de punt onderaan is smal).
+  const S = layoutPatch({ ...base, shape: 'shield', aspect: 1 }, round, c);
+  assert.ok(S.artRectMm.w < 80 && S.artRectMm.w > 50, `breedte ${S.artRectMm.w}`);
+  assert.ok(S.artRectMm.y + S.artRectMm.h / 2 < S.patchHmm / 2, 'hoger dan het midden');
+  // Vierkant logo dat zijn kader vult (labels) in een cirkel: hoeken binnen de cirkel.
+  const n = 20, labels = new Uint8Array(n * n).fill(0);
+  const logo = { artBox: { x: 0, y: 0, w: 200, h: 200 }, shape: { type: null, fillsPatch: false, aspect: 1 }, preview: { width: n, height: n }, labels };
+  const Q = layoutPatch({ ...base, shape: 'circle' }, logo, c).artRectMm;
+  assert.ok(inCircle(L, Q.x, Q.y) && inCircle(L, Q.x + Q.w, Q.y + Q.h));
+});

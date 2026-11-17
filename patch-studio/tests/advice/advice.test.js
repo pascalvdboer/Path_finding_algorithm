@@ -527,3 +527,12 @@ test('robust against partial/odd analysis input', () => {
   invariants(r);
   assert.throws(() => evaluate({}), TypeError);
 });
+
+test('tekstlaag met automatische kleur telt mee als garenkleur (autoThreadCode van de UI)', async () => {
+  const { colorCount } = await import(path.join(plugin, 'assets/src/advice/measure.js'));
+  const a = analysis();
+  const base = design({ texts: [{ id: 't1', text: 'CLUB', font: 'Sora', heightMm: 8, threadCode: 'auto', path: 'straight', offsetMm: { x: 0, y: 0 }, angleDeg: 0, insetMm: 0, letterSpacing: 0.05 }] });
+  const n0 = colorCount(a, base, CONFIG, []).n;
+  const withAuto = { ...base, texts: base.texts.map((l) => ({ ...l, autoThreadCode: 'TEST-AUTO' })) };
+  assert.equal(colorCount(a, withAuto, CONFIG, []).n, n0 + 1);
+});

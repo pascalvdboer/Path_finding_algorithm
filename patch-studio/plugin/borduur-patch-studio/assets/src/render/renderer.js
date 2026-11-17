@@ -111,7 +111,7 @@ function contourPolygonMm(layout, art, design, config) {
   if (texts.length) {
     const box = shapePolygon('rounded', layout.patchWmm, layout.patchHmm, { cornerRatio: 0.5 });
     for (const t of texts) {
-      drawTextLayer(c, t, { poly: box, cx: layout.patchWmm / 2, cy: layout.patchHmm / 2, ppm: 1, edgeMm: 0, config, hex: '#000' });
+      drawTextLayer(c, t, { poly: box, shape: layout.shape, cx: layout.patchWmm / 2, cy: layout.patchHmm / 2, ppm: 1, edgeMm: 0, config, hex: '#000' });
     }
   }
   const d = c.getImageData(0, 0, gw, gh).data, mask = new Uint8Array(gw * gh);
@@ -205,9 +205,14 @@ const SHADOWS = {
 /** Print-like looks show the fabric weave through the ink: overlay the weave on the layer itself. */
 function finishLayer(c, look, ppm, w, h) {
   if (look !== 'printed' && look !== 'sublimated') return;
-  c.save();
-  c.globalCompositeOperation = 'source-atop';
+  // overlayTexture() switches to 'overlay' itself, which also paints the transparent pixels around the design
+  // (grey square around a cut-out round patch). Keep the layer's own alpha: texture, then mask with a copy.
+  const mask = makeCanvas(w, h);
+  ctx2d(mask).drawImage(c.canvas, 0, 0);
   overlayTexture(c, look === 'printed' ? 'twill' : 'poly', ppm, { x: 0, y: 0, w, h }, look === 'printed' ? 0.32 : 0.28);
+  c.save();
+  c.globalCompositeOperation = 'destination-in';
+  c.drawImage(mask, 0, 0);
   c.restore();
 }
 
@@ -276,7 +281,7 @@ function textLayer(layer, look, g, o) {
   const hit = textCache.get(key);
   if (hit) return hit;
   const cv = makeCanvas(g.W, g.H), c = ctx2d(cv, { willReadFrequently: !fast });
-  const field = drawTextLayer(c, layer, { poly: g.poly, cx: g.cx, cy: g.cy, ppm: g.ppm, edgeMm: o.edgeMm, config: o.config, hex: o.hex });
+  const field = drawTextLayer(c, layer, { poly: g.poly, shape: g.shape, cx: g.cx, cy: g.cy, ppm: g.ppm, edgeMm: o.edgeMm, config: o.config, hex: o.hex });
   if (fast) return { canvas: cv, ready, pad: 0 }; // plain text while dragging, not cached
   if (look !== 'printed' && look !== 'sublimated') {
     const img = c.getImageData(0, 0, g.W, g.H);
@@ -428,7 +433,7 @@ export function paintPatch(c, o, g) {
   }
   const texts = (design && design.texts || []).filter((t) => t && String(t.text || '').trim());
   if (texts.length) {
-    const tg = { W, H, ppm, poly, cx: lx + (layout.patchWmm / 2) * ppm, cy: ly + (layout.patchHmm / 2) * ppm, polyKey: g.polyKey };
+    const tg = { W, H, ppm, poly, shape: layout.shape, cx: lx + (layout.patchWmm / 2) * ppm, cy: ly + (layout.patchHmm / 2) * ppm, polyKey: g.polyKey };
     for (const t of texts) {
       const hex = (o.textHex && o.textHex[t.id]) || (lum(baseHex) < 128 ? '#ffffff' : '#151515');
       const tl = textLayer(t, look, tg, { config, hex, edgeMm: edgeCoverMm(edge), quality: o.quality, engraveHex });

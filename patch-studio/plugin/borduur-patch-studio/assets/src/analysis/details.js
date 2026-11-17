@@ -20,14 +20,17 @@ export function measureDetails(L, { W, H, fillsPatch, baseLabel }) {
     Dout = chamfer(M, W, H, false);
   }
 
-  const widths = [];
   const ridge = new Uint8Array(n);
+  const RW = new Float32Array(n).fill(-1);
   for (let p = 0; p < n; p++) {
     if (L[p] < 0 || !isRidge(L, D, W, H, p)) continue;
     ridge[p] = 1;
     if (Dout && Dout[p] <= D[p] + 1.5) continue; // band touching the patch edge: replaced by the border anyway
-    widths.push(2 * D[p] - 0.5);
+    RW[p] = 2 * D[p] - 0.5;
   }
+  dropNecks(RW, L, W, H);
+  const widths = [];
+  for (let p = 0; p < n; p++) if (RW[p] >= 0) widths.push(RW[p]);
   const fineLinePx = weightedLowPercentile(widths, 0.04, 30);
 
   // Smallest gap: narrow strips of "no thread" between design parts (background), or of the base colour
@@ -42,13 +45,19 @@ export function measureDetails(L, { W, H, fillsPatch, baseLabel }) {
   let fineGapPx = null;
   if (gapCount && gapCount < n) {
     const DG = chamfer(G, W, H, false);
-    const gw = [], maxW = 0.1 * Math.min(W, H);
+    const GW = new Float32Array(n).fill(-1), maxW = 0.1 * Math.min(W, H);
     for (let p = 0; p < n; p++) {
       if (G[p] < 0 || !isRidge(G, DG, W, H, p)) continue;
       if (fillsPatch && Dout && Dout[p] <= DG[p] + 1.5) continue;
+      // A strip between the design and the crop edge (fractional crop box) is not a gap between design parts.
+      const gx = p % W, gy = (p - gx) / W;
+      if (Math.min(gx, gy, W - 1 - gx, H - 1 - gy) <= DG[p]) continue;
       const w = 2 * DG[p] - 0.5;
-      if (w <= maxW) gw.push(w);
+      if (w <= maxW) GW[p] = w;
     }
+    dropNecks(GW, G, W, H);
+    const gw = [];
+    for (let p = 0; p < n; p++) if (GW[p] >= 0) gw.push(GW[p]);
     fineGapPx = weightedLowPercentile(gw, 0.04, 30);
   }
 
@@ -71,6 +80,31 @@ export function measureDetails(L, { W, H, fillsPatch, baseLabel }) {
   }
   const bands = [...bandMap.entries()].sort((a, b) => a[0] - b[0]);
   return { D, Dout, ridge, fineLinePx, fineGapPx, bands, objects };
+}
+
+/**
+ * Necks are not lines (accuracy review): where two shapes of one colour touch at a corner, or a gap pinches to a
+ * point, the medial axis has a few narrow ridge pixels. A real thin line or gap has a long narrow ridge. Narrow
+ * ridge runs (≤ NECK_MAX_W px wide) shorter than NECK_MIN_RUN pixels are removed from `RW` (in place, -1 = none).
+ */
+const NECK_MAX_W = 4.5, NECK_MIN_RUN = 4;
+function dropNecks(RW, L, W, H) {
+  const n = W * H, seen = new Uint8Array(n), stack = [], run = [];
+  for (let s = 0; s < n; s++) {
+    if (seen[s] || RW[s] < 0 || RW[s] > NECK_MAX_W) continue;
+    seen[s] = 1; stack.push(s); run.length = 0;
+    while (stack.length) {
+      const p = stack.pop(), x = p % W, y = (p - x) / W;
+      run.push(p);
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const xx = x + dx, yy = y + dy;
+        if ((!dx && !dy) || xx < 0 || yy < 0 || xx >= W || yy >= H) continue;
+        const q = yy * W + xx;
+        if (!seen[q] && RW[q] >= 0 && RW[q] <= NECK_MAX_W && L[q] === L[p]) { seen[q] = 1; stack.push(q); }
+      }
+    }
+    if (run.length < NECK_MIN_RUN) for (const p of run) RW[p] = -1;
+  }
 }
 
 /**

@@ -91,6 +91,7 @@ export default {
     'ui.text.removeShort': 'Verwijderen',
     'ui.text.edit': 'Tekst bewerken',
     'ui.text.dragHint': 'Tip: kies "Tekst bewerken" en sleep dan in het voorbeeld om de tekst te verplaatsen.',
+    'ui.text.tooLong': 'Deze tekst is ± {w} mm lang; op deze plek is er ± {room} mm plaats. Kies kleinere letters, een kortere tekst of een grotere patch, anders valt een deel buiten de rand.',
     'ui.text.dragging': 'Sleep om "{text}" te verplaatsen',
     'ui.text.dragArt': 'Sleep om je ontwerp te verplaatsen',
 
@@ -386,6 +387,7 @@ export default {
     'ui.text.removeShort': 'Supprimer',
     'ui.text.edit': 'Modifier le texte',
     'ui.text.dragHint': 'Astuce : choisissez « Modifier le texte » puis faites glisser dans l’aperçu pour le déplacer.',
+    'ui.text.tooLong': 'Ce texte fait ± {w} mm de long ; à cet endroit, il y a ± {room} mm de place. Choisissez des lettres plus petites, un texte plus court ou un écusson plus grand, sinon une partie dépasse le bord.',
     'ui.text.dragging': 'Faites glisser pour déplacer « {text} »',
     'ui.text.dragArt': 'Faites glisser pour déplacer votre design',
     'ui.s2.title': 'Voici comment nous le réaliserions',

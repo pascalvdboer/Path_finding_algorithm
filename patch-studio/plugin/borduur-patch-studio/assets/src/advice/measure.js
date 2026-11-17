@@ -174,7 +174,7 @@ export function colorCount(analysis, design, config, matches) {
   const extra = new Set();
   for (const l of design.texts || []) {
     if (!l || !String(l.text || '').trim()) continue;
-    const code = l.threadCode;
+    const code = l.threadCode && l.threadCode !== 'auto' ? l.threadCode : l.autoThreadCode; // auto: resolved by the UI
     if (code && code !== 'auto' && !known.has(String(code))) extra.add(String(code));
   }
   return { n: sig.length + extra.size, palette: sig.length, textThreads: extra.size };

@@ -141,11 +141,12 @@ export function buildPalette(img, lab, statMask, mask, W, H, A, { kL = 1, bgLab 
   const pts = labHistogram(img, statMask);
   if (!pts.length) return { pal: [], pts };
   const km = kmeansLab(pts, A.kmeans.k, A.kmeans.iters, A.kmeans.seed);
-  let cl = mergeClusters(km.centers, km.counts, A.mergeDE00, kL).map((c) => ({ ...c, thin: false }));
+  let cl = mergeClusters(km.centers, km.counts, A.mergeDE00, kL).map((c) => ({ ...c, thin: false, mixLike: false }));
   const tot = cl.reduce((s, c) => s + c.n, 0);
   // Anti-aliasing mix colours: c ≈ lerp(i, j) of two bigger colours (or of a colour and the background around
   // the design / outside the patch shape) and its pixels sit between both ⇒ not a real thread colour.
-  const mixCandidates = cl.filter((c) => c.n / tot < 0.03);
+  // Share limit: small text/thin strokes have a lot of edge per area, so their mix colours can reach 5-8 % (accuracy review).
+  const mixCandidates = cl.filter((c) => c.n / tot < (A.mixMaxShare ?? 0.08));
   if (mixCandidates.length && cl.length > 1) {
     const L1 = labelPixels(img, lab, mask, cl.map((c) => c.lab));
     const BG = cl.length; // virtual partner index for "background / outside"
@@ -180,7 +181,9 @@ export function buildPalette(img, lab, statMask, mask, W, H, A, { kL = 1, bgLab 
         }
         if (pairs.some(([i, j]) => seen[i] && seen[j])) both++;
       }
-      if (px && both / px >= 0.7) drop.add(ci);
+      // 0,6 (was 0,7): the anti-aliasing rim of a disc on white measured 0,698 at 360 px (accuracy review).
+      if (px && both / px >= 0.6) drop.add(ci);
+      else if (px && both / px >= 0.3) c.mixLike = true; // partly a mix (e.g. noisy photo): no thin-line exception
     }
     if (drop.size) cl = cl.filter((_, i) => !drop.has(i));
   }
@@ -195,7 +198,7 @@ export function buildPalette(img, lab, statMask, mask, W, H, A, { kL = 1, bgLab 
     const diag = Math.hypot(W, H);
     for (let c = 0; c < comp.count; c++) {
       const cli = cl[comp.label[c]];
-      if (cli.n / tot >= A.minShare || cli.thin) continue;
+      if (cli.n / tot >= A.minShare || cli.thin || cli.mixLike) continue;
       const dg = Math.hypot(comp.maxX[c] - comp.minX[c] + 1, comp.maxY[c] - comp.minY[c] + 1);
       if (dg > 0.1 * diag && maxD[c] <= 2 && comp.size[c] >= 12) cli.thin = true;
     }

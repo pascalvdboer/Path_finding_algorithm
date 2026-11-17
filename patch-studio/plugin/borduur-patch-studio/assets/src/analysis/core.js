@@ -31,6 +31,7 @@ export const ANALYSIS_DEFAULTS = {
   white: { L: 92, C: 6 }, black: { L: 15, C: 8 },
   kmeans: { k: 16, iters: 12, seed: 1 },
   mergeDE00: 7, minShare: 0.004,
+  mixMaxShare: 0.08, fringeBgDE: 12,
   embroideryMergeSteps: [7, 10, 14, 18], // used by colors.reducePalette, listed for completeness
   classify: {
     flatFakeMax: 0.08, flatCoverMax: 12, photoCoverMin: 70, photoHardMax: 0.04,
@@ -191,7 +192,7 @@ export async function analyzeImage(input, config, { job = 1, svgText = null, onP
   };
   const buildMask = (img) => {
     const W = img.width, H = img.height, d = img.data, n = W * H;
-    const cov = new Float32Array(n), mask = new Uint8Array(n);
+    const cov = new Float32Array(n), mask = new Uint8Array(n), amb = new Uint8Array(n);
     const kx = artSrc.w / W, ky = artSrc.h / H;
     const pxA = kx * sA; // pixel size in pass-A units
     let count = 0;
@@ -207,13 +208,36 @@ export async function analyzeImage(input, config, { job = 1, svgText = null, onP
         if (m > 0.02 && m < 0.98 && bg.bgLab && alpha >= A.alphaBg) {
           const lab = rgbToLab(d[p * 4], d[p * 4 + 1], d[p * 4 + 2]);
           c = hyp(lab[0] - bg.bgLab[0], lab[1] - bg.bgLab[1], lab[2] - bg.bgLab[2]) > 12 ? 1 : 0;
+          amb[p] = 1;
         } else c = m >= 0.5 ? 1 : 0;
       }
       cov[p] = c;
       if (c >= 0.5 && alpha >= A.alphaBg) { mask[p] = 1; count++; }
     }
     if (!count) for (let p = 0; p < n; p++) if (d[p * 4 + 3] >= A.alphaBg) { mask[p] = 1; cov[p] = 1; }
-    return { cov, mask };
+    return { cov, mask, amb };
+  };
+  // Anti-aliasing fringe on the design edge (accuracy review): a mixed edge pixel that is nearest to a palette colour
+  // equal to the background (e.g. the light grey rim of black text on white, when white is also a thread colour inside
+  // the design) is background, not a 1 px "line" of that colour. Without this every glyph gets a fake hairline.
+  const dropFringe = (L, mask, amb, palLab, W) => {
+    if (!bg.bgLab || !palLab.length || geomCov) return L;
+    const near = palLab.map((l) => hyp(l[0] - bg.bgLab[0], l[1] - bg.bgLab[1], l[2] - bg.bgLab[2]) < A.fringeBgDE);
+    if (!near.some(Boolean)) return L;
+    const n = L.length, H = n / W;
+    const out = (q) => L[q] < 0;
+    for (let pass = 0; pass < 2; pass++) {
+      const drop = [];
+      for (let p = 0; p < n; p++) {
+        if (L[p] < 0 || !near[L[p]]) continue;
+        const x = p % W, y = (p - x) / W;
+        const touches = (x > 0 && out(p - 1)) || (x < W - 1 && out(p + 1)) || (y > 0 && out(p - W)) || (y < H - 1 && out(p + W));
+        if ((pass === 0 && amb[p]) || touches) drop.push(p);
+      }
+      if (!drop.length) break;
+      for (const p of drop) { L[p] = -1; mask[p] = 0; }
+    }
+    return L;
   };
 
   lap('shape');
@@ -228,7 +252,7 @@ export async function analyzeImage(input, config, { job = 1, svgText = null, onP
   const sB = db.w / artSrc.w;
   const Wb = db.w, Hb = db.h, nB = Wb * Hb;
   let imgB = sampleArt(Wb, Hb);
-  const { mask: maskB } = buildMask(imgB);
+  const { mask: maskB, amb: ambB } = buildMask(imgB);
   let labB = labImage(imgB);
   const statMask = new Uint8Array(nB);
   for (let y = 0; y < Hb; y++) for (let x = 0; x < Wb; x++) {
@@ -241,7 +265,7 @@ export async function analyzeImage(input, config, { job = 1, svgText = null, onP
   for (let p = 0; p < nB && !anyStat; p++) anyStat = statMask[p] === 1;
   const { pal, pts } = buildPalette(imgB, labB, anyStat ? statMask : maskB, maskB, Wb, Hb, A, { kL: isPatchPhoto ? 2 : 1, bgLab: bg.bgLab });
   let palLab = pal.map((c) => c.lab);
-  const L0 = palLab.length ? labelPixels(imgB, labB, maskB, palLab) : new Int16Array(nB).fill(-1);
+  const L0 = palLab.length ? dropFringe(labelPixels(imgB, labB, maskB, palLab), maskB, ambB, palLab, Wb) : new Int16Array(nB).fill(-1);
   const es = edgeStats(labB, Wb, Hb, maskB);
   const le = labelEdges(labB, L0, Wb, Hb);
   const features = {
@@ -297,9 +321,9 @@ export async function analyzeImage(input, config, { job = 1, svgText = null, onP
   const dp = dims(artSrc.w, artSrc.h, A.sizes.preview);
   const Wp = dp.w, Hp = dp.h, nP = Wp * Hp;
   const imgP = sampleArt(Wp, Hp);
-  const { cov: covP, mask: maskP } = buildMask(imgP);
+  const { cov: covP, mask: maskP, amb: ambP } = buildMask(imgP);
   const labP = labImage(imgP);
-  let Lp = palLab.length ? labelPixels(imgP, labP, maskP, palLab) : new Int16Array(nP).fill(-1);
+  let Lp = palLab.length ? dropFringe(labelPixels(imgP, labP, maskP, palLab), maskP, ambP, palLab, Wp) : new Int16Array(nP).fill(-1);
   Lp = modeFilter(Lp, Wp, Hp, Math.max(1, palLab.length));
   const pd = imgP.data;
   const geometric = !!(rect || geomCov);

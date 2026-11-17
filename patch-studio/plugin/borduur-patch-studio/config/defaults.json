@@ -601,7 +601,7 @@
     "floodNeighborDE": 6, "floodBgDE": 35, "floodPhotoDL": 10, "floodPhotoDC": 4,
     "white": { "L": 92, "C": 6 }, "black": { "L": 15, "C": 8 },
     "kmeans": { "k": 16, "iters": 12, "seed": 1 },
-    "mergeDE00": 7, "minShare": 0.004,
+    "mergeDE00": 7, "minShare": 0.004, "mixMaxShare": 0.08, "fringeBgDE": 12,
     "embroideryMergeSteps": [7, 10, 14, 18],
     "classify": { "flatFakeMax": 0.08, "flatCoverMax": 12, "photoCoverMin": 70, "photoHardMax": 0.04, "gradientHardMax": 0.012, "gradientChgMax": 0.03, "gradientCoverMax": 40, "softShadingFakeMin": 0.15 },
     "mockup": { "textureMin": 0.6, "hardMin": 0.04 },

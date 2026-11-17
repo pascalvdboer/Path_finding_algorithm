@@ -166,7 +166,9 @@
  * @property {{id:string, hex:string, label:string}} fabric
  * @property {{code:string, hex:string, name:string}|null} edgeColor
  * @property {{code:string, name:string, hex:string, share:number}[]} threads   gekozen garenkleuren (na reductie + tekst)
- * @property {{text:string, font:string, heightMm:number, threadCode:string, path:string}[]} texts
+ * @property {{text:string, font:string, heightMm:number, threadCode:string, path:string,
+ *            offsetMm?:{x:number,y:number}, angleDeg?:number, insetMm?:number, letterSpacing?:number}[]} texts
+ *           plaatsing optioneel (oudere payloads: midden / 0)
  * @property {{scale:number, offsetMm:{x:number,y:number}, rotation:number}} art
  * @property {{kind:string, hasSoftShading:boolean, colors:number, fineLineMm:number|null, minTextMm:number|null,
  *            stitches:{min:number,max:number}|null, warnings:string[], shape:string|null, background:string}|null} analysis

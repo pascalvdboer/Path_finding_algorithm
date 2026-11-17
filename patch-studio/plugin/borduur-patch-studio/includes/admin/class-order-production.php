@@ -363,6 +363,29 @@ final class Order_Production {
 	}
 
 	/**
+	 * Where the customer placed a text layer (empty for the default spot / older payloads).
+	 *
+	 * @param array $tx Text layer.
+	 */
+	private static function text_place( array $tx ): string {
+		$path = (string) ( $tx['path'] ?? 'straight' );
+		if ( 'straight' === $path ) {
+			$x = (float) ( $tx['offsetMm']['x'] ?? 0 );
+			$y = (float) ( $tx['offsetMm']['y'] ?? 0 );
+			if ( abs( $x ) < 0.05 && abs( $y ) < 0.05 ) {
+				return isset( $tx['offsetMm'] ) ? __( 'gecentreerd', 'borduur-patch-studio' ) : '';
+			}
+			/* translators: 1: x offset mm, 2: y offset mm from the patch centre */
+			return sprintf( __( 'midden %1$s / %2$s mm (x / y) vanaf het centrum', 'borduur-patch-studio' ), self::num( $x ), self::num( $y ) );
+		}
+		if ( ! isset( $tx['angleDeg'] ) && ! isset( $tx['insetMm'] ) ) {
+			return '';
+		}
+		/* translators: 1: angle in degrees along the edge, 2: extra distance to the edge in mm */
+		return sprintf( __( 'gedraaid %1$s° · %2$s mm extra van de rand', 'borduur-patch-studio' ), (string) (int) ( $tx['angleDeg'] ?? 0 ), self::num( (float) ( $tx['insetMm'] ?? 0 ) ) );
+	}
+
+	/**
 	 * Text path label.
 	 *
 	 * @param string $path straight|arc_top|arc_bottom.
@@ -633,6 +656,7 @@ final class Order_Production {
 				/* translators: %s: letter height in mm */
 				sprintf( __( '%s mm hoog', 'borduur-patch-studio' ), self::num( (float) ( $tx['heightMm'] ?? 0 ) ) ),
 				self::path_label( (string) ( $tx['path'] ?? 'straight' ) ),
+				self::text_place( $tx ),
 			);
 			$parts[] = ( '' !== $ti['code'] && 'auto' !== $ti['code'] ) ? $ti['name'] . ' (' . self::brand() . ' ' . $ti['code'] . ')' : __( 'garenkleur automatisch', 'borduur-patch-studio' );
 			$texts[] = array(

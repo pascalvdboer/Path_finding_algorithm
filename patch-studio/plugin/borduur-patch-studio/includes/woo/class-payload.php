@@ -222,6 +222,14 @@ final class Payload {
 				'heightMm'   => round( self::clamp( self::num( $t['heightMm'] ?? 6 ) ?? 6, 1, 100 ), 1 ),
 				'threadCode' => 'auto' === $code ? 'auto' : self::code( $code ),
 				'path'       => in_array( $path, self::PATHS, true ) ? $path : 'straight',
+				// Placement chosen by the customer (drag/arrows/sliders); same limits as ui/state.js.
+				'offsetMm'      => array(
+					'x' => round( self::clamp( self::num( $t['offsetMm']['x'] ?? 0 ) ?? 0, -150, 150 ), 1 ),
+					'y' => round( self::clamp( self::num( $t['offsetMm']['y'] ?? 0 ) ?? 0, -150, 150 ), 1 ),
+				),
+				'angleDeg'      => (int) round( self::clamp( self::num( $t['angleDeg'] ?? 0 ) ?? 0, -180, 180 ) ),
+				'insetMm'       => round( self::clamp( self::num( $t['insetMm'] ?? 0 ) ?? 0, -5, 60 ), 1 ),
+				'letterSpacing' => round( self::clamp( self::num( $t['letterSpacing'] ?? 0.05 ) ?? 0.05, -0.05, 0.5 ), 3 ),
 			);
 		}
 		return $out;

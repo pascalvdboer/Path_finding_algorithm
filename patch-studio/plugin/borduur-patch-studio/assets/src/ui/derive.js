@@ -129,9 +129,14 @@ export function derive(state, analysisRaw, config, tweaks) {
   const quotes = quoteAll({ ...pin, withLadder: false }, config);
   const q = quote({ ...pin, withLadder: true }, config);
 
+  // 'auto' text colour = a real thread too: let the colour count (advice) see which one (eigenaar: tekstkleuren tellen mee).
+  const autoCode = autoText && autoText.code ? String(autoText.code) : null;
+  const designForAdvice = autoCode && (state.texts || []).some((l) => l.threadCode === 'auto')
+    ? { ...state, texts: state.texts.map((l) => (l.threadCode === 'auto' ? { ...l, autoThreadCode: autoCode } : l)) }
+    : state;
   const advice = evaluate({
     analysis,
-    design: state,
+    design: designForAdvice,
     config,
     locale,
     colors: { reduced, matches, contrast, fabricHex: groundHex },
@@ -244,6 +249,11 @@ export function buildPayload(state, d, config, extra = {}) {
       heightMm: l.heightMm,
       threadCode: l.threadCode === 'auto' ? autoTextCode(d.textHex[l.id]) : l.threadCode,
       path: l.path,
+      // plaatsing (eigenaar: zelf schikken), zodat herladen, winkelmand en productiefiche dezelfde patch tonen
+      offsetMm: { x: r1(l.offsetMm && l.offsetMm.x) || 0, y: r1(l.offsetMm && l.offsetMm.y) || 0 },
+      angleDeg: Math.round(Number(l.angleDeg) || 0),
+      insetMm: r1(l.insetMm) || 0,
+      letterSpacing: Math.round((Number(l.letterSpacing) || 0) * 1000) / 1000,
     })),
     art: { scale: state.art.scale, offsetMm: { ...state.art.offsetMm }, rotation: state.art.rotation },
     analysis: a
