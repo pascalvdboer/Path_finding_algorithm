@@ -281,7 +281,9 @@ export function createApp(root, config) {
         if (p.el.hidden === v) p.el.hidden = !v;
         if (v) p.update(s, d);
       }
-      dock.hidden = !mob && !ctx.ui.dock;
+      const inDock = (id) => DOCK.some(([x]) => x === id);
+      dock.hidden = mob ? !inDock(ctx.ui.mob) : !ctx.ui.dock;
+      side.hidden = mob && inDock(ctx.ui.mob);
       railBtns.forEach((b) => { const on = b.dataset.panel === ctx.ui.dock; b.setAttribute('aria-pressed', String(on)); b.classList.toggle('is-on', on); });
       const [tab, , group] = groupOf(ctx.ui.mob);
       tabBtns.forEach((b) => { const on = b.dataset.tab === tab; b.setAttribute('aria-pressed', String(on)); b.classList.toggle('is-on', on); });

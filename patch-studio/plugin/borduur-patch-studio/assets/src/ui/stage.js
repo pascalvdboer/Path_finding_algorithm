@@ -86,6 +86,7 @@ export function createStage(ctx) {
   const viewName = ctx.uidBase + '-view';
   const views = h('div.bps-views', { role: 'radiogroup', 'aria-label': t('ui.view.label') });
   const el = h('figure.bps-stage.bps-preview', { 'aria-label': t('ui.preview.label') }, views, wrap, zoomBar, chip);
+  el.addEventListener('pointerdown', () => { el.classList.add('is-touched'); });
 
   let renderer = null, broken = false, lastResult = null, queued = false, quality = 'high', hiTimer = 0;
   let state = null, d = null, zoom = 1, center = null, light = null, lastTech = null, warmedJob = null;
@@ -284,6 +285,7 @@ export function createStage(ctx) {
     const editable = !!b && !editing;
     sel.hidden = !editable;
     ctxbar.hidden = !editable || !!drag;
+    el.classList.toggle('has-ctx', !ctxbar.hidden);
     if (!editable) return;
     const ppm = (lastResult.pxPerMm || 1) / pxScale();
     const c = toPx(b.x, b.y);
@@ -292,9 +294,10 @@ export function createStage(ctx) {
     sel.classList.toggle('is-text', tgt !== 'art');
     // Toolbar above the selection, kept inside the stage.
     const ww = wrap.clientWidth, wh = wrap.clientHeight;
+    if (ctx.isMobile && ctx.isMobile()) { ctxbar.style.left = Math.max(8, (ww - (ctxbar.offsetWidth || 200)) / 2) + 'px'; ctxbar.style.top = ''; return; }
     const bw = ctxbar.offsetWidth || 200, bh = ctxbar.offsetHeight || 44;
     const extent = Math.max(w, hh) / 2;
-    const minY = views.hidden ? 8 : views.offsetTop + views.offsetHeight + 8;
+    const minY = 8;
     let y = c.y - (b.rot ? extent : hh / 2) - bh - 12;
     if (y < minY) y = Math.min(wh - bh - 64, c.y + (b.rot ? extent : hh / 2) + 12);
     if (y < minY) y = minY;
@@ -438,7 +441,7 @@ export function createStage(ctx) {
 
   canvas.addEventListener('pointerdown', (ev) => {
     if (!state || !d || (ev.button != null && ev.button > 0)) return;
-    canvas.focus({ preventScroll: true });
+    canvas.focus({ preventScroll: true, focusVisible: false });
     pointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
     try { canvas.setPointerCapture(ev.pointerId); } catch (e) { /* ignore */ }
     ev.preventDefault();
