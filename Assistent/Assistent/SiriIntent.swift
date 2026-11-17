@@ -37,13 +37,32 @@ struct OpenAssistantIntent: AppIntent {
     }
 }
 
+/// Opent de app op het tabblad Opnames en begint direct met opnemen.
+struct StartRecordingIntent: AppIntent {
+    static var title: LocalizedStringResource = "Start gespreksopname"
+    static var openAppWhenRun = true
+
+    @MainActor
+    func perform() async throws -> some IntentResult {
+        RecordRequest.pending = true
+        NotificationCenter.default.post(name: .startRecording, object: nil)
+        return .result()
+    }
+}
+
 @MainActor
 enum ListenRequest {
     static var pending = false
 }
 
+@MainActor
+enum RecordRequest {
+    static var pending = false
+}
+
 extension Notification.Name {
     static let startListening = Notification.Name("assistent.startListening")
+    static let startRecording = Notification.Name("assistent.startRecording")
 }
 
 struct AssistentShortcuts: AppShortcutsProvider {
@@ -63,6 +82,12 @@ struct AssistentShortcuts: AppShortcutsProvider {
             phrases: ["Open \(.applicationName)", "Start \(.applicationName)"],
             shortTitle: "Open en luister",
             systemImageName: "mic.fill"
+        )
+        AppShortcut(
+            intent: StartRecordingIntent(),
+            phrases: ["Neem op met \(.applicationName)", "Start opname in \(.applicationName)"],
+            shortTitle: "Start opname",
+            systemImageName: "record.circle"
         )
     }
 }

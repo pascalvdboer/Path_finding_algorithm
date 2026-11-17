@@ -161,6 +161,14 @@ final class ToolExecutor {
          "description": "Opent een webpagina of een andere app via een link, bijv. 'https://…', 'spotify:', 'music://', 'photos-redirect://', 'mobilenotes://', 'calshow://'.",
          "input_schema": object(["url": str("De URL.")], required: ["url"])],
 
+        // Opgenomen gesprekken
+        ["name": "list_recordings",
+         "description": "Geeft de opgenomen gesprekken (vergaderingen, afspraken) met id, titel, datum, duur en sprekers.",
+         "input_schema": object([:])],
+        ["name": "read_recording",
+         "description": "Leest de samenvatting en het volledige transcript (met sprekers) van een opgenomen gesprek. Gebruik dit om vragen over een gesprek te beantwoorden of actiepunten over te nemen.",
+         "input_schema": object(["id": str("Het id uit list_recordings.")], required: ["id"])],
+
         // Geheugen
         ["name": "remember",
          "description": "Onthoudt een blijvend feit of een voorkeur van de gebruiker voor latere gesprekken, bijv. 'Partner heet Lisa' of 'Wil antwoorden kort'.",
@@ -201,6 +209,8 @@ final class ToolExecutor {
             case "open_maps": return Outcome(text: try await openMaps(input))
             case "run_shortcut": return Outcome(text: try await runShortcut(input))
             case "open_url": return Outcome(text: try await openURL(input))
+            case "list_recordings": return Outcome(text: listRecordings())
+            case "read_recording": return Outcome(text: try readRecording(input))
             case "remember":
                 memory.add(try string(input, "fact"))
                 return Outcome(text: "Onthouden.")
@@ -283,12 +293,13 @@ final class ToolExecutor {
     private func listReminders() async throws -> String {
         try await ensureRemindersAccess()
         let predicate = store.predicateForIncompleteReminders(withDueDateStarting: nil, ending: nil, calendars: nil)
+        let isoOut = Self.isoOut // lokaal kopiëren: de callback draait buiten de MainActor
         let lines: [String] = await withCheckedContinuation { continuation in
             store.fetchReminders(matching: predicate) { reminders in
                 let lines = (reminders ?? []).prefix(50).map { r -> String in
                     var line = "- [id: \(r.calendarItemIdentifier)] \(r.title ?? "(zonder titel)")"
                     if let comps = r.dueDateComponents, let due = Calendar.current.date(from: comps) {
-                        line += ", gepland: \(Self.isoOut.string(from: due))"
+                        line += ", gepland: \(isoOut.string(from: due))"
                     }
                     return line
                 }
@@ -435,6 +446,28 @@ final class ToolExecutor {
         }
         guard await ui.open(url) else { throw ToolError.invalidInput("Deze link kon niet worden geopend (is de app geïnstalleerd?).") }
         return "Geopend."
+    }
+
+    // MARK: - Opnames
+
+    private func listRecordings() -> String {
+        let list = RecordingStore.shared.recordings
+        if list.isEmpty { return "Er zijn nog geen opgenomen gesprekken." }
+        return list.prefix(50).map { r in
+            let speakers = r.speakers.map { r.name(of: $0) }.joined(separator: ", ")
+            return "- [id: \(r.id.uuidString)] \(r.title) | \(Self.isoOut.string(from: r.createdAt)) | \(Recording.durationText(r.duration)) | status: \(r.statusText)\(speakers.isEmpty ? "" : " | sprekers: \(speakers)")"
+        }.joined(separator: "\n")
+    }
+
+    private func readRecording(_ input: [String: Any]) throws -> String {
+        guard let uuid = UUID(uuidString: try string(input, "id")),
+              let r = RecordingStore.shared.recording(uuid) else {
+            throw ToolError.invalidInput("Opname niet gevonden; gebruik eerst list_recordings.")
+        }
+        guard !r.utterances.isEmpty else { return "Deze opname is nog niet uitgeschreven (status: \(r.statusText))." }
+        var transcript = r.transcriptText
+        if transcript.count > 400_000 { transcript = String(transcript.prefix(400_000)) + "\n…(ingekort)" }
+        return "\(r.title)\n\(Self.isoOut.string(from: r.createdAt)) · \(Recording.durationText(r.duration))\n\n\(r.summary ?? "")\n\nTRANSCRIPT\n\(transcript)"
     }
 
     // MARK: - Hulpfuncties

@@ -21,7 +21,7 @@ final class SpeechManager: NSObject, ObservableObject {
     }
 
     func requestPermissions() async -> Bool {
-        let speechOK = await withCheckedContinuation { continuation in
+        let speechOK: Bool = await withCheckedContinuation { continuation in
             SFSpeechRecognizer.requestAuthorization { status in
                 continuation.resume(returning: status == .authorized)
             }

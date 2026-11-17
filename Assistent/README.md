@@ -18,6 +18,8 @@ Een native iPhone-app (SwiftUI, iOS 17+) die werkt als Siri, met Claude als brei
 | 🔎 **Opzoeken en advies** | "Wat voor weer wordt het?", "Laatste nieuws over…", "Welke wijn past bij risotto?" | Zoekt op internet en leest webpagina's |
 | 👀 **Bekijken** | Stuur een foto of schermafbeelding mee met 📎: "Wat staat hier?", "Vat dit samen", "Wat moet ik antwoorden?" | Claude kan beelden lezen |
 | 🧠 **Geheugen** | "Onthoud dat mijn vrouw Lisa heet", "Ik werk in Utrecht" | Hij leert je kennen. Je ziet en wist het in Instellingen |
+| 🎧 **Gesprekken opnemen** | Tabblad *Opnames* → opnemen. Daarna: "Wat zei Jan over het budget?", "Zet de actiepunten in mijn herinneringen" | Onbeperkt lang, ook met het scherm uit. Volledig uitgeschreven per spreker (AssemblyAI), met titel, samenvatting, besluiten en actiepunten (Claude) |
+| ☀️ **Meedenken** | Bij openen of met ☀️: "Je volgende afspraak is om 14:00 in Utrecht; vertrek om 13:20. Jan wacht nog op antwoord over de offerte. Zal ik een reactie opstellen?" | Combineert agenda, mail, opnames en wat hij over je weet |
 
 ### Wat Apple niet toestaat (en hoe het hier toch werkt)
 Op de iPhone mag een app **niet in andere apps kijken of daarin knoppen indrukken**. Geen enkele app kan dat, ook Siri niet volledig. Daarom werkt deze assistent zo:
@@ -26,7 +28,32 @@ Op de iPhone mag een app **niet in andere apps kijken of daarin knoppen indrukke
 - **Instellingen veranderen** (wekker, Focus, helderheid, wifi, slimme lampen…) gaat via **Opdrachten**. Die mogen dat wel, en de assistent start ze voor je.
 - **Berichten en bellen** worden klaargezet, en jij geeft de laatste tik. Apple verplicht dat; zo kan er ook nooit per ongeluk iets weg.
 
+## Gesprekken opnemen en uitschrijven
+
+1. Maak een gratis account op [assemblyai.com](https://www.assemblyai.com) en kopieer je API-sleutel. Plak die in de app onder ⚙️ → *Gespreksopnames*. Zet daar eventueel *EU-servers* aan.
+2. Ga naar het tabblad **Opnames** en tik op **Gesprek opnemen**, of zeg *"Hé Siri, neem op met Assistent"*. Je kunt de opname ook onder de Actieknop zetten (*Start opname*).
+3. Leg de telefoon midden op tafel. Je kunt het scherm uitzetten; de opname loopt door. Er is geen tijdslimiet: een uur opnemen kost ongeveer 15 MB opslag.
+4. Tik op ⏹. De app uploadt de audio, AssemblyAI schrijft hem uit met sprekers (A, B, C…), en Claude maakt een titel, samenvatting, besluiten en actiepunten. Hij raadt ook de namen van sprekers als die in het gesprek vallen. Namen kun je zelf aanpassen.
+5. Vraag daarna in het tabblad Assistent bijvoorbeeld: *"Wat hebben we gisteren afgesproken met de aannemer?"*.
+
+Goed om te weten:
+- **Kosten:** AssemblyAI rekent ongeveer $0,15–0,40 per uur audio; nieuwe accounts krijgen tegoed. De samenvatting door Claude kost een paar cent per uur gesprek.
+- **Telefoongesprekken** kan geen enkele app opnemen; Apple staat dat niet toe. Gebruik daarvoor de ingebouwde opname van de Telefoon-app (iOS 18.1+, knop linksboven tijdens een gesprek). Videogesprekken op een andere computer of tablet kun je wel opnemen door de iPhone ernaast te leggen.
+- Wordt een opname onderbroken door een binnenkomend gesprek, dan gaat hij daarna automatisch verder.
+- **Vraag toestemming** aan de anderen voordat je opneemt. Dat is netjes en voorkomt gedoe.
+
 ## Installeren op je iPhone
+
+**Snelste manier** (op je Mac, met je iPhone via de kabel aangesloten en ontgrendeld):
+```bash
+git clone https://github.com/pascalvdboer/Path_finding_algorithm.git
+cd Path_finding_algorithm && git checkout claude/quirky-maxwell-ye2nea
+cd Assistent
+./install.sh <JOUW_TEAM_ID>
+```
+Je Team ID staat op [developer.apple.com/account](https://developer.apple.com/account) onder *Membership details*. Het script installeert XcodeGen, bouwt de app en zet hem op je iPhone. Met een betaald developer-account blijft hij een jaar werken.
+
+**Of via Xcode:**
 
 Je hebt een **Mac met Xcode 15 of nieuwer** nodig. Een gratis Apple ID is genoeg om de app op je eigen telefoon te zetten. Met een gratis account moet je de app wel elke 7 dagen opnieuw installeren; met een betaald developer-account ($99 per jaar) is dat een jaar.
 
@@ -119,11 +146,14 @@ antwoord ──► voorlezen (AVSpeechSynthesizer)
 | `GoogleAuth.swift`, `GmailClient.swift` | Gmail-koppeling (OAuth + PKCE) en Gmail API |
 | `Services.swift` | Contacten, locatie, geheugen |
 | `SpeechManager.swift` | Spraakherkenning en voorlezen |
-| `SiriIntent.swift` | Siri-zinnen en de opdrachten "Vraag de assistent" / "Open en luister" |
+| `Recordings.swift`, `RecordingsView.swift` | Opnemen, AssemblyAI-transcriptie met sprekers, samenvatting, opnamescherm |
+| `SiriIntent.swift` | Siri-zinnen en de opdrachten "Vraag de assistent", "Open en luister" en "Start opname" |
 | `ContentView.swift`, `SettingsView.swift`, `MailComposer.swift`, `MessageComposer.swift` | Interface |
 | `Keychain.swift` | Veilige opslag van sleutels |
 
 ## Nog te doen / ideeën
 - **Andere mailboxen** (Outlook, Hostinger): Outlook kan via Microsoft Graph, andere via IMAP.
 - **Deelmenu-extensie:** vanuit elke app op *Deel → Assistent* tikken om een mail, webpagina of tekst direct te laten samenvatten.
-- **Ochtendbriefing:** elke ochtend automatisch agenda, weer en belangrijke mail, via een Opdracht-automatisering die "Vraag de assistent" start.
+- **Ochtendbriefing met geluid:** maak in Opdrachten een *Automatisering* → *Tijd van de dag 07:30* → actie *Vraag de assistent* met tekst "Geef mijn ochtendbriefing". Siri leest hem dan elke ochtend voor.
+- **Live meelezen** tijdens een opname (tekst die meeloopt terwijl er gepraat wordt).
+- **TestFlight**, zodat je de app zonder kabel kunt bijwerken.

@@ -6,6 +6,10 @@ struct SettingsView: View {
     @ObservedObject private var memory = MemoryStore.shared
 
     @State private var apiKey = Keychain.load() ?? ""
+    @State private var assemblyKey = Keychain.load(account: "assemblyai") ?? ""
+    @AppStorage("assemblyEU") private var assemblyEU = false
+    @AppStorage("recordingLanguage") private var recordingLanguage = "nl"
+    @AppStorage("autoBriefing") private var autoBriefing = true
     @State private var googleError: String?
     @State private var connecting = false
     @AppStorage("model") private var model = ClaudeClient.defaultModel
@@ -24,6 +28,23 @@ struct SettingsView: View {
                     Text("Claude API-sleutel")
                 } footer: {
                     Text("Maak een sleutel aan op platform.claude.com. Hij wordt alleen in de sleutelhanger van je iPhone bewaard.")
+                }
+
+                Section {
+                    SecureField("AssemblyAI API-sleutel", text: $assemblyKey)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                    Picker("Taal van gesprekken", selection: $recordingLanguage) {
+                        Text("Nederlands").tag("nl")
+                        Text("Engels").tag("en")
+                        Text("Duits").tag("de")
+                        Text("Automatisch herkennen").tag("auto")
+                    }
+                    Toggle("Verwerken op EU-servers", isOn: $assemblyEU)
+                } header: {
+                    Text("Gespreksopnames")
+                } footer: {
+                    Text("Voor uitschrijven met sprekerherkenning. Maak een sleutel aan op assemblyai.com. EU-servers houden je audio binnen Europa.")
                 }
 
                 Section {
@@ -88,6 +109,12 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    Toggle("Briefing bij openen", isOn: $autoBriefing)
+                } footer: {
+                    Text("Bij het openen van de app (hooguit eens per 3 uur) vertelt de assistent wat je nu moet weten: volgende afspraak, belangrijke mail, actiepunten.")
+                }
+
+                Section {
                     Toggle("Antwoorden altijd voorlezen", isOn: $autoSpeak)
                 } footer: {
                     Text("Als je met je stem vraagt, wordt het antwoord altijd voorgelezen.")
@@ -105,6 +132,8 @@ struct SettingsView: View {
                     Button("Klaar") {
                         let trimmed = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
                         if trimmed.isEmpty { Keychain.delete() } else { Keychain.save(trimmed) }
+                        let aai = assemblyKey.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if aai.isEmpty { Keychain.delete(account: "assemblyai") } else { Keychain.save(aai, account: "assemblyai") }
                         dismiss()
                     }
                 }

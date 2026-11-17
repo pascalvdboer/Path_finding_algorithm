@@ -55,6 +55,10 @@ final class AssistantViewModel: ObservableObject, AssistantUI {
     // MARK: - Invoer
 
     func toggleListening() {
+        if MeetingRecorder.shared.isRecording && !speech.isRecording {
+            messages.append(ChatMessage(role: .error, text: "Er loopt een gespreksopname. Typ je vraag, of stop eerst de opname."))
+            return
+        }
         if speech.isRecording {
             let text = speech.stopRecording()
             if !text.isEmpty || attachedImage != nil { send(text, spoken: true) }
@@ -88,11 +92,43 @@ final class AssistantViewModel: ObservableObject, AssistantUI {
         Task {
             defer { isThinking = false }
             do {
-                let answer = try await agent.ask(text, imageJPEG: image.flatMap(Self.jpegForUpload))
+                let answer = try await agent.ask(text, imageJPEG: image.flatMap { Self.jpegForUpload($0) })
                 messages.append(ChatMessage(role: .assistant, text: answer))
-                if autoSpeak || spoken { speech.speak(answer) }
+                if (autoSpeak || spoken) && !MeetingRecorder.shared.isRecording { speech.speak(answer) }
             } catch {
                 messages.append(ChatMessage(role: .error, text: error.localizedDescription))
+            }
+        }
+    }
+
+    // MARK: - Proactief
+
+    static let briefingPrompt = """
+    Geef me een korte, proactieve briefing voor dit moment. Kijk zelf naar mijn agenda (vandaag en morgen), \
+    openstaande herinneringen, ongelezen of belangrijke mail van de laatste dag (als Gmail gekoppeld is), \
+    recente gespreksopnames met open actiepunten, en wat je over mij weet. Noem alleen wat er nu toe doet, \
+    zoals de eerstvolgende afspraak en of ik op tijd moet vertrekken, iets wat botst, een mail die antwoord \
+    nodig heeft of een verjaardag. Sluit af met één concreet voorstel wat je voor me kunt doen. Maximaal vijf zinnen.
+    """
+
+    /// Automatisch bij openen (hooguit eens per 3 uur) of als je op de briefing-knop tikt.
+    func briefing(automatic: Bool) {
+        guard hasApiKey, !isThinking else { return }
+        if automatic {
+            guard UserDefaults.standard.object(forKey: "autoBriefing") as? Bool ?? true else { return }
+            let last = UserDefaults.standard.double(forKey: "lastBriefing")
+            guard Date().timeIntervalSince1970 - last > 3 * 3600 else { return }
+        }
+        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: "lastBriefing")
+        isThinking = true
+        Task {
+            defer { isThinking = false }
+            do {
+                let answer = try await agent.ask(Self.briefingPrompt)
+                messages.append(ChatMessage(role: .assistant, text: answer))
+                if !automatic && autoSpeak && !MeetingRecorder.shared.isRecording { speech.speak(answer) }
+            } catch {
+                if !automatic { messages.append(ChatMessage(role: .error, text: error.localizedDescription)) }
             }
         }
     }

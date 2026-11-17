@@ -74,7 +74,7 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
 
     func describeCurrentLocation() async throws -> String {
         if manager.authorizationStatus == .notDetermined {
-            await withCheckedContinuation { continuation in
+            await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
                 authContinuation = continuation
                 manager.requestWhenInUseAuthorization()
             }

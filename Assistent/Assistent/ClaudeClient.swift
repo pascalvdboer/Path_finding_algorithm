@@ -32,10 +32,12 @@ struct ClaudeClient {
     /// (ook thinking-, fallback- en web-search-blokken), zoals de API vereist.
     func send(system: String,
               messages: [[String: Any]],
-              tools: [[String: Any]]) async throws -> [String: Any] {
+              tools: [[String: Any]],
+              effort: String = "low",
+              timeout: TimeInterval = 120) async throws -> [String: Any] {
         var request = URLRequest(url: URL(string: "https://api.anthropic.com/v1/messages")!)
         request.httpMethod = "POST"
-        request.timeoutInterval = 120
+        request.timeoutInterval = timeout
         request.setValue("application/json", forHTTPHeaderField: "content-type")
         request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
         request.setValue("2026-10-21", forHTTPHeaderField: "anthropic-version")
@@ -43,17 +45,19 @@ struct ClaudeClient {
         // het automatisch op een ander model.
         request.setValue("server-side-fallback-2026-07-01", forHTTPHeaderField: "anthropic-beta")
 
-        let body: [String: Any] = [
+        var body: [String: Any] = [
             "model": model,
             "max_tokens": 16000,
             "system": system,
             "messages": messages,
-            "tools": tools,
-            "tool_choice": ["type": "auto"],
             // Lage effort = snellere antwoorden, prettig voor een spraakassistent.
-            "output_config": ["effort": "low"],
+            "output_config": ["effort": effort],
             "fallbacks": "default",
         ]
+        if !tools.isEmpty {
+            body["tools"] = tools
+            body["tool_choice"] = ["type": "auto"]
+        }
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let (data, response) = try await URLSession.shared.data(for: request)
@@ -65,5 +69,18 @@ struct ClaudeClient {
             throw ClientError.badResponse
         }
         return json
+    }
+
+    /// Eén vraag zonder tools; geeft de tekst van het antwoord terug.
+    func complete(system: String, prompt: String, effort: String = "medium") async throws -> String {
+        let response = try await send(system: system,
+                                      messages: [["role": "user", "content": prompt]],
+                                      tools: [], effort: effort, timeout: 600)
+        let content = response["content"] as? [[String: Any]] ?? []
+        return content
+            .filter { $0["type"] as? String == "text" }
+            .compactMap { $0["text"] as? String }
+            .joined()
+            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

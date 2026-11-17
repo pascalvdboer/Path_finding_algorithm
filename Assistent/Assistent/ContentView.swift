@@ -21,6 +21,11 @@ struct ContentView: View {
                         .accessibilityLabel("Nieuw gesprek")
                 }
                 ToolbarItem(placement: .topBarTrailing) {
+                    Button { vm.briefing(automatic: false) } label: { Image(systemName: "sun.max") }
+                        .accessibilityLabel("Wat moet ik weten?")
+                        .disabled(vm.isThinking)
+                }
+                ToolbarItem(placement: .topBarTrailing) {
                     Button { showSettings = true } label: { Image(systemName: "gearshape") }
                         .accessibilityLabel("Instellingen")
                 }
@@ -45,7 +50,13 @@ struct ContentView: View {
             .task {
                 speechObserver.bind(vm.speech)
                 await vm.onAppear()
-                if !vm.hasApiKey { showSettings = true } else { startListeningIfRequested() }
+                if !vm.hasApiKey {
+                    showSettings = true
+                } else if ListenRequest.pending {
+                    startListeningIfRequested()
+                } else {
+                    vm.briefing(automatic: true)
+                }
             }
             .onReceive(NotificationCenter.default.publisher(for: .startListening)) { _ in
                 startListeningIfRequested()
@@ -77,7 +88,9 @@ struct ContentView: View {
                 .padding()
             }
             .onChange(of: vm.messages.count) {
-                withAnimation { proxy.scrollTo(vm.messages.last?.id, anchor: .bottom) }
+                if let lastID = vm.messages.last?.id {
+                    withAnimation { proxy.scrollTo(lastID, anchor: .bottom) }
+                }
             }
         }
     }
@@ -96,7 +109,7 @@ struct ContentView: View {
                 "Navigeer naar het station.",
                 "Welke wijn past bij risotto?",
             ], id: \.self) { Text("• \($0)").foregroundStyle(.secondary) }
-            Text("Je kunt ook een foto of schermafbeelding meesturen met 📎.")
+            Text("Tik op ☀️ voor een briefing: wat moet je nu weten of doen? Je kunt ook een foto of schermafbeelding meesturen met 📎.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .padding(.top, 8)
@@ -143,7 +156,7 @@ struct ContentView: View {
                 Button { vm.toggleListening() } label: {
                     Image(systemName: speechObserver.isRecording ? "stop.circle.fill" : "mic.circle.fill")
                         .font(.system(size: 44))
-                        .foregroundStyle(speechObserver.isRecording ? .red : .accentColor)
+                        .foregroundStyle(speechObserver.isRecording ? Color.red : Color.accentColor)
                         .symbolEffect(.pulse, isActive: speechObserver.isRecording)
                 }
                 .disabled(vm.isThinking)
@@ -191,7 +204,7 @@ struct MessageBubble: View {
                         .textSelection(.enabled)
                         .padding(12)
                         .background(background, in: RoundedRectangle(cornerRadius: 16))
-                        .foregroundStyle(message.role == .user ? .white : .primary)
+                        .foregroundStyle(message.role == .user ? Color.white : Color.primary)
                 }
             }
             if message.role != .user { Spacer(minLength: 40) }

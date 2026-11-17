@@ -13,6 +13,7 @@ targets:
   Assistent:
     type: application
     platform: iOS
+    scheme: {}
     sources:
       - Assistent
     settings:
@@ -20,12 +21,15 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.jouwnaam.assistent
         PRODUCT_NAME: Assistent
         TARGETED_DEVICE_FAMILY: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     info:
       path: Assistent/Info.plist
       properties:
         CFBundleDisplayName: Assistent
         CFBundleDevelopmentRegion: nl
         UILaunchScreen: {}
+        UIBackgroundModes:
+          - audio
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
         NSMicrophoneUsageDescription: "De assistent luistert naar je stem zodat je kunt praten in plaats van typen."
