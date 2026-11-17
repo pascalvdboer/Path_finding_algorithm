@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="nl-BE">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Patch Studio — dev</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="../plugin/borduur-patch-studio/assets/css/patch-studio.css">
+<style>
+  /* Dev page only: imitate the site frame (Hello Elementor: white page, blue hero) without loading anything external. */
+  html, body { margin: 0; background: #fff; }
+  body { font-family: "Assistant", system-ui, sans-serif; color: #1e1b1b; }
+  .dev-hero { background: linear-gradient(90deg, #0b2444 0%, #2a6ea3 60%, #9cc7e1 100%); color: #fff; padding: 28px 16px 36px; }
+  .dev-hero h1 { margin: 0 auto; max-width: 1240px; font-family: "Sora", system-ui, sans-serif; font-size: clamp(24px, 4vw, 38px); }
+  .dev-hero p { margin: 6px auto 0; max-width: 1240px; opacity: .9; }
+  .dev-tools { max-width: 1240px; margin: 10px auto 0; padding: 0 16px; font-size: 14px; display: flex; gap: 14px; flex-wrap: wrap; color: #444; }
+  .dev-tools a { color: #0b74a6; }
+  .dev-err { max-width: 900px; margin: 24px auto; padding: 16px; border: 2px solid #b42318; border-radius: 8px; color: #b42318; font-family: monospace; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<header class="dev-hero">
+  <h1>Patches laten maken</h1>
+  <p>Dev-pagina zonder WordPress: prijs lokaal, bestellen toont de payload.</p>
+</header>
+<div class="dev-tools">
+  <span>Taal: <a href="?lang=nl">NL</a> · <a href="?lang=fr">FR</a></span>
+  <span>Startparameters: <a href="?techniek=pvc&amp;aantal=20">PVC · 20</a> · <a href="?compact=1">compact</a></span>
+  <span><a href="#" id="dev-clear">Sessie wissen</a></span>
+</div>
+
+<main>
+  <div class="bps-studio" id="studio" data-bps-root data-bps-version="1.0.0" lang="nl-BE">
+    <!-- Same skeleton as the PHP shortcode renders (works before JS). -->
+    <div class="bps-skeleton" data-bps-skeleton>
+      <h2 class="bps-skeleton__title">Ontwerp je patch</h2>
+      <p class="bps-skeleton__subtitle">Upload je logo, tekening of zelfs een foto van een bestaande patch. Wij kijken meteen of het te borduren is.</p>
+      <label class="bps-skeleton__dropzone" for="dev-file">
+        <span class="bps-skeleton__drop-main"><strong>Sleep je bestand hierheen</strong> of <em>kies een bestand</em></span>
+        <span class="bps-skeleton__drop-hint">PNG, JPG, SVG of PDF · max. 25 MB</span>
+        <input class="bps-skeleton__input" id="dev-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,application/pdf,.ai,.eps,.psd" data-bps-skeleton-input>
+      </label>
+      <noscript><p class="bps-skeleton__noscript">Je browser ondersteunt de ontwerptool niet. Vraag je patch eenvoudig aan via ons offerteformulier.</p></noscript>
+    </div>
+  </div>
+</main>
+
+<script>window.BPS_NO_AUTOMOUNT = true;</script>
+<script src="../plugin/borduur-patch-studio/assets/dist/patch-studio.js"></script>
+<script>
+(async function () {
+  const q = new URLSearchParams(location.search);
+  const locale = q.get('lang') === 'fr' ? 'fr-BE' : 'nl-BE';
+  const root = document.getElementById('studio');
+  root.setAttribute('lang', locale);
+  document.documentElement.lang = locale;
+  document.getElementById('dev-clear').addEventListener('click', (e) => {
+    e.preventDefault();
+    try { sessionStorage.clear(); localStorage.removeItem('bps:state:v1:device'); } catch (x) {}
+    location.href = location.pathname + location.search;
+  });
+  try {
+    if (!window.BPS) throw new Error('dist/patch-studio.js ontbreekt: voer eerst `npm run build` uit in patch-studio/.');
+    const base = '../plugin/borduur-patch-studio/';
+    const [defaults, palette] = await Promise.all([
+      fetch(base + 'config/defaults.json').then((r) => r.json()),
+      fetch(base + 'config/thread-palette.json').then((r) => r.json()),
+    ]);
+    const page = {
+      technique: q.get('techniek') || '',
+      sizeCm: q.get('maat') ? Number(q.get('maat')) : null,
+      qty: q.get('aantal') ? Number(q.get('aantal')) : null,
+      shape: q.get('vorm') || 'auto',
+      compact: q.get('compact') === '1',
+    };
+    const config = BPS.buildPublicConfig(defaults, palette, {
+      locale,
+      rest: null, // offline mode: price computed locally, "Bestellen" shows the payload
+      assets: { workerUrl: base + 'assets/dist/patch-studio-worker.js', fontsUrl: base + 'assets/fonts/', version: 'dev' },
+      strings: {},
+      page,
+    });
+    window.BPS_DEV = { config, app: BPS.mount(root, config) };
+    root.addEventListener('bps:quote', (e) => { window.BPS_DEV.lastQuote = e.detail.quote; });
+    root.addEventListener('bps:advice', (e) => { window.BPS_DEV.lastAdvice = e.detail.advice; });
+  } catch (e) {
+    const pre = document.createElement('pre');
+    pre.className = 'dev-err';
+    pre.textContent = String(e && e.stack || e);
+    document.body.appendChild(pre);
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "borduur-patch-studio-e2e",
+  "private": true,
+  "type": "commonjs",
+  "description": "End-to-end scenarios for Patch Studio against a local WordPress + WooCommerce (SQLite) site. Playwright comes from the machine (require('playwright')).",
+  "scripts": {
+    "start-wp": "bash start-wp.sh",
+    "e2e": "bash run-e2e.sh"
+  },
+  "devDependencies": {
+    "axe-core": "4.10.2"
+  }
+}

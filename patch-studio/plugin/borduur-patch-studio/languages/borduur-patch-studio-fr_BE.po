@@ -1,0 +1,3057 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Patch Studio – Borduurservice België 1.0.0\n"
+"Report-Msgid-Bugs-To: https://borduurservicebelgie.be/\n"
+"POT-Creation-Date: 2026-11-17T02:49:52+00:00\n"
+"PO-Revision-Date: 2026-11-17 02:49+0000\n"
+"Last-Translator: Patch Studio\n"
+"Language-Team: Français (Belgique)\n"
+"Language: fr_BE\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Domain: borduur-patch-studio\n"
+"X-Generator: WP-CLI 2.11.0\n"
+
+#. Plugin Name of the plugin
+#: borduur-patch-studio.php
+msgid "Patch Studio – Borduurservice België"
+msgstr "Patch Studio – Borduurservice België"
+
+#. Plugin URI of the plugin
+#: borduur-patch-studio.php
+msgid "https://borduurservicebelgie.be/"
+msgstr "https://borduurservicebelgie.be/"
+
+#. Description of the plugin
+#: borduur-patch-studio.php
+msgid "Patches online ontwerpen met deskundig advies, live prijs en digitale proef."
+msgstr "Concevez vos écussons en ligne avec des conseils d’expert, un prix en direct et une épreuve numérique."
+
+#. Author of the plugin
+#: borduur-patch-studio.php
+msgid "Borduurservice België"
+msgstr "Borduurservice België"
+
+#. translators: 1: required PHP version, 2: current PHP version
+#: borduur-patch-studio.php:42
+msgid "Patch Studio heeft PHP %1$s of hoger nodig. Je server draait PHP %2$s."
+msgstr "Patch Studio nécessite PHP %1$s ou plus récent. Votre serveur utilise PHP %2$s."
+
+#: includes/admin/class-order-production.php:376
+msgid "gecentreerd"
+msgstr "centré"
+
+#. translators: 1: x offset mm, 2: y offset mm from the patch centre
+#: includes/admin/class-order-production.php:379
+msgid "midden %1$s / %2$s mm (x / y) vanaf het centrum"
+msgstr "centre %1$s / %2$s mm (x / y) depuis le milieu"
+
+#. translators: 1: angle in degrees along the edge, 2: extra distance to the edge in mm
+#: includes/admin/class-order-production.php:385
+msgid "gedraaid %1$s° · %2$s mm extra van de rand"
+msgstr "pivoté de %1$s° · %2$s mm de plus depuis le bord"
+
+#: includes/admin/class-order-production.php:396
+msgid "Boog boven"
+msgstr "Arc en haut"
+
+#: includes/admin/class-order-production.php:398
+msgid "Boog onder"
+msgstr "Arc en bas"
+
+#: includes/admin/class-order-production.php:400
+msgid "Recht"
+msgstr "Droit"
+
+#: includes/admin/class-order-production.php:547 includes/admin/class-order-production.php:1872 includes/admin/views/tab-prijzen.php:40 includes/admin/views/tab-prijzen.php:88 includes/admin/views/tab-prijzen.php:386 includes/woo/class-cart.php:586 includes/woo/class-order.php:133 includes/woo/class-privacy.php:171 includes/woo/class-quotes.php:206 includes/woo/class-quotes.php:338 templates/admin/fiche-print.php:141
+msgid "Techniek"
+msgstr "Technique"
+
+#: includes/admin/class-order-production.php:551 includes/admin/class-order-production.php:1876 includes/admin/views/tab-prijzen.php:387 includes/woo/class-cart.php:587 includes/woo/class-order.php:135 includes/woo/class-privacy.php:172
+msgid "Maat"
+msgstr "Taille"
+
+#. translators: 1: width mm, 2: height mm, 3: longest side in cm
+#: includes/admin/class-order-production.php:553
+msgid "%1$s × %2$s mm (langste zijde %3$s cm)"
+msgstr "%1$s × %2$s mm (plus grand côté %3$s cm)"
+
+#: includes/admin/class-order-production.php:557 includes/admin/class-order-production.php:1880 includes/woo/class-cart.php:588 includes/woo/class-order.php:137 templates/admin/fiche-print.php:143
+msgid "Vorm"
+msgstr "Forme"
+
+#: includes/admin/class-order-production.php:561 includes/admin/class-order-production.php:1884 includes/woo/class-privacy.php:201 includes/woo/class-quotes.php:205 includes/woo/class-quotes.php:339 templates/admin/fiche-print.php:144 templates/emails/plain/quote-admin.php:25 templates/emails/plain/quote-customer.php:29 templates/emails/plain/save-design.php:31 templates/emails/quote-admin.php:29 templates/emails/quote-customer.php:62 templates/emails/save-design.php:51
+msgid "Aantal"
+msgstr "Quantité"
+
+#. translators: %s: quantity
+#: includes/admin/class-order-production.php:563 includes/admin/class-order-production.php:1886 templates/admin/fiche-card.php:42
+msgid "%s stuks"
+msgstr "%s pièces"
+
+#: includes/admin/class-order-production.php:567 includes/admin/class-order-production.php:1897
+msgid "Rand"
+msgstr "Bordure"
+
+#: includes/admin/class-order-production.php:575 includes/admin/class-order-production.php:1904
+msgid "Randkleur"
+msgstr "Couleur de la bordure"
+
+#: includes/admin/class-order-production.php:583 includes/admin/class-order-production.php:1917
+msgid "Achterkant"
+msgstr "Dos"
+
+#: includes/admin/class-order-production.php:590
+msgid "Klittenband"
+msgstr "Velcro"
+
+#: includes/admin/class-order-production.php:596
+msgid "Dikte"
+msgstr "Épaisseur"
+
+#: includes/admin/class-order-production.php:602
+msgid "Drager"
+msgstr "Support"
+
+#: includes/admin/class-order-production.php:611
+msgid "achtergrond uit het ontwerp overgenomen"
+msgstr "fond repris du dessin"
+
+#: includes/admin/class-order-production.php:614
+msgid "Stof / achtergrond"
+msgstr "Tissu / fond"
+
+#: includes/admin/class-order-production.php:622
+msgid "Extra's"
+msgstr "Extras"
+
+#. translators: %s: letter height in mm
+#: includes/admin/class-order-production.php:657
+msgid "%s mm hoog"
+msgstr "%s mm de haut"
+
+#: includes/admin/class-order-production.php:661
+msgid "garenkleur automatisch"
+msgstr "couleur de fil automatique"
+
+#: includes/admin/class-order-production.php:675
+msgid "Geschat steekaantal"
+msgstr "Nombre de points estimé"
+
+#. translators: 1: min stitches, 2: max stitches
+#: includes/admin/class-order-production.php:677
+msgid "± %1$s – %2$s steken (schatting, per stuk)"
+msgstr "± %1$s – %2$s points (estimation, par pièce)"
+
+#: includes/admin/class-order-production.php:683
+msgid "Aantal garenkleuren"
+msgstr "Nombre de couleurs de fil"
+
+#: includes/admin/class-order-production.php:683
+msgid "Aantal kleuren"
+msgstr "Nombre de couleurs"
+
+#: includes/admin/class-order-production.php:684
+msgid "(inclusief tekst)"
+msgstr "(texte compris)"
+
+#: includes/admin/class-order-production.php:690
+msgid "Plaatsing ontwerp"
+msgstr "Placement du dessin"
+
+#. translators: 1: scale %, 2: x offset mm, 3: y offset mm, 4: rotation degrees
+#: includes/admin/class-order-production.php:692
+msgid "schaal %1$s %% · verschoven %2$s / %3$s mm (x / y) · rotatie %4$s°"
+msgstr "échelle %1$s %% · décalé de %2$s / %3$s mm (x / y) · rotation %4$s°"
+
+#: includes/admin/class-order-production.php:700
+msgid "Vlak logo"
+msgstr "Logo en aplat"
+
+#: includes/admin/class-order-production.php:701
+msgid "Logo met kleurverloop"
+msgstr "Logo avec dégradé"
+
+#: includes/admin/class-order-production.php:702
+msgid "Illustratie met tinten"
+msgstr "Illustration avec nuances"
+
+#: includes/admin/class-order-production.php:703 includes/admin/class-order-production.php:966
+msgid "Foto"
+msgstr "Photo"
+
+#: includes/admin/class-order-production.php:707
+msgid "Soort ontwerp"
+msgstr "Type de dessin"
+
+#: includes/admin/class-order-production.php:708
+msgid "met zachte schaduwen"
+msgstr "avec des ombres douces"
+
+#: includes/admin/class-order-production.php:711
+msgid "transparant"
+msgstr "transparent"
+
+#: includes/admin/class-order-production.php:712
+msgid "wit (weggelaten, stofkleur gekozen)"
+msgstr "blanc (supprimé, couleur de tissu choisie)"
+
+#: includes/admin/class-order-production.php:713
+msgid "effen kleur (meegenomen als patchachtergrond)"
+msgstr "couleur unie (reprise comme fond de l’écusson)"
+
+#: includes/admin/class-order-production.php:714
+msgid "geen aparte achtergrond (ontwerp loopt tot de rand)"
+msgstr "pas de fond séparé (le dessin va jusqu’au bord)"
+
+#: includes/admin/class-order-production.php:718
+msgid "Achtergrond bestand"
+msgstr "Fond du fichier"
+
+#: includes/admin/class-order-production.php:724
+msgid "Vorm herkend"
+msgstr "Forme reconnue"
+
+#: includes/admin/class-order-production.php:730
+msgid "Kleuren in het bestand"
+msgstr "Couleurs dans le fichier"
+
+#: includes/admin/class-order-production.php:736
+msgid "Fijnste lijn"
+msgstr "Ligne la plus fine"
+
+#. translators: %s: mm
+#: includes/admin/class-order-production.php:738 includes/admin/class-order-production.php:746
+msgid "± %s mm"
+msgstr "± %s mm"
+
+#: includes/admin/class-order-production.php:744
+msgid "Kleinste tekst in het bestand"
+msgstr "Plus petit texte dans le fichier"
+
+#: includes/admin/class-order-production.php:760 includes/admin/class-order-production.php:765
+msgid "Bestand van de klant"
+msgstr "Fichier du client"
+
+#: includes/admin/class-order-production.php:766
+msgid "Geen: patch met enkel tekst"
+msgstr "Aucun : écusson avec texte uniquement"
+
+#: includes/admin/class-order-production.php:772
+msgid "aanrader"
+msgstr "recommandé"
+
+#: includes/admin/class-order-production.php:773
+msgid "kan, met aanpassing"
+msgstr "possible, avec adaptation"
+
+#: includes/admin/class-order-production.php:774
+msgid "raden we af"
+msgstr "déconseillé"
+
+#. translators: 1: recommended technique, 2: chosen technique, 3: status word
+#: includes/admin/class-order-production.php:779
+msgid "Ons advies: %1$s · gekozen: %2$s (%3$s)"
+msgstr "Notre conseil : %1$s · choisi : %2$s (%3$s)"
+
+#: includes/admin/class-order-production.php:788
+msgid "Advies in de tool"
+msgstr "Conseil dans l’outil"
+
+#: includes/admin/class-order-production.php:796 includes/woo/class-order.php:143
+msgid "Rechtenverklaring"
+msgstr "Déclaration de droits"
+
+#: includes/admin/class-order-production.php:803
+msgid "Specificaties"
+msgstr "Spécifications"
+
+#. translators: %d: number of colours
+#: includes/admin/class-order-production.php:808
+msgid "Garenkleuren (%d)"
+msgstr "Couleurs de fil (%d)"
+
+#. translators: %d: number of colours
+#: includes/admin/class-order-production.php:808
+msgid "Kleuren (%d)"
+msgstr "Couleurs (%d)"
+
+#: includes/admin/class-order-production.php:812
+msgid "Tekstlagen"
+msgstr "Calques de texte"
+
+#: includes/admin/class-order-production.php:816
+msgid "Voor de digitaliseerder"
+msgstr "Pour le digitaliseur"
+
+#: includes/admin/class-order-production.php:820
+msgid "Aandachtspunten"
+msgstr "Points d’attention"
+
+#: includes/admin/class-order-production.php:824
+msgid "Analyse van het bestand"
+msgstr "Analyse du fichier"
+
+#: includes/admin/class-order-production.php:828
+msgid "Klant en advies"
+msgstr "Client et conseil"
+
+#. translators: 1: measured mm, 2: minimum mm, 3: technique
+#. translators: 1: measured mm, 2: comfortable mm
+#: includes/admin/class-order-production.php:921 includes/admin/class-order-production.php:924
+msgid "Kleine tekst"
+msgstr "Petit texte"
+
+#. translators: 1: measured mm, 2: minimum mm, 3: technique
+#: includes/admin/class-order-production.php:921
+msgid "Kleinste tekst in het bestand ± %1$s mm, onder het minimum van %2$s mm voor %3$s. Vereenvoudigen of weglaten bij het digitaliseren, of overleggen met de klant."
+msgstr "Plus petit texte dans le fichier ± %1$s mm, sous le minimum de %2$s mm pour %3$s. Simplifier ou supprimer lors de la digitalisation, ou en discuter avec le client."
+
+#. translators: 1: measured mm, 2: comfortable mm
+#: includes/admin/class-order-production.php:924
+msgid "Kleinste tekst ± %1$s mm: haalbaar, maar onder de comfortgrens van %2$s mm. Extra zorg bij het digitaliseren."
+msgstr "Plus petit texte ± %1$s mm : faisable, mais sous la limite de confort de %2$s mm. Soin particulier lors de la digitalisation."
+
+#. translators: 1: text, 2: height mm, 3: needed mm
+#: includes/admin/class-order-production.php:938
+msgid "Tekstlaag te klein"
+msgstr "Calque de texte trop petit"
+
+#. translators: 1: text, 2: height mm, 3: needed mm
+#: includes/admin/class-order-production.php:938
+msgid "“%1$s” is %2$s mm hoog; met dit lettertype vragen we minstens %3$s mm."
+msgstr "« %1$s » mesure %2$s mm de haut ; avec cette police, nous demandons au moins %3$s mm."
+
+#. translators: 1: measured mm, 2: minimum mm
+#: includes/admin/class-order-production.php:946
+msgid "Fijnste lijn ± %1$s mm (minimum %2$s mm): als loopsteek uitvoeren, verdikken of weglaten."
+msgstr "Ligne la plus fine ± %1$s mm (minimum %2$s mm) : réaliser en point droit, épaissir ou supprimer."
+
+#. translators: 1: measured mm, 2: minimum mm
+#: includes/admin/class-order-production.php:948
+msgid "Fijnste lijn ± %1$s mm (minimum %2$s mm): controleer of die lijn zichtbaar blijft."
+msgstr "Ligne la plus fine ± %1$s mm (minimum %2$s mm) : vérifiez que cette ligne reste visible."
+
+#: includes/admin/class-order-production.php:949
+msgid "Dunne lijnen"
+msgstr "Lignes fines"
+
+#. translators: 1: number of colours, 2: max
+#: includes/admin/class-order-production.php:957
+msgid "Te veel kleuren"
+msgstr "Trop de couleurs"
+
+#. translators: 1: number of colours, 2: max
+#: includes/admin/class-order-production.php:957
+msgid "%1$d kleuren; maximum is %2$d. Vereenvoudigen vóór de proef."
+msgstr "%1$d couleurs ; le maximum est %2$d. Simplifier avant l’épreuve."
+
+#. translators: 1: number of colours, 2: comfortable max
+#: includes/admin/class-order-production.php:960
+msgid "Veel kleuren"
+msgstr "Beaucoup de couleurs"
+
+#. translators: 1: number of colours, 2: comfortable max
+#: includes/admin/class-order-production.php:960
+msgid "%1$d garenkleuren (comfortabel tot %2$d): reken op meer kleurwissels."
+msgstr "%1$d couleurs de fil (confortable jusqu’à %2$d) : prévoyez plus de changements de couleur."
+
+#: includes/admin/class-order-production.php:966
+msgid "Het bestand is een foto: borduren kan enkel als sterk vereenvoudigde versie. Bespreek dit in de proef."
+msgstr "Le fichier est une photo : la broderie n’est possible qu’en version fortement simplifiée. À discuter lors de l’épreuve."
+
+#. translators: %d: number of thread colours
+#: includes/admin/class-order-production.php:969
+msgid "Vereenvoudigen"
+msgstr "Simplifier"
+
+#. translators: %d: number of thread colours
+#: includes/admin/class-order-production.php:969
+msgid "Illustratie met tinten: schaduwen en verlopen omzetten naar vlakken in %d garenkleuren (zoals de klant in het voorbeeld zag)."
+msgstr "Illustration avec nuances : convertir les ombres et dégradés en aplats de %d couleurs de fil (comme le client l’a vu dans l’aperçu)."
+
+#. translators: %d: number of thread colours
+#: includes/admin/class-order-production.php:969
+msgid "Illustratie met tinten: schaduwen en verlopen omzetten naar vlakken."
+msgstr "Illustration avec nuances : convertir les ombres et dégradés en aplats."
+
+#: includes/admin/class-order-production.php:971
+msgid "Kleurverloop"
+msgstr "Dégradé"
+
+#: includes/admin/class-order-production.php:971
+msgid "Kleurverloop in het ontwerp: uitvoeren in 2 tot 4 kleurbanden."
+msgstr "Dégradé dans le dessin : réaliser en 2 à 4 bandes de couleur."
+
+#: includes/admin/class-order-production.php:976
+msgid "Lage resolutie voor deze maat: vraag eventueel een groter of origineel bestand."
+msgstr "Résolution faible pour cette taille : demandez éventuellement un fichier plus grand ou l’original."
+
+#: includes/admin/class-order-production.php:977
+msgid "Transparante schaduw in het bestand: die zachte schaduw wordt niet overgenomen."
+msgstr "Ombre transparente dans le fichier : cette ombre douce n’est pas reprise."
+
+#: includes/admin/class-order-production.php:978
+msgid "De upload is een afbeelding van een patch (mock-up), geen origineel ontwerpbestand. Vraag het origineel als dat er is."
+msgstr "Le fichier envoyé est une image d’écusson (maquette), pas un fichier de dessin original. Demandez l’original s’il existe."
+
+#: includes/admin/class-order-production.php:979
+msgid "Foto van een bestaande patch, automatisch uitgeknipt: rand en details zelf nakijken."
+msgstr "Photo d’un écusson existant, détourée automatiquement : vérifiez vous-même le bord et les détails."
+
+#: includes/admin/class-order-production.php:980
+msgid "Het bestand is bijna leeg: controleer of het juiste bestand werd geüpload."
+msgstr "Le fichier est presque vide : vérifiez que le bon fichier a été envoyé."
+
+#: includes/admin/class-order-production.php:981
+msgid "Witte elementen op een transparante achtergrond: controleer wat wit moet blijven."
+msgstr "Éléments blancs sur fond transparent : vérifiez ce qui doit rester blanc."
+
+#: includes/admin/class-order-production.php:982
+msgid "Vorm niet met zekerheid herkend: controleer de gekozen vorm."
+msgstr "Forme non reconnue avec certitude : vérifiez la forme choisie."
+
+#: includes/admin/class-order-production.php:983
+msgid "SVG met kleurverlopen."
+msgstr "SVG avec dégradés."
+
+#: includes/admin/class-order-production.php:984
+msgid "SVG met een ingesloten pixelafbeelding (geen echte vector)."
+msgstr "SVG avec une image matricielle intégrée (pas un vrai vectoriel)."
+
+#: includes/admin/class-order-production.php:991 includes/admin/class-order-production.php:994
+msgid "Bestand"
+msgstr "Fichier"
+
+#: includes/admin/class-order-production.php:994
+msgid "Dit bestandstype werd niet automatisch geanalyseerd (bv. PDF, AI, EPS of PSD): kleuren, lijnen en tekst zelf nakijken."
+msgstr "Ce type de fichier n’a pas été analysé automatiquement (p. ex. PDF, AI, EPS ou PSD) : vérifiez vous-même les couleurs, lignes et textes."
+
+#: includes/admin/class-order-production.php:1002
+msgid "Keuze klant"
+msgstr "Choix du client"
+
+#. translators: 1: chosen technique, 2: recommended technique
+#: includes/admin/class-order-production.php:1005
+msgid "De klant koos %1$s, terwijl de tool %2$s aanraadde. Bekijk het ontwerp extra goed vóór je de proef maakt."
+msgstr "Le client a choisi %1$s, alors que l’outil conseillait %2$s. Examinez le dessin avec une attention particulière avant de faire l’épreuve."
+
+#: includes/admin/class-order-production.php:1006
+msgid "De tool gaf voor deze keuze een waarschuwing. Bekijk het ontwerp extra goed vóór je de proef maakt."
+msgstr "L’outil a donné un avertissement pour ce choix. Examinez le dessin avec une attention particulière avant de faire l’épreuve."
+
+#: includes/admin/class-order-production.php:1011
+msgid "Niet uitsnijden"
+msgstr "Ne pas découper"
+
+#: includes/admin/class-order-production.php:1011
+msgid "De klant knipt zelf: leveren op een stuk stof, niet uitsnijden."
+msgstr "Le client découpe lui-même : livrer sur un morceau de tissu, sans découpe."
+
+#: includes/admin/class-order-production.php:1014
+msgid "Merrow-rand"
+msgstr "Bord merrow"
+
+#: includes/admin/class-order-production.php:1014
+msgid "Merrow (omgezoomde rand) gaat niet rond scherpe binnenhoeken: vorm nakijken."
+msgstr "Le merrow (bord surjeté) ne passe pas dans les angles intérieurs vifs : vérifiez la forme."
+
+#. translators: 1: date, 2: time
+#: includes/admin/class-order-production.php:1111
+msgid "%1$s om %2$s"
+msgstr "%1$s à %2$s"
+
+#: includes/admin/class-order-production.php:1122
+msgid "Proef verstuurd, wacht op antwoord"
+msgstr "Épreuve envoyée, en attente de réponse"
+
+#: includes/admin/class-order-production.php:1124 templates/admin/fiche-print.php:254
+msgid "Proef goedgekeurd"
+msgstr "Épreuve approuvée"
+
+#: includes/admin/class-order-production.php:1126
+msgid "Klant vraagt een aanpassing"
+msgstr "Le client demande une modification"
+
+#: includes/admin/class-order-production.php:1128
+msgid "Nog geen proef verstuurd"
+msgstr "Pas encore d’épreuve envoyée"
+
+#: includes/admin/class-order-production.php:1198
+msgid "Patch Studio · productiefiche"
+msgstr "Patch Studio · fiche de production"
+
+#. translators: %1$s: customer first name
+#: includes/admin/class-order-production.php:1253
+msgid "Hallo %1$s, hier is de digitale proef van je patch. Kijk je alles even na? Klopt alles, dan starten we meteen met de productie."
+msgstr "Bonjour %1$s, voici l’épreuve numérique de votre écusson. Pouvez-vous tout vérifier ? Si tout est correct, nous lançons immédiatement la production."
+
+#: includes/admin/class-order-production.php:1254
+msgid "Hier is de digitale proef van je patch. Kijk je alles even na? Klopt alles, dan starten we meteen met de productie."
+msgstr "Voici l’épreuve numérique de votre écusson. Pouvez-vous tout vérifier ? Si tout est correct, nous lançons immédiatement la production."
+
+#: includes/admin/class-order-production.php:1265
+msgid "Bezig met versturen…"
+msgstr "Envoi en cours…"
+
+#: includes/admin/class-order-production.php:1266
+msgid "Bezig met opslaan…"
+msgstr "Enregistrement…"
+
+#: includes/admin/class-order-production.php:1267
+msgid "De digitale proef is verstuurd."
+msgstr "L’épreuve numérique a été envoyée."
+
+#: includes/admin/class-order-production.php:1268 includes/admin/class-order-production.php:1669
+msgid "Status bijgewerkt."
+msgstr "Statut mis à jour."
+
+#: includes/admin/class-order-production.php:1269
+msgid "Er ging iets mis. Probeer het opnieuw of herlaad de pagina."
+msgstr "Une erreur s’est produite. Réessayez ou rechargez la page."
+
+#: includes/admin/class-order-production.php:1270
+msgid "Kies een proefafbeelding"
+msgstr "Choisir une image d’épreuve"
+
+#: includes/admin/class-order-production.php:1271
+msgid "Gebruik deze afbeelding"
+msgstr "Utiliser cette image"
+
+#: includes/admin/class-order-production.php:1272 includes/admin/class-settings-page.php:148
+msgid "Gekopieerd"
+msgstr "Copié"
+
+#: includes/admin/class-order-production.php:1273
+msgid "Kopiëren lukte niet"
+msgstr "La copie a échoué"
+
+#: includes/admin/class-order-production.php:1274 includes/rest/class-routes.php:630
+msgid "Vul een geldig e-mailadres in."
+msgstr "Saisissez une adresse e-mail valide."
+
+#. translators: %d: proof round
+#: includes/admin/class-order-production.php:1276
+msgid "Dit wordt proefronde %d."
+msgstr "Ce sera l’épreuve n° %d."
+
+#: includes/admin/class-order-production.php:1277
+msgid "De e-mail wordt in het Frans verstuurd (taal van het ontwerp)."
+msgstr "L’e-mail sera envoyé en français (langue du dessin)."
+
+#: includes/admin/class-order-production.php:1278
+msgid "De e-mail wordt in het Nederlands verstuurd (taal van het ontwerp)."
+msgstr "L’e-mail sera envoyé en néerlandais (langue du dessin)."
+
+#: includes/admin/class-order-production.php:1314
+msgid "Productiefiche bekijken"
+msgstr "Voir la fiche de production"
+
+#: includes/admin/class-order-production.php:1429
+msgid "Je hebt geen toegang tot deze productiefiche."
+msgstr "Vous n’avez pas accès à cette fiche de production."
+
+#: includes/admin/class-order-production.php:1434
+msgid "Bestelling niet gevonden."
+msgstr "Commande introuvable."
+
+#: includes/admin/class-order-production.php:1445
+msgid "Deze bestelling bevat geen Patch Studio-patches."
+msgstr "Cette commande ne contient pas d’écussons Patch Studio."
+
+#: includes/admin/class-order-production.php:1480
+msgid "Je sessie is verlopen. Herlaad de pagina en probeer opnieuw."
+msgstr "Votre session a expiré. Rechargez la page et réessayez."
+
+#: includes/admin/class-order-production.php:1483
+msgid "Je hebt geen rechten om bestellingen te bewerken."
+msgstr "Vous n’avez pas les droits pour modifier des commandes."
+
+#: includes/admin/class-order-production.php:1490
+msgid "Deze patch hoort niet bij deze bestelling."
+msgstr "Cet écusson n’appartient pas à cette commande."
+
+#. translators: 1: proof round, 2: e-mail address
+#: includes/admin/class-order-production.php:1514
+msgid "Proefronde %1$d is verstuurd naar %2$s."
+msgstr "L’épreuve n° %1$d a été envoyée à %2$s."
+
+#: includes/admin/class-order-production.php:1536
+msgid "Het ontwerp van deze patch bestaat niet meer (opgeruimd). Stuur de proef manueel."
+msgstr "Le dessin de cet écusson n’existe plus (nettoyé). Envoyez l’épreuve manuellement."
+
+#: includes/admin/class-order-production.php:1541
+msgid "Deze bestelling heeft geen geldig e-mailadres. Vul een ontvanger in."
+msgstr "Cette commande n’a pas d’adresse e-mail valide. Indiquez un destinataire."
+
+#: includes/admin/class-order-production.php:1546
+msgid "Het gekozen bestand is geen afbeelding."
+msgstr "Le fichier choisi n’est pas une image."
+
+#: includes/admin/class-order-production.php:1551
+msgid "Er is geen proefafbeelding. Kies een afbeelding uit de mediabibliotheek."
+msgstr "Il n’y a pas d’image d’épreuve. Choisissez une image dans la médiathèque."
+
+#: includes/admin/class-order-production.php:1558
+msgid "De e-mail \"Patch Studio: digitale proef\" is niet beschikbaar."
+msgstr "L’e-mail « Patch Studio : épreuve numérique » n’est pas disponible."
+
+#: includes/admin/class-order-production.php:1561
+msgid "De e-mail \"Patch Studio: digitale proef\" staat uit onder WooCommerce › Instellingen › E-mails."
+msgstr "L’e-mail « Patch Studio : épreuve numérique » est désactivé sous WooCommerce › Réglages › E-mails."
+
+#: includes/admin/class-order-production.php:1565
+msgid "De e-mail kon niet verstuurd worden. Controleer de e-mailinstellingen van de website."
+msgstr "L’e-mail n’a pas pu être envoyé. Vérifiez les réglages e-mail du site."
+
+#. translators: 1: round, 2: design ref, 3: e-mail
+#: includes/admin/class-order-production.php:1598
+msgid "Digitale proef (ronde %1$d) voor patch %2$s verstuurd naar %3$s."
+msgstr "Épreuve numérique (n° %1$d) pour l’écusson %2$s envoyée à %3$s."
+
+#: includes/admin/class-order-production.php:1628
+msgid "Onbekende status."
+msgstr "Statut inconnu."
+
+#: includes/admin/class-order-production.php:1632
+msgid "Het ontwerp van deze patch bestaat niet meer."
+msgstr "Le dessin de cet écusson n’existe plus."
+
+#. translators: 1: design ref, 2: status, 3: user, 4: note
+#: includes/admin/class-order-production.php:1658
+msgid "Proefstatus van patch %1$s manueel gezet op \"%2$s\" door %3$s. %4$s"
+msgstr "Statut de l’épreuve de l’écusson %1$s mis manuellement sur « %2$s » par %3$s. %4$s"
+
+#: includes/admin/class-order-production.php:1746
+msgid "Laat ons even weten wat je wil aanpassen."
+msgstr "Dites-nous ce que vous souhaitez modifier."
+
+#. translators: 1: design ref, 2: round
+#: includes/admin/class-order-production.php:1835
+msgid "De klant vraagt een aanpassing aan de digitale proef van patch %1$s (ronde %2$d)."
+msgstr "Le client demande une modification de l’épreuve numérique de l’écusson %1$s (n° %2$d)."
+
+#. translators: 1: design ref, 2: round
+#: includes/admin/class-order-production.php:1837
+msgid "De klant keurde de digitale proef van patch %1$s goed (ronde %2$d)."
+msgstr "Le client a approuvé l’épreuve numérique de l’écusson %1$s (n° %2$d)."
+
+#. translators: %s: customer note
+#: includes/admin/class-order-production.php:1840
+msgid "Opmerking: %s"
+msgstr "Remarque : %s"
+
+#. translators: %s: velcro colour
+#. translators: %s: colour
+#: includes/admin/class-order-production.php:1912 includes/woo/class-cart.php:661
+msgid "klittenband %s"
+msgstr "velcro %s"
+
+#: includes/admin/class-order-production.php:1923 includes/woo/class-quotes.php:267
+msgid "Stofkleur"
+msgstr "Couleur du tissu"
+
+#. translators: %s: thread brand
+#: includes/admin/class-order-production.php:1936 includes/admin/views/tab-kleuren.php:25 includes/woo/class-quotes.php:274
+msgid "Garenkleuren"
+msgstr "Couleurs de fil"
+
+#: includes/admin/class-order-production.php:1948 includes/woo/class-cart.php:595 includes/woo/class-order.php:141 includes/woo/class-quotes.php:281
+msgid "Tekst"
+msgstr "Texte"
+
+#: includes/admin/class-order-production.php:2004 includes/admin/class-order-production.php:2008
+msgid "Patchproef"
+msgstr "Épreuve d’écusson"
+
+#: includes/admin/class-order-production.php:2069
+msgid "Proef maken"
+msgstr "Épreuve à faire"
+
+#: includes/admin/class-order-production.php:2070
+msgid "Wacht op klant"
+msgstr "En attente du client"
+
+#: includes/admin/class-order-production.php:2071 templates/admin/proof-status.php:73
+msgid "Goedgekeurd"
+msgstr "Approuvée"
+
+#: includes/admin/class-order-production.php:2072 templates/admin/proof-status.php:74
+msgid "Aanpassing gevraagd"
+msgstr "Modification demandée"
+
+#: includes/admin/class-order-production.php:2116
+msgid "Patch Studio: digitale proef"
+msgstr "Patch Studio : épreuve numérique"
+
+#: includes/admin/class-order-production.php:2117
+msgid "Wordt vanuit de bestelling verstuurd met de knop \"Digitale proef versturen\": proefafbeelding, samenvatting en knoppen om goed te keuren of een aanpassing te vragen. In de taal van het ontwerp."
+msgstr "Envoyé depuis la commande avec le bouton « Envoyer l’épreuve numérique » : image d’épreuve, résumé et boutons pour approuver ou demander une modification. Dans la langue du dessin."
+
+#: includes/admin/class-order-production.php:2131
+msgid "Je digitale proef voor patch {ref} staat klaar"
+msgstr "Votre épreuve numérique pour l’écusson {ref} est prête"
+
+#: includes/admin/class-order-production.php:2138
+msgid "Je digitale proef"
+msgstr "Votre épreuve numérique"
+
+#: includes/admin/class-order-production.php:2197
+msgid "Patch Studio: antwoord op digitale proef"
+msgstr "Patch Studio : réponse à l’épreuve numérique"
+
+#: includes/admin/class-order-production.php:2198
+msgid "Melding aan de winkel wanneer een klant een digitale proef goedkeurt of een aanpassing vraagt."
+msgstr "Notification à la boutique lorsqu’un client approuve une épreuve numérique ou demande une modification."
+
+#: includes/admin/class-order-production.php:2220 includes/woo/emails/class-quote-admin.php:109
+msgid "Ontvanger(s)"
+msgstr "Destinataire(s)"
+
+#. translators: %s: admin e-mail
+#: includes/admin/class-order-production.php:2223
+msgid "Komma-gescheiden. Standaard: %s."
+msgstr "Séparés par des virgules. Par défaut : %s."
+
+#: includes/admin/class-order-production.php:2237
+msgid "[{site_title}] Proef {ref} (bestelling #{order_number}): {answer}"
+msgstr "[{site_title}] Épreuve {ref} (commande n° {order_number}) : {answer}"
+
+#: includes/admin/class-order-production.php:2244
+msgid "Antwoord op een digitale proef"
+msgstr "Réponse à une épreuve numérique"
+
+#: includes/admin/class-order-production.php:2261
+msgid "aanpassing gevraagd"
+msgstr "modification demandée"
+
+#: includes/admin/class-order-production.php:2261
+msgid "goedgekeurd"
+msgstr "approuvée"
+
+#: includes/admin/class-settings-page.php:45
+msgid "Technieken"
+msgstr "Techniques"
+
+#: includes/admin/class-settings-page.php:46
+msgid "Kies welke soorten patches klanten kunnen kiezen en of ze die meteen online bestellen of eerst een offerte vragen. De technische grenzen gebruikt het advies om eerlijk te zeggen wat haalbaar is."
+msgstr "Choisissez quels types d’écussons les clients peuvent sélectionner et s’ils les commandent directement en ligne ou demandent d’abord un devis. Le conseil utilise les limites techniques pour dire honnêtement ce qui est faisable."
+
+#: includes/admin/class-settings-page.php:50
+msgid "Prijzen"
+msgstr "Prix"
+
+#: includes/admin/class-settings-page.php:51
+msgid "Alle bedragen vul je in zonder btw, net zoals in WooCommerce. De klant ziet altijd de prijs met btw. De tabel bovenaan toont meteen wat een klant betaalt."
+msgstr "Saisissez tous les montants hors TVA, comme dans WooCommerce. Le client voit toujours le prix TVA comprise. Le tableau du haut montre directement ce qu’un client paie."
+
+#: includes/admin/class-settings-page.php:55 includes/admin/views/tab-technieken.php:22
+msgid "Kleuren"
+msgstr "Couleurs"
+
+#: includes/admin/class-settings-page.php:56
+msgid "Vink de garenkleuren uit die je niet op voorraad hebt: de tool kiest dan automatisch de dichtstbijzijnde kleur die je wel hebt. Stofkleuren zijn de achtergronden waarop geborduurd of gedrukt wordt."
+msgstr "Décochez les couleurs de fil que vous n’avez pas en stock : l’outil choisit alors automatiquement la couleur disponible la plus proche. Les couleurs de tissu sont les fonds sur lesquels on brode ou imprime."
+
+#: includes/admin/class-settings-page.php:60 includes/admin/views/tab-technieken.php:151
+msgid "Teksten & beloftes"
+msgstr "Textes & promesses"
+
+#: includes/admin/class-settings-page.php:61
+msgid "Wat je klanten belooft, moet kloppen. Laat een veld leeg als je iets (nog) niet wilt beloven: de tool gebruikt dan een neutrale zin."
+msgstr "Ce que vous promettez à vos clients doit être exact. Laissez un champ vide si vous ne voulez pas (encore) promettre quelque chose : l’outil utilise alors une phrase neutre."
+
+#: includes/admin/class-settings-page.php:65
+msgid "Algemeen"
+msgstr "Général"
+
+#: includes/admin/class-settings-page.php:66
+msgid "Hoe de tool samenwerkt met je winkel, welke onderdelen zichtbaar zijn en hoe lang ontwerpen bewaard blijven."
+msgstr "Comment l’outil fonctionne avec votre boutique, quelles parties sont visibles et combien de temps les dessins sont conservés."
+
+#: includes/admin/class-settings-page.php:79 includes/admin/class-settings-page.php:80 includes/admin/class-settings-page.php:153 includes/admin/views/tab-prijzen.php:388 includes/frontend/class-elementor-widget.php:35
+msgid "Patch Studio"
+msgstr "Patch Studio"
+
+#: includes/admin/class-settings-page.php:136 includes/admin/class-settings-page.php:736 includes/admin/class-settings-page.php:1076
+msgid "Je hebt geen toegang tot deze pagina."
+msgstr "Vous n’avez pas accès à cette page."
+
+#. translators: %s: amount including VAT
+#: includes/admin/class-settings-page.php:147
+msgid "klant betaalt %s incl. btw"
+msgstr "le client paie %s TVAC"
+
+#. translators: 1: active colors, 2: total colors
+#: includes/admin/class-settings-page.php:150 includes/admin/views/tab-kleuren.php:29
+msgid "%1$d van %2$d beschikbaar"
+msgstr "%1$d sur %2$d disponibles"
+
+#: includes/admin/class-settings-page.php:154
+msgid "Alles staat al goed ingesteld met de prijzen en beloftes van je webshop. Pas enkel aan wat voor jou anders moet."
+msgstr "Tout est déjà configuré avec les prix et promesses de votre boutique. Modifiez uniquement ce qui doit être différent pour vous."
+
+#: includes/admin/class-settings-page.php:157
+msgid "Bekijk je ontwerppagina"
+msgstr "Voir votre page de conception"
+
+#: includes/admin/class-settings-page.php:169
+msgid "Onderdelen van Patch Studio"
+msgstr "Parties de Patch Studio"
+
+#: includes/admin/class-settings-page.php:195
+msgid "Wijzigingen bewaren"
+msgstr "Enregistrer les modifications"
+
+#: includes/admin/class-settings-page.php:196
+msgid "Alle instellingen van dit tabblad terugzetten naar de standaardwaarden?"
+msgstr "Rétablir les valeurs par défaut de tous les réglages de cet onglet ?"
+
+#: includes/admin/class-settings-page.php:196
+msgid "Herstel standaard voor dit tabblad"
+msgstr "Rétablir les valeurs par défaut de cet onglet"
+
+#: includes/admin/class-settings-page.php:197
+msgid "Niet-bewaarde wijzigingen"
+msgstr "Modifications non enregistrées"
+
+#: includes/admin/class-settings-page.php:223
+msgid "Snel aan de slag"
+msgstr "Démarrage rapide"
+
+#: includes/admin/class-settings-page.php:225
+msgid "Maak de ontwerppagina."
+msgstr "Créez la page de conception."
+
+#: includes/admin/class-settings-page.php:226
+msgid "We maken de pagina \"Ontwerp je patch\" met de tool erop. Je kan ze daarna gewoon in Elementor verder opmaken."
+msgstr "Nous créons la page « Concevez votre écusson » avec l’outil. Vous pouvez ensuite la mettre en forme dans Elementor."
+
+#: includes/admin/class-settings-page.php:230
+msgid "Maak de ontwerppagina aan"
+msgstr "Créer la page de conception"
+
+#: includes/admin/class-settings-page.php:231
+msgid "Kijk je prijzen even na."
+msgstr "Vérifiez vos prix."
+
+#: includes/admin/class-settings-page.php:232
+msgid "Ze komen uit je huidige webshop. "
+msgstr "Ils proviennent de votre boutique actuelle. "
+
+#: includes/admin/class-settings-page.php:233
+msgid "Naar Prijzen"
+msgstr "Vers Prix"
+
+#: includes/admin/class-settings-page.php:234
+msgid "Link ernaar vanuit je menu of de knop \"Ontwerp het zelf\"."
+msgstr "Ajoutez un lien depuis votre menu ou le bouton « Ontwerp het zelf »."
+
+#: includes/admin/class-settings-page.php:235
+msgid "Liever een bestaande pagina? Zet er de shortcode op of sleep de Elementor-widget \"Patch Studio\" erin."
+msgstr "Vous préférez une page existante ? Placez-y le shortcode ou glissez-y le widget Elementor « Patch Studio »."
+
+#: includes/admin/class-settings-page.php:244
+msgid "Kopieer"
+msgstr "Copier"
+
+#. translators: %s: default value
+#: includes/admin/class-settings-page.php:363
+msgid "standaard: %s"
+msgstr "par défaut : %s"
+
+#: includes/admin/class-settings-page.php:413
+msgid "Nederlands"
+msgstr "Néerlandais"
+
+#: includes/admin/class-settings-page.php:423
+msgid "Frans"
+msgstr "Français"
+
+#. translators: %d: minimum quantity
+#: includes/admin/class-settings-page.php:525
+msgid "vanaf %d st."
+msgstr "à partir de %d pc."
+
+#: includes/admin/class-settings-page.php:639
+msgid "WooCommerce"
+msgstr "WooCommerce"
+
+#: includes/admin/class-settings-page.php:640
+msgid "Actief"
+msgstr "Actif"
+
+#: includes/admin/class-settings-page.php:640
+msgid "Niet actief: klanten kunnen niet bestellen."
+msgstr "Inactif : les clients ne peuvent pas commander."
+
+#: includes/admin/class-settings-page.php:647
+msgid "Product \"Patch op maat\""
+msgstr "Produit « Écusson sur mesure »"
+
+#. translators: %d: product ID
+#: includes/admin/class-settings-page.php:650
+msgid "Gevonden (ID %d), verborgen in de winkel. Prijzen zet Patch Studio zelf."
+msgstr "Trouvé (ID %d), masqué dans la boutique. Patch Studio fixe lui-même les prix."
+
+#: includes/admin/class-settings-page.php:652
+msgid "Nog niet aangemaakt. Het wordt automatisch gemaakt bij het activeren van de plugin."
+msgstr "Pas encore créé. Il sera créé automatiquement à l’activation de l’extension."
+
+#: includes/admin/class-settings-page.php:656 includes/admin/class-settings-page.php:672 includes/admin/views/tab-algemeen.php:51 includes/woo/class-quotes.php:382
+msgid "Bekijken"
+msgstr "Voir"
+
+#: includes/admin/class-settings-page.php:663
+msgid "Ontwerppagina"
+msgstr "Page de conception"
+
+#. translators: %s: page title
+#: includes/admin/class-settings-page.php:666
+msgid "De tool staat op \"%s\"."
+msgstr "L’outil se trouve sur « %s »."
+
+#: includes/admin/class-settings-page.php:668
+msgid "Nog op geen enkele pagina. Gebruik de knop bovenaan of de shortcode."
+msgstr "Sur aucune page pour l’instant. Utilisez le bouton en haut ou le shortcode."
+
+#: includes/admin/class-settings-page.php:692
+msgid "Veilige opslag van bestanden"
+msgstr "Stockage sécurisé des fichiers"
+
+#: includes/admin/class-settings-page.php:693
+msgid "Nog niet te testen (uploadmodule niet geladen)."
+msgstr "Impossible à tester pour l’instant (module d’envoi non chargé)."
+
+#: includes/admin/class-settings-page.php:699
+msgid "Ontwerptool (JavaScript)"
+msgstr "Outil de conception (JavaScript)"
+
+#: includes/admin/class-settings-page.php:700
+msgid "Aanwezig."
+msgstr "Présent."
+
+#: includes/admin/class-settings-page.php:700
+msgid "Het bestand assets/dist/patch-studio.js ontbreekt. Installeer de volledige plugin-zip."
+msgstr "Le fichier assets/dist/patch-studio.js est manquant. Installez le zip complet de l’extension."
+
+#: includes/admin/class-settings-page.php:706
+msgid "Prijsberekening op de server"
+msgstr "Calcul des prix sur le serveur"
+
+#: includes/admin/class-settings-page.php:707
+msgid "Actief: de winkelmand rekent met exact dezelfde prijzen als de tool."
+msgstr "Actif : le panier calcule avec exactement les mêmes prix que l’outil."
+
+#: includes/admin/class-settings-page.php:707
+msgid "Prijsmodule ontbreekt."
+msgstr "Module de prix manquant."
+
+#: includes/admin/class-settings-page.php:713
+msgid "WP Rocket"
+msgstr "WP Rocket"
+
+#: includes/admin/class-settings-page.php:714
+msgid "Gevonden. De tool is automatisch uitgesloten van \"JavaScript uitstellen\" en de cache wordt geleegd als je hier iets bewaart."
+msgstr "Trouvé. L’outil est automatiquement exclu de « Différer le JavaScript » et le cache est vidé quand vous enregistrez quelque chose ici."
+
+#: includes/admin/class-settings-page.php:720
+msgid "Elementor"
+msgstr "Elementor"
+
+#: includes/admin/class-settings-page.php:721
+msgid "Gevonden. Sleep de widget \"Patch Studio\" op een pagina, of gebruik de shortcode."
+msgstr "Trouvé. Glissez le widget « Patch Studio » sur une page, ou utilisez le shortcode."
+
+#. translators: %s: tab name
+#: includes/admin/class-settings-page.php:754
+msgid "De standaardwaarden voor \"%s\" staan terug."
+msgstr "Les valeurs par défaut pour « %s » ont été rétablies."
+
+#: includes/admin/class-settings-page.php:765
+msgid "Bewaard. De ontwerptool gebruikt meteen de nieuwe instellingen."
+msgstr "Enregistré. L’outil de conception utilise immédiatement les nouveaux réglages."
+
+#: includes/admin/class-settings-page.php:1089 includes/frontend/class-shortcode.php:205 includes/woo/class-product.php:240
+msgid "Ontwerp je patch"
+msgstr "Créez votre écusson"
+
+#: includes/admin/class-settings-page.php:1090
+msgid "patch-ontwerpen"
+msgstr "concevoir-ecusson"
+
+#: includes/admin/class-settings-page.php:1100
+msgid "De pagina kon niet aangemaakt worden. Maak zelf een pagina en zet er de shortcode [patch_studio] op."
+msgstr "La page n’a pas pu être créée. Créez vous-même une page et placez-y le shortcode [patch_studio]."
+
+#. translators: 1: view URL, 2: edit URL
+#: includes/admin/class-settings-page.php:1107
+msgid "Je ontwerppagina staat online. <a href=\"%1$s\" target=\"_blank\" rel=\"noopener\">Bekijk ze</a> of <a href=\"%2$s\">bewerk ze</a>. Zet er nog een link naar in je menu of op de knop \"Ontwerp het zelf\"."
+msgstr "Votre page de conception est en ligne. <a href=\"%1$s\" target=\"_blank\" rel=\"noopener\">Voir la page</a> ou <a href=\"%2$s\">la modifier</a>. Ajoutez encore un lien dans votre menu ou sur le bouton « Ontwerp het zelf »."
+
+#: includes/admin/views/tab-algemeen.php:18
+msgid "Tekst toevoegen op de patch"
+msgstr "Ajouter du texte sur l’écusson"
+
+#: includes/admin/views/tab-algemeen.php:19
+msgid "\"Bekijk op een kledingstuk\""
+msgstr "« Voir sur un vêtement »"
+
+#: includes/admin/views/tab-algemeen.php:19
+msgid "Toont de patch op ware grootte op een polo, pet of jas."
+msgstr "Montre l’écusson en taille réelle sur un polo, une casquette ou une veste."
+
+#: includes/admin/views/tab-algemeen.php:20
+msgid "Technieken naast elkaar vergelijken"
+msgstr "Comparer les techniques côte à côte"
+
+#: includes/admin/views/tab-algemeen.php:21
+msgid "\"Bewaar & mail mijn ontwerp\""
+msgstr "« Enregistrer & envoyer mon dessin par e-mail »"
+
+#: includes/admin/views/tab-algemeen.php:21
+msgid "De klant krijgt een link om later verder te gaan, zonder account."
+msgstr "Le client reçoit un lien pour continuer plus tard, sans compte."
+
+#: includes/admin/views/tab-algemeen.php:22
+msgid "Offerte aanvragen vanuit de tool"
+msgstr "Demander un devis depuis l’outil"
+
+#: includes/admin/views/tab-algemeen.php:23
+msgid "Schakelaar \"prijzen zonder btw\""
+msgstr "Interrupteur « prix hors TVA »"
+
+#: includes/admin/views/tab-algemeen.php:24
+msgid "Melding over patches die al in de winkelmand zitten"
+msgstr "Message sur les écussons déjà dans le panier"
+
+#: includes/admin/views/tab-algemeen.php:24
+msgid "Bv. \"Samen zit je in de 10 %-trede\"."
+msgstr "P. ex. « Ensemble, vous atteignez le palier de 10 % »."
+
+#: includes/admin/views/tab-algemeen.php:25
+msgid "Gebeurtenissen doorgeven aan Google Analytics (dataLayer)"
+msgstr "Transmettre les événements à Google Analytics (dataLayer)"
+
+#: includes/admin/views/tab-algemeen.php:25
+msgid "Enkel na toestemming via je cookiebanner. Zonder persoonsgegevens."
+msgstr "Uniquement après consentement via votre bannière cookies. Sans données personnelles."
+
+#: includes/admin/views/tab-algemeen.php:29 includes/woo/class-privacy.php:170
+msgid "Status"
+msgstr "Statut"
+
+#: includes/admin/views/tab-algemeen.php:40 templates/admin/fiche-card.php:22 templates/admin/fiche-print.php:26
+msgid "In orde"
+msgstr "En ordre"
+
+#: includes/admin/views/tab-algemeen.php:41
+msgid "Actie nodig"
+msgstr "Action requise"
+
+#: includes/admin/views/tab-algemeen.php:42
+msgid "Onbekend"
+msgstr "Inconnu"
+
+#: includes/admin/views/tab-algemeen.php:57
+msgid "Shortcode"
+msgstr "Shortcode"
+
+#: includes/admin/views/tab-algemeen.php:59
+msgid "Opties: techniek=\"embroidered\" maat=\"8\" aantal=\"25\" vorm=\"circle\""
+msgstr "Options : techniek=\"embroidered\" maat=\"8\" aantal=\"25\" vorm=\"circle\""
+
+#: includes/admin/views/tab-algemeen.php:66
+msgid "Winkel"
+msgstr "Boutique"
+
+#: includes/admin/views/tab-algemeen.php:71
+msgid "Hoe komt de patch in de winkelmand?"
+msgstr "Comment l’écusson arrive-t-il dans le panier ?"
+
+#: includes/admin/views/tab-algemeen.php:73
+msgid "Via het verborgen product \"Patch op maat\" (aanbevolen)"
+msgstr "Via le produit masqué « Écusson sur mesure » (recommandé)"
+
+#: includes/admin/views/tab-algemeen.php:74
+msgid "Via je bestaande patchproducten (volgt later)"
+msgstr "Via vos produits d’écussons existants (prévu plus tard)"
+
+#: includes/admin/views/tab-algemeen.php:76
+msgid "Patch Studio rekent zelf de prijs uit met de tabel bij Prijzen, dus kortingsplugins of extra velden zijn niet nodig."
+msgstr "Patch Studio calcule lui-même le prix avec le tableau de l’onglet Prix ; les extensions de remise ou champs supplémentaires ne sont donc pas nécessaires."
+
+#: includes/admin/views/tab-algemeen.php:81
+msgid "Zichtbaarheid van dat product in je winkel"
+msgstr "Visibilité de ce produit dans votre boutique"
+
+#: includes/admin/views/tab-algemeen.php:83
+msgid "Verborgen (aanbevolen)"
+msgstr "Masqué (recommandé)"
+
+#: includes/admin/views/tab-algemeen.php:84
+msgid "Enkel in zoekresultaten"
+msgstr "Uniquement dans les résultats de recherche"
+
+#: includes/admin/views/tab-algemeen.php:85
+msgid "Enkel in de winkel"
+msgstr "Uniquement dans la boutique"
+
+#: includes/admin/views/tab-algemeen.php:86
+msgid "Overal"
+msgstr "Partout"
+
+#: includes/admin/views/tab-algemeen.php:89
+msgid "Na \"Bestellen\" meteen naar de winkelmand"
+msgstr "Après « Commander », aller directement au panier"
+
+#: includes/admin/views/tab-algemeen.php:89
+msgid "Uit: de klant blijft in de tool en ziet een bevestiging."
+msgstr "Désactivé : le client reste dans l’outil et voit une confirmation."
+
+#: includes/admin/views/tab-algemeen.php:93
+msgid "Eenmalige kosten niet dubbel aanrekenen"
+msgstr "Ne pas facturer deux fois les frais uniques"
+
+#: includes/admin/views/tab-algemeen.php:94
+msgid "Als de klant ook al een gewoon patchproduct met borduurkaart in de winkelmand heeft."
+msgstr "Si le client a aussi déjà un produit d’écusson ordinaire avec programme de broderie dans le panier."
+
+#: includes/admin/views/tab-algemeen.php:99
+msgid "Offerteaanvragen sturen naar"
+msgstr "Envoyer les demandes de devis à"
+
+#: includes/admin/views/tab-algemeen.php:103
+msgid "Leeg = het e-mailadres van de website."
+msgstr "Vide = l’adresse e-mail du site."
+
+#: includes/admin/views/tab-algemeen.php:109
+msgid "Grootste bestand dat een klant mag uploaden"
+msgstr "Plus gros fichier qu’un client peut envoyer"
+
+#. translators: %s: server upload limit
+#: includes/admin/views/tab-algemeen.php:116
+msgid "Je server laat maximaal %s toe."
+msgstr "Votre serveur autorise au maximum %s."
+
+#: includes/admin/views/tab-algemeen.php:125
+msgid "Onderdelen van de tool"
+msgstr "Parties de l’outil"
+
+#: includes/admin/views/tab-algemeen.php:132
+msgid "Kassa"
+msgstr "Caisse"
+
+#: includes/admin/views/tab-algemeen.php:138
+msgid "Bestelknop in de kassa heet \"Bestellen en betalen\""
+msgstr "Le bouton de commande dans la caisse s’appelle « Commander et payer »"
+
+#: includes/admin/views/tab-algemeen.php:139
+msgid "Wettelijk verplicht in de EU: de knop moet duidelijk zeggen dat de klant een betaling aangaat."
+msgstr "Obligation légale dans l’UE : le bouton doit indiquer clairement que le client s’engage à payer."
+
+#: includes/admin/views/tab-algemeen.php:144
+msgid "Melden dat maatwerk niet herroepen kan worden"
+msgstr "Indiquer que le sur-mesure ne peut pas faire l’objet d’une rétractation"
+
+#: includes/admin/views/tab-algemeen.php:145
+msgid "Een patch op maat valt buiten het herroepingsrecht, op voorwaarde dat je dat vooraf duidelijk zegt."
+msgstr "Un écusson sur mesure est exclu du droit de rétractation, à condition de le signaler clairement au préalable."
+
+#: includes/admin/views/tab-algemeen.php:151
+msgid "Privacy: hoe lang bewaren we ontwerpen?"
+msgstr "Vie privée : combien de temps conservons-nous les dessins ?"
+
+#: includes/admin/views/tab-algemeen.php:152
+msgid "Daarna worden bestanden automatisch verwijderd. Kortere termijnen zijn beter voor de privacy van je klanten."
+msgstr "Ensuite, les fichiers sont supprimés automatiquement. Des délais plus courts sont meilleurs pour la vie privée de vos clients."
+
+#: includes/admin/views/tab-algemeen.php:155
+msgid "Ontwerpen die nooit besteld werden"
+msgstr "Dessins jamais commandés"
+
+#: includes/admin/views/tab-algemeen.php:155 includes/admin/views/tab-algemeen.php:156 includes/admin/views/tab-algemeen.php:157
+msgid "dagen"
+msgstr "jours"
+
+#: includes/admin/views/tab-algemeen.php:156
+msgid "Bewaarde ontwerpen (via \"Bewaar & mail\")"
+msgstr "Dessins enregistrés (via « Enregistrer & envoyer »)"
+
+#: includes/admin/views/tab-algemeen.php:157
+msgid "Offerteaanvragen"
+msgstr "Demandes de devis"
+
+#: includes/admin/views/tab-algemeen.php:158
+msgid "Bestelde ontwerpen (voor herbestellingen)"
+msgstr "Dessins commandés (pour les recommandes)"
+
+#: includes/admin/views/tab-algemeen.php:158
+msgid "jaar"
+msgstr "ans"
+
+#: includes/admin/views/tab-algemeen.php:173
+msgid "Plugin verwijderen"
+msgstr "Supprimer l’extension"
+
+#: includes/admin/views/tab-algemeen.php:178
+msgid "Bij het verwijderen van de plugin ook alle ontwerpen, offertes en bestanden wissen"
+msgstr "Lors de la suppression de l’extension, effacer aussi tous les dessins, devis et fichiers"
+
+#: includes/admin/views/tab-algemeen.php:179
+msgid "Standaard uit: je bestellingen verwijzen naar die ontwerpen. Instellingen worden altijd gewist."
+msgstr "Désactivé par défaut : vos commandes renvoient à ces dessins. Les réglages sont toujours effacés."
+
+#. translators: %s: thread brand
+#: includes/admin/views/tab-kleuren.php:25
+msgid "Garenkleuren (%s)"
+msgstr "Couleurs de fil (%s)"
+
+#: includes/admin/views/tab-kleuren.php:34
+msgid "Het garenpalet is nog niet geladen."
+msgstr "La palette de fils n’est pas encore chargée."
+
+#: includes/admin/views/tab-kleuren.php:38
+msgid "Zoek een kleur"
+msgstr "Rechercher une couleur"
+
+#: includes/admin/views/tab-kleuren.php:39
+msgid "Zoek op naam of nummer…"
+msgstr "Rechercher par nom ou numéro…"
+
+#: includes/admin/views/tab-kleuren.php:40
+msgid "Alles aan"
+msgstr "Tout activer"
+
+#: includes/admin/views/tab-kleuren.php:41
+msgid "Alles uit"
+msgstr "Tout désactiver"
+
+#: includes/admin/views/tab-kleuren.php:58
+msgid "niet leverbaar"
+msgstr "non disponible"
+
+#: includes/admin/views/tab-kleuren.php:69
+msgid "Standaard zwart garen"
+msgstr "Fil noir standard"
+
+#: includes/admin/views/tab-kleuren.php:70
+msgid "Standaard wit garen"
+msgstr "Fil blanc standard"
+
+#: includes/admin/views/tab-kleuren.php:79
+msgid "Stofkleuren (achtergrond van de patch)"
+msgstr "Couleurs de tissu (fond de l’écusson)"
+
+#: includes/admin/views/tab-kleuren.php:80
+msgid "De kleuren twill of stof die je op voorraad hebt. De tool kiest automatisch de stof waarop het ontwerp het best uitkomt; de klant kan wijzigen."
+msgstr "Les couleurs de twill ou de tissu que vous avez en stock. L’outil choisit automatiquement le tissu sur lequel le dessin ressort le mieux ; le client peut modifier ce choix."
+
+#: includes/admin/views/tab-kleuren.php:83
+msgid "Ledertinten (gelaserd leder)"
+msgstr "Teintes de cuir (cuir gravé au laser)"
+
+#: includes/admin/views/tab-kleuren.php:84
+msgid "\"Gravure\" is de kleur van de ingebrande lijnen."
+msgstr "« Gravure » est la couleur des lignes brûlées."
+
+#: includes/admin/views/tab-kleuren.php:97 includes/admin/views/tab-kleuren.php:124
+msgid "Kleur"
+msgstr "Couleur"
+
+#: includes/admin/views/tab-kleuren.php:99 includes/admin/views/tab-kleuren.php:129
+msgid "Gravure"
+msgstr "Gravure"
+
+#: includes/admin/views/tab-kleuren.php:101 includes/admin/views/tab-kleuren.php:138
+msgid "Naam (NL)"
+msgstr "Nom (NL)"
+
+#: includes/admin/views/tab-kleuren.php:102 includes/admin/views/tab-kleuren.php:146
+msgid "Naam (FR)"
+msgstr "Nom (FR)"
+
+#: includes/admin/views/tab-kleuren.php:103 includes/admin/views/tab-kleuren.php:150
+msgid "Verwijderen"
+msgstr "Supprimer"
+
+#: includes/admin/views/tab-kleuren.php:141
+msgid "Nieuwe kleur toevoegen…"
+msgstr "Ajouter une nouvelle couleur…"
+
+#: includes/admin/views/tab-kleuren.php:158
+msgid "+ Nog een kleur"
+msgstr "+ Une couleur de plus"
+
+#: includes/admin/views/tab-prijzen.php:20
+msgid "Zo ziet de klant het"
+msgstr "Ce que voit le client"
+
+#: includes/admin/views/tab-prijzen.php:23
+msgid "De voorbeeldtabel verschijnt zodra de prijsmodule geladen is."
+msgstr "Le tableau d’exemple apparaît dès que le module de prix est chargé."
+
+#: includes/admin/views/tab-prijzen.php:25
+msgid "Er staat geen enkele techniek op \"online bestellen\"."
+msgstr "Aucune technique n’est sur « commander en ligne »."
+
+#. translators: 1: size in cm, 2: VAT percentage
+#: includes/admin/views/tab-prijzen.php:31
+msgid "Totaal voor de klant bij %1$s cm met de standaardafwerking: alle eenmalige kosten, %2$s %% btw en verzending inbegrepen. Daaronder de prijs per stuk alles inbegrepen."
+msgstr "Total pour le client à %1$s cm avec la finition standard : tous les frais uniques, %2$s %% de TVA et la livraison compris. En dessous, le prix par pièce tout compris."
+
+#. translators: %d: quantity
+#: includes/admin/views/tab-prijzen.php:45
+msgid "%d stuk"
+msgid_plural "%d stuks"
+msgstr[0] "%d pièce"
+msgstr[1] "%d pièces"
+
+#. translators: %s: price per piece
+#: includes/admin/views/tab-prijzen.php:63
+msgid "%s/st."
+msgstr "%s/pc."
+
+#: includes/admin/views/tab-prijzen.php:74
+msgid "De tabel wordt bijgewerkt nadat je bewaart."
+msgstr "Le tableau est mis à jour après l’enregistrement."
+
+#: includes/admin/views/tab-prijzen.php:79
+msgid "Prijs per stuk"
+msgstr "Prix par pièce"
+
+#: includes/admin/views/tab-prijzen.php:82
+msgid "Per maat (langste zijde), zonder btw. Een tussenmaat krijgt de prijs van de volgende maat, net zoals in je webshop. Leeg laten bij een techniek op offerte is prima."
+msgstr "Par taille (plus grand côté), hors TVA. Une taille intermédiaire reçoit le prix de la taille suivante, comme dans votre boutique. Laisser vide pour une technique sur devis ne pose aucun problème."
+
+#: includes/admin/views/tab-prijzen.php:92 includes/admin/views/tab-prijzen.php:146
+msgid "Staffelkorting"
+msgstr "Remise par quantité"
+
+#: includes/admin/views/tab-prijzen.php:103
+msgid "offerte"
+msgstr "devis"
+
+#. translators: 1: technique, 2: size
+#: includes/admin/views/tab-prijzen.php:116
+msgid "%1$s %2$s cm"
+msgstr "%1$s %2$s cm"
+
+#: includes/admin/views/tab-prijzen.php:133
+msgid "Geldt"
+msgstr "S’applique à"
+
+#: includes/admin/views/tab-prijzen.php:147
+msgid "Korting op de prijs per stuk vanaf een aantal. Laat een rij leeg om ze te verwijderen."
+msgstr "Remise sur le prix par pièce à partir d’une quantité. Laissez une ligne vide pour la supprimer."
+
+#: includes/admin/views/tab-prijzen.php:149
+msgid "Vanaf"
+msgstr "À partir de"
+
+#: includes/admin/views/tab-prijzen.php:149 includes/admin/views/tab-prijzen.php:186
+msgid "Korting"
+msgstr "Remise"
+
+#: includes/admin/views/tab-prijzen.php:164
+msgid "1 stuk"
+msgstr "1 pièce"
+
+#: includes/admin/views/tab-prijzen.php:169
+msgid "Vanaf aantal"
+msgstr "À partir de la quantité"
+
+#: includes/admin/views/tab-prijzen.php:171 includes/admin/views/tab-technieken.php:72 includes/admin/views/tab-technieken.php:83
+msgid "stuks"
+msgstr "pièces"
+
+#: includes/admin/views/tab-prijzen.php:181
+msgid "geen korting"
+msgstr "pas de remise"
+
+#: includes/admin/views/tab-prijzen.php:203
+msgid "Alle patches in de winkelmand tellen samen voor de staffel"
+msgstr "Tous les écussons du panier comptent ensemble pour la remise par quantité"
+
+#: includes/admin/views/tab-prijzen.php:204
+msgid "Zoals in je webshop: 10 stuks van ontwerp A en 15 van ontwerp B geven samen de korting van 25 stuks."
+msgstr "Comme dans votre boutique : 10 pièces du dessin A et 15 du dessin B donnent ensemble la remise de 25 pièces."
+
+#: includes/admin/views/tab-prijzen.php:210
+msgid "Eenmalige kosten"
+msgstr "Frais uniques"
+
+#: includes/admin/views/tab-prijzen.php:211
+msgid "Zonder btw. De klant ziet deze kosten apart, met uitleg waarom ze er zijn."
+msgstr "Hors TVA. Le client voit ces frais séparément, avec une explication."
+
+#. translators: %s: technique names
+#: includes/admin/views/tab-prijzen.php:229
+msgid "Voor: %s"
+msgstr "Pour : %s"
+
+#: includes/admin/views/tab-prijzen.php:238
+msgid "Hoe vaak aanrekenen?"
+msgstr "Combien de fois facturer ?"
+
+#: includes/admin/views/tab-prijzen.php:240
+msgid "Eén keer per bestelling (zoals je kassa nu)"
+msgstr "Une fois par commande (comme votre caisse actuellement)"
+
+#: includes/admin/views/tab-prijzen.php:241
+msgid "Eén keer per ontwerp"
+msgstr "Une fois par dessin"
+
+#: includes/admin/views/tab-prijzen.php:248
+msgid "Verzending en btw"
+msgstr "Livraison et TVA"
+
+#: includes/admin/views/tab-prijzen.php:249
+msgid "Enkel voor de schatting in de tool. WooCommerce berekent de echte verzending in de kassa; hou beide gelijk."
+msgstr "Uniquement pour l’estimation dans l’outil. WooCommerce calcule la vraie livraison à la caisse ; gardez les deux identiques."
+
+#: includes/admin/views/tab-prijzen.php:254
+msgid "Verzendkost"
+msgstr "Frais de livraison"
+
+#: includes/admin/views/tab-prijzen.php:263
+msgid "Gratis verzending vanaf (met btw)"
+msgstr "Livraison gratuite à partir de (TVAC)"
+
+#: includes/admin/views/tab-prijzen.php:272
+msgid "\"Nog € x tot gratis verzending\" tonen vanaf (met btw)"
+msgstr "Afficher « Plus que € x pour la livraison gratuite » à partir de (TVAC)"
+
+#: includes/admin/views/tab-prijzen.php:281
+msgid "Bedrijven kunnen prijzen zonder btw bekijken"
+msgstr "Les entreprises peuvent voir les prix hors TVA"
+
+#: includes/admin/views/tab-prijzen.php:282
+msgid "Het hoofdbedrag blijft altijd met btw, zoals de wet vraagt voor consumenten."
+msgstr "Le montant principal reste toujours TVA comprise, comme l’exige la loi pour les consommateurs."
+
+#: includes/admin/views/tab-prijzen.php:289
+msgid "Afwerking en extra's"
+msgstr "Finition et extras"
+
+#: includes/admin/views/tab-prijzen.php:290
+msgid "Meerprijs zonder btw. \"Per stuk\" telt mee per patch, \"per bestelregel\" één keer, een percentage past de stukprijs aan. Zet uit wat je niet aanbiedt."
+msgstr "Supplément hors TVA. « Par pièce » compte par écusson, « par ligne de commande » une seule fois, un pourcentage adapte le prix par pièce. Désactivez ce que vous ne proposez pas."
+
+#: includes/admin/views/tab-prijzen.php:306
+msgid "per stuk"
+msgstr "par pièce"
+
+#: includes/admin/views/tab-prijzen.php:307
+msgid "per bestelregel"
+msgstr "par ligne de commande"
+
+#: includes/admin/views/tab-prijzen.php:308
+msgid "op de stukprijs"
+msgstr "sur le prix par pièce"
+
+#: includes/admin/views/tab-prijzen.php:318
+msgid "Optie"
+msgstr "Option"
+
+#: includes/admin/views/tab-prijzen.php:319
+msgid "Voor"
+msgstr "Pour"
+
+#: includes/admin/views/tab-prijzen.php:320
+msgid "Meerprijs"
+msgstr "Supplément"
+
+#: includes/admin/views/tab-prijzen.php:321
+msgid "Aangeboden"
+msgstr "Proposé"
+
+#. translators: %s: technique
+#: includes/admin/views/tab-prijzen.php:357
+msgid "Bij %s"
+msgstr "Pour %s"
+
+#: includes/admin/views/tab-prijzen.php:369
+msgid "Ja"
+msgstr "Oui"
+
+#: includes/admin/views/tab-prijzen.php:381
+msgid "Controle met je webshop"
+msgstr "Contrôle avec votre boutique"
+
+#: includes/admin/views/tab-prijzen.php:382
+msgid "We vergelijken de prijzen hierboven met je bestaande patchproducten, zodat de tool nooit iets anders zegt dan je winkel."
+msgstr "Nous comparons les prix ci-dessus avec vos produits d’écussons existants, pour que l’outil ne dise jamais autre chose que votre boutique."
+
+#: includes/admin/views/tab-prijzen.php:389
+msgid "Webshop"
+msgstr "Boutique"
+
+#: includes/admin/views/tab-prijzen.php:390
+msgid "Resultaat"
+msgstr "Résultat"
+
+#: includes/admin/views/tab-prijzen.php:398
+msgid "niet gevonden"
+msgstr "introuvable"
+
+#: includes/admin/views/tab-prijzen.php:401
+msgid "Gelijk"
+msgstr "Identique"
+
+#: includes/admin/views/tab-prijzen.php:403
+msgid "Product bestaat niet op deze site"
+msgstr "Le produit n’existe pas sur ce site"
+
+#: includes/admin/views/tab-prijzen.php:405
+msgid "Verschillend"
+msgstr "Différent"
+
+#: includes/admin/views/tab-technieken.php:15
+msgid "Patchmaat"
+msgstr "Taille de l’écusson"
+
+#: includes/admin/views/tab-technieken.php:16
+msgid "Hoogte hoofdletters"
+msgstr "Hauteur des majuscules"
+
+#: includes/admin/views/tab-technieken.php:17
+msgid "Hoogte kleine letters (x-hoogte)"
+msgstr "Hauteur des minuscules (hauteur d’x)"
+
+#: includes/admin/views/tab-technieken.php:18
+msgid "Strenger voor schreef- en sierletters (factor)"
+msgstr "Plus strict pour les polices à empattements et décoratives (facteur)"
+
+#: includes/admin/views/tab-technieken.php:19
+msgid "Dunste lijn"
+msgstr "Ligne la plus fine"
+
+#: includes/admin/views/tab-technieken.php:20
+msgid "Kleinste tussenruimte"
+msgstr "Plus petit espacement"
+
+#: includes/admin/views/tab-technieken.php:21
+msgid "Kleinste detail"
+msgstr "Plus petit détail"
+
+#: includes/admin/views/tab-technieken.php:25
+msgid "Absoluut minimum"
+msgstr "Minimum absolu"
+
+#: includes/admin/views/tab-technieken.php:26
+msgid "Minimum met omgezoomde rand"
+msgstr "Minimum avec bord surjeté"
+
+#: includes/admin/views/tab-technieken.php:27 includes/admin/views/tab-technieken.php:28
+msgid "Mooi resultaat vanaf"
+msgstr "Beau résultat à partir de"
+
+#: includes/admin/views/tab-technieken.php:29
+msgid "Aangeraden maximum"
+msgstr "Maximum conseillé"
+
+#: includes/admin/views/tab-technieken.php:30
+msgid "Maximum"
+msgstr "Maximum"
+
+#: includes/admin/views/tab-technieken.php:31
+msgid "Minimum met loopsteek"
+msgstr "Minimum en point droit"
+
+#: includes/admin/views/tab-technieken.php:41
+msgid "Verborgen"
+msgstr "Masqué"
+
+#: includes/admin/views/tab-technieken.php:42
+msgid "Online bestelbaar"
+msgstr "Commandable en ligne"
+
+#: includes/admin/views/tab-technieken.php:43
+msgid "Offerte op aanvraag"
+msgstr "Devis sur demande"
+
+#: includes/admin/views/tab-technieken.php:53
+msgid "Tonen in de ontwerptool"
+msgstr "Afficher dans l’outil de conception"
+
+#: includes/admin/views/tab-technieken.php:55
+msgid "Online bestellen met prijs"
+msgstr "Commander en ligne avec prix"
+
+#: includes/admin/views/tab-technieken.php:55
+msgid "Online bestellen (vul eerst prijzen in bij Prijzen)"
+msgstr "Commander en ligne (saisissez d’abord les prix dans Prix)"
+
+#: includes/admin/views/tab-technieken.php:59
+msgid "Hoe bestelt de klant?"
+msgstr "Comment le client commande-t-il ?"
+
+#: includes/admin/views/tab-technieken.php:62
+msgid "Offerte op aanvraag (geen prijs tonen)"
+msgstr "Devis sur demande (ne pas afficher de prix)"
+
+#: includes/admin/views/tab-technieken.php:64
+msgid "Bij een offerte vult de klant zijn ontwerp in en krijg jij een aanvraag met alles erbij."
+msgstr "Pour un devis, le client complète son dessin et vous recevez une demande avec tous les détails."
+
+#: includes/admin/views/tab-technieken.php:70
+msgid "Minimum aantal"
+msgstr "Quantité minimale"
+
+#: includes/admin/views/tab-technieken.php:81
+msgid "Bestellen per"
+msgstr "Commander par"
+
+#: includes/admin/views/tab-technieken.php:87
+msgid "Bijvoorbeeld 10 als je enkel per tiental maakt."
+msgstr "Par exemple 10 si vous ne produisez que par dizaine."
+
+#: includes/admin/views/tab-technieken.php:95
+msgid "Technische grenzen voor het advies (gevorderd)"
+msgstr "Limites techniques pour le conseil (avancé)"
+
+#: includes/admin/views/tab-technieken.php:96
+msgid "Hiermee beslist de tool of iets haalbaar is. Alle maten in millimeter op de echte patch. Laat staan als je twijfelt."
+msgstr "L’outil s’en sert pour décider si quelque chose est faisable. Toutes les mesures en millimètres sur l’écusson réel. Ne changez rien en cas de doute."
+
+#: includes/admin/views/tab-technieken.php:134
+msgid "kleuren"
+msgstr "couleurs"
+
+#: includes/admin/views/tab-technieken.php:136
+msgid "geen limiet"
+msgstr "pas de limite"
+
+#. translators: %s: link to the texts tab
+#: includes/admin/views/tab-technieken.php:150
+msgid "Levertijd per techniek stel je in bij %s."
+msgstr "Le délai de livraison par technique se règle dans %s."
+
+#: includes/admin/views/tab-technieken.php:161
+msgid "Speciale afwerkingen"
+msgstr "Finitions spéciales"
+
+#: includes/admin/views/tab-technieken.php:162
+msgid "Deze worden enkel als mogelijkheid \"op aanvraag\" vermeld in het advies, zonder prijs. Zet uit wat je niet aanbiedt."
+msgstr "Elles ne sont mentionnées dans le conseil que comme possibilité « sur demande », sans prix. Désactivez ce que vous ne proposez pas."
+
+#: includes/admin/views/tab-teksten.php:19 templates/admin/proof-status.php:28
+msgid "Digitale proef"
+msgstr "Épreuve numérique"
+
+#: includes/admin/views/tab-teksten.php:24
+msgid "Proef in de mailbox binnen"
+msgstr "Épreuve dans la boîte mail sous"
+
+#: includes/admin/views/tab-teksten.php:26
+msgid "werkdagen"
+msgstr "jours ouvrables"
+
+#: includes/admin/views/tab-teksten.php:28
+msgid "niet beloven"
+msgstr "ne rien promettre"
+
+#: includes/admin/views/tab-teksten.php:29
+msgid "Leeg = de klant leest \"Zo snel mogelijk krijg je je digitale proef\". Vul enkel een aantal in dat je altijd haalt."
+msgstr "Vide = le client lit « Vous recevez votre épreuve numérique le plus vite possible ». Indiquez uniquement un nombre que vous respectez toujours."
+
+#: includes/admin/views/tab-teksten.php:32
+msgid "Belofte over de proef"
+msgstr "Promesse concernant l’épreuve"
+
+#: includes/admin/views/tab-teksten.php:36
+msgid "Kosteloos annuleren tot de klant de proef goedkeurt"
+msgstr "Annulation gratuite jusqu’à l’approbation de l’épreuve par le client"
+
+#: includes/admin/views/tab-teksten.php:37
+msgid "Zet dit enkel aan als je het echt zo doet: de tool belooft het dan bij het bestellen."
+msgstr "Activez ceci uniquement si vous procédez réellement ainsi : l’outil le promet alors lors de la commande."
+
+#: includes/admin/views/tab-teksten.php:42
+msgid "Betalen pas na goedkeuring van de proef"
+msgstr "Paiement seulement après approbation de l’épreuve"
+
+#: includes/admin/views/tab-teksten.php:43
+msgid "Enkel aanzetten als je kassa dat ook zo regelt."
+msgstr "À activer uniquement si votre caisse le gère aussi ainsi."
+
+#: includes/admin/views/tab-teksten.php:49
+msgid "Service en levertijd"
+msgstr "Service et délai de livraison"
+
+#: includes/admin/views/tab-teksten.php:51
+msgid "\"Vanaf 1 stuk\" tonen"
+msgstr "Afficher « À partir de 1 pièce »"
+
+#: includes/admin/views/tab-teksten.php:52
+msgid "Tekst \"vanaf 1 stuk\""
+msgstr "Texte « à partir de 1 pièce »"
+
+#: includes/admin/views/tab-teksten.php:53
+msgid "Hoe snel je antwoordt"
+msgstr "Votre rapidité de réponse"
+
+#: includes/admin/views/tab-teksten.php:57
+msgid "Levertijd als er per techniek niets is ingevuld"
+msgstr "Délai de livraison si rien n’est indiqué par technique"
+
+#: includes/admin/views/tab-teksten.php:62
+msgid "Bij herbestelling vervallen de eenmalige kosten"
+msgstr "Lors d’une recommande, les frais uniques disparaissent"
+
+#: includes/admin/views/tab-teksten.php:63
+msgid "De tool vermeldt dit dan als voordeel. De kassa rekent ze vandaag wel opnieuw aan, dus laat uit tot dat geregeld is."
+msgstr "L’outil le mentionne alors comme avantage. Aujourd’hui la caisse les facture pourtant à nouveau ; laissez désactivé tant que ce n’est pas réglé."
+
+#: includes/admin/views/tab-teksten.php:70
+msgid "Levertijd per techniek"
+msgstr "Délai de livraison par technique"
+
+#: includes/admin/views/tab-teksten.php:71
+msgid "Bijvoorbeeld \"± 2 weken na goedkeuring van je proef\". Leeg = de algemene levertijdzin hierboven."
+msgstr "Par exemple « ± 2 semaines après approbation de votre épreuve ». Vide = la phrase générale sur le délai ci-dessus."
+
+#: includes/admin/views/tab-teksten.php:86 templates/admin/proof-response.php:202
+msgid "Contact"
+msgstr "Contact"
+
+#: includes/admin/views/tab-teksten.php:88 includes/woo/class-privacy.php:198 includes/woo/class-quotes.php:202 templates/emails/plain/quote-admin.php:22 templates/emails/quote-admin.php:26
+msgid "Telefoon"
+msgstr "Téléphone"
+
+#: includes/admin/views/tab-teksten.php:92
+msgid "WhatsApp-nummer (internationaal, enkel cijfers)"
+msgstr "Numéro WhatsApp (international, chiffres uniquement)"
+
+#: includes/admin/views/tab-teksten.php:98 includes/woo/class-privacy.php:197 includes/woo/class-quotes.php:201 includes/woo/class-quotes.php:220 templates/emails/plain/quote-admin.php:21 templates/emails/quote-admin.php:25
+msgid "E-mail"
+msgstr "E-mail"
+
+#: includes/admin/views/tab-teksten.php:99
+msgid "Gemeente atelier"
+msgstr "Commune de l’atelier"
+
+#: includes/admin/views/tab-teksten.php:100
+msgid "Pagina offerte aanvragen"
+msgstr "Page de demande de devis"
+
+#: includes/admin/views/tab-teksten.php:101
+msgid "Pagina privacybeleid"
+msgstr "Page de politique de confidentialité"
+
+#: includes/admin/views/tab-teksten.php:102
+msgid "Pagina algemene voorwaarden"
+msgstr "Page des conditions générales"
+
+#: includes/admin/views/tab-teksten.php:107
+msgid "Klantgetuigenis en actie"
+msgstr "Témoignage client et action"
+
+#: includes/admin/views/tab-teksten.php:108
+msgid "Toon enkel een echte getuigenis van een echte klant, met diens toestemming. Patch Studio toont nooit sterren, nep-reviews of aftelklokken."
+msgstr "N’affichez qu’un vrai témoignage d’un vrai client, avec son accord. Patch Studio n’affiche jamais d’étoiles, de faux avis ou de comptes à rebours."
+
+#: includes/admin/views/tab-teksten.php:111
+msgid "Getuigenis tonen bij het overzicht"
+msgstr "Afficher le témoignage dans le récapitulatif"
+
+#: includes/admin/views/tab-teksten.php:112
+msgid "Voornaam klant"
+msgstr "Prénom du client"
+
+#: includes/admin/views/tab-teksten.php:113
+msgid "Wie is het?"
+msgstr "Qui est-ce ?"
+
+#: includes/admin/views/tab-teksten.php:114
+msgid "Wat zei de klant?"
+msgstr "Qu’a dit le client ?"
+
+#: includes/admin/views/tab-teksten.php:120
+msgid "Meldingsbalk tonen (bv. sluitingsperiode of besteldatum voor de feestdagen)"
+msgstr "Afficher une barre d’annonce (p. ex. période de fermeture ou date limite de commande pour les fêtes)"
+
+#: includes/admin/views/tab-teksten.php:121
+msgid "Enkel voor echte data. Zet hem uit zodra de datum voorbij is."
+msgstr "Uniquement pour de vraies dates. Désactivez-la dès que la date est passée."
+
+#: includes/admin/views/tab-teksten.php:123
+msgid "Tekst van de melding"
+msgstr "Texte de l’annonce"
+
+#: includes/class-plugin.php:378
+msgid "Patch Studio heeft WooCommerce nodig."
+msgstr "Patch Studio nécessite WooCommerce."
+
+#: includes/class-plugin.php:379
+msgid "Activeer WooCommerce om patches te laten bestellen. De instellingen kan je intussen al bekijken."
+msgstr "Activez WooCommerce pour permettre la commande d’écussons. Vous pouvez déjà consulter les réglages en attendant."
+
+#: includes/class-plugin.php:388
+msgid "Patch Studio is klaar voor gebruik."
+msgstr "Patch Studio est prêt à l’emploi."
+
+#: includes/class-plugin.php:389
+msgid "Alle prijzen en teksten staan al goed ingesteld. Je hoeft enkel nog de ontwerppagina te maken."
+msgstr "Tous les prix et textes sont déjà configurés. Il ne vous reste qu’à créer la page de conception."
+
+#: includes/class-plugin.php:390
+msgid "Naar Patch Studio"
+msgstr "Vers Patch Studio"
+
+#: includes/class-plugin.php:402
+msgid "Instellingen"
+msgstr "Réglages"
+
+#. translators: %s: technique name
+#: includes/class-settings.php:946
+msgid "%s staat op \"Offerte op aanvraag\": vul eerst een prijs in voor elke maat om online bestellen aan te zetten."
+msgstr "%s est sur « Devis sur demande » : saisissez d’abord un prix pour chaque taille pour activer la commande en ligne."
+
+#. translators: 1: technique, 2: new minimum
+#: includes/class-settings.php:964
+msgid "Minimum voor %1$s aangepast naar %2$d zodat het past bij de stapgrootte."
+msgstr "Minimum pour %1$s ajusté à %2$d pour correspondre au pas de commande."
+
+#: includes/class-settings.php:1008
+msgid "Bestellen via de bestaande producten komt in een volgende versie. Patch Studio gebruikt voorlopig zijn eigen product."
+msgstr "La commande via les produits existants arrivera dans une prochaine version. Patch Studio utilise pour l’instant son propre produit."
+
+#: includes/class-settings.php:1030
+msgid "Alle technieken staan uit. Klanten kunnen dan niets bestellen of aanvragen."
+msgstr "Toutes les techniques sont désactivées. Les clients ne peuvent alors rien commander ni demander."
+
+#: includes/class-uploads.php:209
+msgid "Dit bestandstype kunnen we niet lezen. Gebruik PNG, JPG, WEBP, SVG, PDF, AI, EPS of PSD."
+msgstr "Nous ne pouvons pas lire ce type de fichier. Utilisez PNG, JPG, WEBP, SVG, PDF, AI, EPS ou PSD."
+
+#: includes/class-uploads.php:232
+msgid "Dit SVG-bestand kunnen we niet veilig openen. Bewaar het opnieuw als PNG of PDF, of stuur het ons gewoon per e-mail."
+msgstr "Nous ne pouvons pas ouvrir ce fichier SVG en toute sécurité. Enregistrez-le à nouveau en PNG ou PDF, ou envoyez-le-nous simplement par e-mail."
+
+#: includes/class-uploads.php:416
+msgid "De uploadmap van Patch Studio is niet schrijfbaar. Vraag je hostingpartij om wp-content/uploads/patch-studio schrijfbaar te maken."
+msgstr "Le dossier d’envoi de Patch Studio n’est pas accessible en écriture. Demandez à votre hébergeur de rendre wp-content/uploads/patch-studio accessible en écriture."
+
+#: includes/class-uploads.php:436
+msgid "Privéuploads: de server kon zichzelf niet bereiken om het te testen. De bestanden hebben onraadbare namen; controleer de beveiliging eventueel met je hostingpartij."
+msgstr "Envois privés : le serveur n’a pas pu se joindre lui-même pour le tester. Les fichiers ont des noms impossibles à deviner ; vérifiez éventuellement la sécurité avec votre hébergeur."
+
+#: includes/class-uploads.php:444
+msgid "Opgelet: privéuploads zijn publiek bereikbaar. Je server negeert .htaccess (bv. nginx). Voeg deze regel toe aan de serverconfiguratie: location ^~ /wp-content/uploads/patch-studio/private/ { deny all; return 404; }"
+msgstr "Attention : les envois privés sont accessibles publiquement. Votre serveur ignore .htaccess (p. ex. nginx). Ajoutez cette règle à la configuration du serveur : location ^~ /wp-content/uploads/patch-studio/private/ { deny all; return 404; }"
+
+#. translators: %d: HTTP status code
+#: includes/class-uploads.php:450
+msgid "Privéuploads zijn afgeschermd (test gaf HTTP %d)."
+msgstr "Les envois privés sont protégés (le test a donné HTTP %d)."
+
+#: includes/class-uploads.php:471
+msgid "Het uploaden is niet gelukt. Probeer het nog eens."
+msgstr "L’envoi a échoué. Réessayez."
+
+#. translators: %s: max size in MB
+#: includes/class-uploads.php:528 includes/rest/class-routes.php:318
+msgid "Je bestand is groter dan %s MB. Stuur het gerust via WeTransfer of per e-mail, dan bekijken we het samen."
+msgstr "Votre fichier dépasse %s Mo. Envoyez-le sans souci via WeTransfer ou par e-mail, nous l’examinerons ensemble."
+
+#: includes/class-uploads.php:537
+msgid "Het voorbeeld van je patch kwam niet goed door. Probeer het nog eens."
+msgstr "L’aperçu de votre écusson n’est pas bien arrivé. Réessayez."
+
+#: includes/class-uploads.php:544
+msgid "Opslaan is niet gelukt door een probleem op onze server. Probeer het later nog eens of mail ons je ontwerp."
+msgstr "L’enregistrement a échoué à cause d’un problème sur notre serveur. Réessayez plus tard ou envoyez-nous votre dessin par e-mail."
+
+#: includes/frontend/class-elementor-widget.php:93
+msgid "Startinstellingen"
+msgstr "Réglages de départ"
+
+#: includes/frontend/class-elementor-widget.php:96
+msgid "Automatisch (ons advies)"
+msgstr "Automatique (notre conseil)"
+
+#: includes/frontend/class-elementor-widget.php:103
+msgid "Standaardtechniek"
+msgstr "Technique par défaut"
+
+#: includes/frontend/class-elementor-widget.php:107
+msgid "Laat op \"Automatisch\" staan: de tool kiest dan de techniek die het best bij het ontwerp past."
+msgstr "Laissez sur « Automatique » : l’outil choisit alors la technique qui convient le mieux au dessin."
+
+#: includes/frontend/class-elementor-widget.php:114
+msgid "Startmaat (cm)"
+msgstr "Taille de départ (cm)"
+
+#: includes/frontend/class-elementor-widget.php:120
+msgid "Leeg = maatadvies van de tool."
+msgstr "Vide = conseil de taille de l’outil."
+
+#: includes/frontend/class-elementor-widget.php:127
+msgid "Startaantal"
+msgstr "Quantité de départ"
+
+#: includes/frontend/class-elementor-widget.php:135
+msgid "Automatisch (uit het ontwerp)"
+msgstr "Automatique (d’après le dessin)"
+
+#: includes/frontend/class-elementor-widget.php:142
+msgid "Startvorm"
+msgstr "Forme de départ"
+
+#: includes/frontend/class-elementor-widget.php:152
+msgid "Compacte weergave"
+msgstr "Affichage compact"
+
+#: includes/frontend/class-shortcode.php:206
+msgid "Upload je logo, tekening of zelfs een foto van een bestaande patch. Wij kijken meteen of het te borduren is."
+msgstr "Téléchargez votre logo, un dessin ou même une photo d’un écusson existant. Nous vérifions tout de suite s’il peut être brodé."
+
+#: includes/frontend/class-shortcode.php:208
+msgid "Sleep je bestand hierheen"
+msgstr "Glissez votre fichier ici"
+
+#: includes/frontend/class-shortcode.php:208
+msgid "of"
+msgstr "ou"
+
+#: includes/frontend/class-shortcode.php:208
+msgid "kies een bestand"
+msgstr "choisissez un fichier"
+
+#. translators: %s: maximum file size in MB
+#: includes/frontend/class-shortcode.php:212
+msgid "PNG, JPG, SVG of PDF · max. %s MB"
+msgstr "PNG, JPG, SVG ou PDF · max. %s Mo"
+
+#: includes/frontend/class-shortcode.php:217
+msgid "Je hoeft geen perfect bestand te hebben. Een schets of foto is genoeg om te beginnen."
+msgstr "Pas besoin d’un fichier parfait. Un croquis ou une photo suffit pour commencer."
+
+#: includes/frontend/class-shortcode.php:218
+msgid "Nog geen ontwerp? Start met tekst"
+msgstr "Pas encore de design ? Commencez par un texte"
+
+#: includes/frontend/class-shortcode.php:220
+msgid "Je bestand wordt eerst alleen op je eigen toestel geanalyseerd. Pas als je bestelt, een offerte vraagt of je ontwerp bewaart, sturen we het naar ons om je patch te maken. We bewaren het niet langer dan nodig."
+msgstr "Votre fichier est d’abord analysé uniquement sur votre appareil. Il ne nous est envoyé que si vous commandez, demandez un devis ou enregistrez votre design, afin de fabriquer votre écusson. Nous ne le conservons pas plus longtemps que nécessaire."
+
+#: includes/frontend/class-shortcode.php:222
+msgid "Privacybeleid"
+msgstr "Politique de confidentialité"
+
+#: includes/frontend/class-shortcode.php:227
+msgid "Je browser ondersteunt de ontwerptool niet. Vraag je patch eenvoudig aan via ons offerteformulier."
+msgstr "Votre navigateur ne prend pas en charge l’outil de conception. Demandez simplement votre écusson via notre formulaire de devis."
+
+#: includes/frontend/class-shortcode.php:229
+msgid "Naar het offerteformulier"
+msgstr "Vers le formulaire de devis"
+
+#: includes/rest/class-guard.php:66
+msgid "Je sessie is verlopen. We proberen het meteen opnieuw."
+msgstr "Votre session a expiré. Nous réessayons immédiatement."
+
+#: includes/rest/class-guard.php:142
+msgid "een minuut"
+msgstr "une minute"
+
+#: includes/rest/class-guard.php:142
+msgid "een uur"
+msgstr "une heure"
+
+#. translators: %s: "een minuut" or "een uur"
+#: includes/rest/class-guard.php:146
+msgid "Even geduld: je stuurde veel verzoeken na elkaar. Probeer het binnen %s opnieuw, of bel of WhatsApp ons gerust."
+msgstr "Un instant : vous avez envoyé beaucoup de demandes d’affilée. Réessayez dans %s, ou n’hésitez pas à nous appeler ou nous écrire sur WhatsApp."
+
+#: includes/rest/class-routes.php:251
+msgid "De prijsberekening is even niet beschikbaar. Probeer het straks opnieuw."
+msgstr "Le calcul du prix n’est momentanément pas disponible. Réessayez dans un instant."
+
+#: includes/rest/class-routes.php:258
+msgid "We konden geen prijs berekenen voor deze keuzes. Controleer de maat en het aantal."
+msgstr "Nous n’avons pas pu calculer de prix pour ces choix. Vérifiez la taille et la quantité."
+
+#: includes/rest/class-routes.php:288
+msgid "We konden geen prijs berekenen voor deze keuzes."
+msgstr "Nous n’avons pas pu calculer de prix pour ces choix."
+
+#: includes/rest/class-routes.php:300
+msgid "We konden je ontwerp niet bewaren. Laad de pagina opnieuw en probeer het nog eens."
+msgstr "Nous n’avons pas pu enregistrer votre dessin. Rechargez la page et réessayez."
+
+#: includes/rest/class-routes.php:310
+msgid "Het voorbeeld van je patch ontbreekt. Probeer het nog eens."
+msgstr "L’aperçu de votre écusson est manquant. Réessayez."
+
+#: includes/rest/class-routes.php:425
+msgid "Deze link naar je ontwerp werkt niet (meer). Misschien is hij verlopen; je kan gewoon opnieuw beginnen."
+msgstr "Ce lien vers votre dessin ne fonctionne pas (ou plus). Il a peut-être expiré ; vous pouvez simplement recommencer."
+
+#: includes/rest/class-routes.php:429 includes/rest/class-routes.php:634
+msgid "Dit ontwerp bestaat niet meer."
+msgstr "Ce dessin n’existe plus."
+
+#: includes/rest/class-routes.php:454
+msgid "Deze link is verlopen."
+msgstr "Ce lien a expiré."
+
+#: includes/rest/class-routes.php:458
+msgid "Dit bestand bestaat niet meer."
+msgstr "Ce fichier n’existe plus."
+
+#: includes/rest/class-routes.php:474 includes/rest/class-routes.php:482 includes/rest/class-routes.php:549 includes/rest/class-routes.php:626
+msgid "We vonden je ontwerp niet terug. Laad de ontwerptool opnieuw en probeer het nog eens."
+msgstr "Nous n’avons pas retrouvé votre dessin. Rechargez l’outil de conception et réessayez."
+
+#: includes/rest/class-routes.php:478 includes/rest/class-routes.php:572
+msgid "Vink aan dat je dit ontwerp mag laten maken. Zo weten we dat alles in orde is."
+msgstr "Cochez la case pour confirmer que vous pouvez faire réaliser ce design."
+
+#: includes/rest/class-routes.php:485 includes/rest/class-routes.php:491
+msgid "De winkelmand is even niet beschikbaar. Probeer het straks opnieuw."
+msgstr "Le panier n’est momentanément pas disponible. Réessayez dans un instant."
+
+#: includes/rest/class-routes.php:539
+msgid "Je aanvraag kon niet verstuurd worden. Probeer het nog eens of mail ons."
+msgstr "Votre demande n’a pas pu être envoyée. Réessayez ou envoyez-nous un e-mail."
+
+#: includes/rest/class-routes.php:542
+msgid "Dat ging wel heel snel. Kijk je gegevens even na en verstuur opnieuw."
+msgstr "C’était vraiment très rapide. Vérifiez vos coordonnées et envoyez à nouveau."
+
+#: includes/rest/class-routes.php:559
+msgid "Vul je naam in."
+msgstr "Indiquez votre nom."
+
+#: includes/rest/class-routes.php:562
+msgid "Vul een geldig e-mailadres in, dan kunnen we je prijs bezorgen."
+msgstr "Indiquez une adresse e-mail valide pour que nous puissions vous envoyer votre prix."
+
+#: includes/rest/class-routes.php:565
+msgid "Vul in hoeveel patches je nodig hebt."
+msgstr "Indiquez le nombre d’écussons dont vous avez besoin."
+
+#: includes/rest/class-routes.php:568
+msgid "Bevestig dat we je gegevens mogen gebruiken om je offerte te maken."
+msgstr "Confirmez que nous pouvons utiliser vos données pour établir votre devis."
+
+#: includes/rest/class-routes.php:644
+msgid "Dit ontwerp werd al naar meerdere adressen gemaild. Bewaar het opnieuw of neem contact met ons op."
+msgstr "Ce dessin a déjà été envoyé à plusieurs adresses. Enregistrez-le à nouveau ou contactez-nous."
+
+#: includes/rest/class-routes.php:657
+msgid "Je ontwerp is bewaard, maar de e-mail kon niet verstuurd worden. Probeer het later nog eens of contacteer ons."
+msgstr "Votre dessin est enregistré, mais l’e-mail n’a pas pu être envoyé. Réessayez plus tard ou contactez-nous."
+
+#: includes/woo/class-cart.php:74
+msgid "Deze techniek is niet meer beschikbaar. Kies een andere techniek."
+msgstr "Cette technique n’est plus disponible. Choisissez une autre technique."
+
+#: includes/woo/class-cart.php:97
+msgid "De winkelmand is even niet beschikbaar. Probeer het straks opnieuw of vraag een offerte."
+msgstr "Le panier n’est momentanément pas disponible. Réessayez dans un instant ou demandez un devis."
+
+#: includes/woo/class-cart.php:142
+msgid "Toevoegen aan je winkelmand is niet gelukt. Probeer het nog eens."
+msgstr "L’ajout au panier a échoué. Réessayez."
+
+#. translators: %s: design reference
+#: includes/woo/class-cart.php:432
+msgid "Je ontwerp %s is niet meer beschikbaar. Verwijder het uit je winkelmand en ontwerp je patch opnieuw."
+msgstr "Votre dessin %s n’est plus disponible. Retirez-le de votre panier et concevez à nouveau votre écusson."
+
+#: includes/woo/class-cart.php:511
+msgid "Deze patch maken we op offerte. Vraag vrijblijvend je prijs op maat aan; je ontwerp gaat automatisch mee."
+msgstr "Nous réalisons cet écusson sur devis. Demandez sans engagement votre prix sur mesure ; votre dessin est joint automatiquement."
+
+#. translators: 1: technique, 2: minimum quantity
+#: includes/woo/class-cart.php:520
+msgid "%1$s maken we vanaf %2$d stuks. Pas het aantal aan."
+msgstr "Nous réalisons %1$s à partir de %2$d pièces. Adaptez la quantité."
+
+#. translators: 1: technique, 2: step
+#: includes/woo/class-cart.php:529
+msgid "%1$s bestel je per %2$d stuks. Pas het aantal aan."
+msgstr "%1$s se commande par %2$d pièces. Adaptez la quantité."
+
+#: includes/woo/class-cart.php:534
+msgid "Deze maat is te klein voor deze techniek. Kies een grotere maat."
+msgstr "Cette taille est trop petite pour cette technique. Choisissez une taille plus grande."
+
+#: includes/woo/class-cart.php:537
+msgid "De gekozen afwerking past niet (meer) bij deze techniek. Kies je afwerking opnieuw."
+msgstr "La finition choisie ne convient pas (plus) à cette technique. Choisissez à nouveau votre finition."
+
+#: includes/woo/class-cart.php:540
+msgid "De prijsberekening is even niet beschikbaar. Probeer het straks opnieuw of vraag een offerte."
+msgstr "Le calcul du prix n’est momentanément pas disponible. Réessayez dans un instant ou demandez un devis."
+
+#: includes/woo/class-cart.php:542
+msgid "Deze patch kan zo niet online besteld worden. Vraag een offerte of pas je keuzes aan."
+msgstr "Cet écusson ne peut pas être commandé en ligne ainsi. Demandez un devis ou adaptez vos choix."
+
+#: includes/woo/class-cart.php:570
+msgid "Maatwerk"
+msgstr "Sur mesure"
+
+#: includes/woo/class-cart.php:571
+msgid "Geen herroepingsrecht · digitale proef vóór productie"
+msgstr "Pas de droit de rétractation · épreuve numérique avant production"
+
+#: includes/woo/class-cart.php:585 includes/woo/class-order.php:131 templates/emails/quote-admin.php:64
+msgid "Ontwerp"
+msgstr "Design"
+
+#: includes/woo/class-cart.php:591 includes/woo/class-order.php:139
+msgid "Afwerking"
+msgstr "Finition"
+
+#. translators: %s: design reference
+#: includes/woo/class-cart.php:682
+msgid "Voorbeeld van jouw patch %s"
+msgstr "Aperçu de votre écusson %s"
+
+#: includes/woo/class-cart.php:705
+msgid "Voorbeeld van jouw patch"
+msgstr "Aperçu de votre écusson"
+
+#. translators: 1: technique, 2: minimum
+#: includes/woo/class-cart.php:778
+msgid "%1$s maken we vanaf %2$d stuks."
+msgstr "Nous réalisons %1$s à partir de %2$d pièces."
+
+#. translators: 1: technique, 2: step
+#: includes/woo/class-cart.php:783
+msgid "%1$s bestel je per %2$d stuks."
+msgstr "%1$s se commande par %2$d pièces."
+
+#: includes/woo/class-cart.php:840
+msgid "Je bestelling bevat maatwerk. Voor op maat gemaakte patches geldt geen herroepingsrecht (art. VI.53 WER). Je ontvangt eerst een digitale proef; de productie start pas na jouw akkoord."
+msgstr "Votre commande contient du sur-mesure. Les écussons fabriqués sur mesure ne bénéficient pas du droit de rétractation (art. VI.53 CDE). Vous recevez d’abord une épreuve numérique ; la production ne démarre qu’après votre accord."
+
+#: includes/woo/class-cart.php:877 includes/woo/class-cart.php:892
+msgid "Bestellen en betalen"
+msgstr "Commander et payer"
+
+#. translators: %s: date
+#: includes/woo/class-cleanup.php:197
+msgid "Ontwerpbestand verwijderd op %s (bewaartermijn)"
+msgstr "Fichier du dessin supprimé le %s (délai de conservation)"
+
+#: includes/woo/class-designs.php:52
+msgid "Patch-ontwerpen"
+msgstr "Dessins d’écusson"
+
+#: includes/woo/class-designs.php:53
+msgid "Patch-ontwerp"
+msgstr "Dessin d’écusson"
+
+#: includes/woo/class-designs.php:248
+msgid "Opslaan is niet gelukt. Probeer het nog eens."
+msgstr "L’enregistrement a échoué. Réessayez."
+
+#: includes/woo/class-designs.php:404
+msgid "Je hebt geen toegang tot dit bestand."
+msgstr "Vous n’avez pas accès à ce fichier."
+
+#: includes/woo/class-designs.php:408
+msgid "Dit ontwerpbestand bestaat niet (meer). Mogelijk werd het verwijderd na de bewaartermijn."
+msgstr "Ce fichier de dessin n’existe pas (ou plus). Il a peut-être été supprimé après le délai de conservation."
+
+#: includes/woo/class-emails.php:86 templates/emails/quote-customer.php:49 templates/emails/save-design.php:38
+msgid "Voorbeeld van je patch"
+msgstr "Aperçu de votre écusson"
+
+#: includes/woo/class-emails.php:106 templates/emails/plain/quote-customer.php:21 templates/emails/quote-customer.php:39
+msgid "Wat gebeurt er nu?"
+msgstr "Que se passe-t-il maintenant ?"
+
+#. translators: %d: number of working days
+#: includes/woo/class-emails.php:126
+msgid "Binnen %d werkdag krijg je je digitale proef per e-mail."
+msgid_plural "Binnen %d werkdagen krijg je je digitale proef per e-mail."
+msgstr[0] "Vous recevez votre épreuve numérique par e-mail sous %d jour ouvrable."
+msgstr[1] "Vous recevez votre épreuve numérique par e-mail sous %d jours ouvrables."
+
+#: includes/woo/class-emails.php:130
+msgid "Je krijgt eerst je digitale proef per e-mail."
+msgstr "Vous recevez d’abord votre épreuve numérique par e-mail."
+
+#: includes/woo/class-emails.php:132
+msgid "Pas na jouw akkoord starten we de productie. Je patch wordt op maat gemaakt; daarom geldt het herroepingsrecht niet."
+msgstr "La production ne démarre qu’après votre accord. Votre écusson est fabriqué sur mesure ; c’est pourquoi le droit de rétractation ne s’applique pas."
+
+#: includes/woo/class-emails.php:134
+msgid "Tot je de proef goedkeurt, kan je je bestelling kosteloos annuleren."
+msgstr "Tant que vous n’avez pas validé l’épreuve, vous pouvez annuler votre commande sans frais."
+
+#. translators: 1: date, 2: time, 3: text version
+#: includes/woo/class-order.php:72
+msgid "Bevestigd op %1$s om %2$s (tekstversie %3$s)"
+msgstr "Confirmé le %1$s à %2$s (version du texte %3$s)"
+
+#: includes/woo/class-order.php:145
+msgid "Ontwerpbestand"
+msgstr "Fichier du dessin"
+
+#: includes/woo/class-payload.php:32
+msgid "Je ontwerp bevat te veel gegevens."
+msgstr "Votre dessin contient trop de données."
+
+#: includes/woo/class-payload.php:43
+msgid "Deze techniek is niet beschikbaar. Kies een andere techniek."
+msgstr "Cette technique n’est pas disponible. Choisissez une autre technique."
+
+#: includes/woo/class-payload.php:48
+msgid "Deze vorm kennen we niet. Kies een andere vorm."
+msgstr "Nous ne connaissons pas cette forme. Choisissez une autre forme."
+
+#: includes/woo/class-payload.php:59
+msgid "Deze maat kunnen we niet maken. Kies een maat tussen de grenzen van de tool."
+msgstr "Nous ne pouvons pas réaliser cette taille. Choisissez une taille dans les limites de l’outil."
+
+#: includes/woo/class-payload.php:69
+msgid "Kies een geldig aantal."
+msgstr "Choisissez une quantité valide."
+
+#: includes/woo/class-payload.php:82
+msgid "Een gekozen afwerking bestaat niet meer. Kies je afwerking opnieuw."
+msgstr "Une finition choisie n’existe plus. Choisissez à nouveau votre finition."
+
+#: includes/woo/class-payload.php:433
+msgid "We konden je ontwerp niet goed lezen. Laad de pagina opnieuw en probeer het nog eens."
+msgstr "Nous n’avons pas pu lire correctement votre dessin. Rechargez la page et réessayez."
+
+#: includes/woo/class-privacy.php:37
+msgid "Patch Studio (patches online ontwerpen)"
+msgstr "Patch Studio (conception d’écussons en ligne)"
+
+#: includes/woo/class-privacy.php:38
+msgid "Wanneer u in onze Patch Studio een afbeelding opent, analyseert uw browser die afbeelding op uw eigen toestel. Uw bestand wordt pas naar ons verzonden wanneer u uw patch in de winkelmand legt, een offerte aanvraagt of uw ontwerp bewaart."
+msgstr "Lorsque vous ouvrez une image dans notre Patch Studio, votre navigateur analyse cette image sur votre propre appareil. Votre fichier ne nous est envoyé que lorsque vous mettez votre écusson dans le panier, demandez un devis ou enregistrez votre dessin."
+
+#: includes/woo/class-privacy.php:39
+msgid "Gegevens:"
+msgstr "Données :"
+
+#: includes/woo/class-privacy.php:39
+msgid "uw afbeelding of logo, de tekst en keuzes van uw ontwerp, en — bij bewaren of een offerte — uw e-mailadres."
+msgstr "votre image ou logo, le texte et les choix de votre dessin et, en cas d’enregistrement ou de devis, votre adresse e-mail."
+
+#: includes/woo/class-privacy.php:40
+msgid "Doel en rechtsgrond:"
+msgstr "Finalité et base juridique :"
+
+#: includes/woo/class-privacy.php:40
+msgid "uw patch adviseren, een digitale proef maken, produceren en eventueel later opnieuw maken (uitvoering van de overeenkomst of stappen op uw verzoek vóór een overeenkomst)."
+msgstr "vous conseiller sur votre écusson, réaliser une épreuve numérique, le produire et éventuellement le refaire plus tard (exécution du contrat ou mesures prises à votre demande avant un contrat)."
+
+#: includes/woo/class-privacy.php:41
+msgid "Bewaartermijn:"
+msgstr "Délai de conservation :"
+
+#. translators: 1: days without order, 2: days for saved designs, 3: days for quotes, 4: years after order
+#: includes/woo/class-privacy.php:44
+msgid "bestanden zonder bestelling wissen wij automatisch na %1$d dagen; bewaarde ontwerpen %2$d dagen na uw laatste bezoek aan de link; bestanden van een offerte zonder bestelling na %3$d dagen; bestanden van een bestelling %4$d jaar na uw laatste bestelling van dat ontwerp, zodat u het makkelijk opnieuw kunt bestellen. U kunt altijd vragen om ze eerder te wissen."
+msgstr "nous supprimons automatiquement les fichiers sans commande après %1$d jours ; les dessins enregistrés %2$d jours après votre dernière visite du lien ; les fichiers d’un devis sans commande après %3$d jours ; les fichiers d’une commande %4$d ans après votre dernière commande de ce dessin, afin que vous puissiez facilement le recommander. Vous pouvez toujours demander leur suppression anticipée."
+
+#: includes/woo/class-privacy.php:51
+msgid "Verklaring over rechten:"
+msgstr "Déclaration de droits :"
+
+#: includes/woo/class-privacy.php:51
+msgid "wij bewaren bij uw bestelling uw verklaring dat u het ontwerp mag gebruiken, met datum en tijd."
+msgstr "nous conservons avec votre commande votre déclaration selon laquelle vous pouvez utiliser le dessin, avec la date et l’heure."
+
+#: includes/woo/class-privacy.php:60 includes/woo/class-privacy.php:71
+msgid "Patch Studio-ontwerpen en offertes"
+msgstr "Dessins et devis Patch Studio"
+
+#: includes/woo/class-privacy.php:163
+msgid "Patch Studio-ontwerpen"
+msgstr "Dessins Patch Studio"
+
+#: includes/woo/class-privacy.php:168 includes/woo/class-privacy.php:194
+msgid "Referentie"
+msgstr "Référence"
+
+#: includes/woo/class-privacy.php:169
+msgid "Aangemaakt"
+msgstr "Créé"
+
+#: includes/woo/class-privacy.php:173
+msgid "Tekst op de patch"
+msgstr "Texte sur l’écusson"
+
+#: includes/woo/class-privacy.php:174
+msgid "Opmerking"
+msgstr "Remarque"
+
+#: includes/woo/class-privacy.php:175 includes/woo/class-quotes.php:336
+msgid "Voorbeeld"
+msgstr "Aperçu"
+
+#: includes/woo/class-privacy.php:176
+msgid "Origineel bestand"
+msgstr "Fichier original"
+
+#: includes/woo/class-privacy.php:189
+msgid "Patch Studio-offertes"
+msgstr "Devis Patch Studio"
+
+#: includes/woo/class-privacy.php:195 includes/woo/class-quotes.php:340
+msgid "Datum"
+msgstr "Date"
+
+#: includes/woo/class-privacy.php:196 includes/woo/class-quotes.php:200 templates/emails/plain/quote-admin.php:20 templates/emails/quote-admin.php:24
+msgid "Naam"
+msgstr "Nom"
+
+#: includes/woo/class-privacy.php:199 includes/woo/class-quotes.php:203 templates/emails/plain/quote-admin.php:23 templates/emails/quote-admin.php:27
+msgid "Bedrijf"
+msgstr "Entreprise"
+
+#: includes/woo/class-privacy.php:200 includes/woo/class-quotes.php:204 templates/emails/plain/quote-admin.php:24 templates/emails/quote-admin.php:28
+msgid "Btw-nummer"
+msgstr "Numéro de TVA"
+
+#: includes/woo/class-privacy.php:202 templates/emails/quote-admin.php:78
+msgid "Bericht"
+msgstr "Message"
+
+#. translators: %s: design reference
+#: includes/woo/class-privacy.php:238
+msgid "Ontwerp %s hoort bij een bestelling die nog loopt en wordt bewaard tot ze afgerond is."
+msgstr "Le dessin %s fait partie d’une commande en cours et est conservé jusqu’à ce qu’elle soit terminée."
+
+#. translators: %s: link to the Patch Studio page
+#: includes/woo/class-product.php:239
+msgid "Een patch op maat stel je samen in onze ontwerptool. %s"
+msgstr "Vous composez un écusson sur mesure dans notre outil de conception. %s"
+
+#: includes/woo/class-quotes.php:47 includes/woo/class-quotes.php:49 includes/woo/class-quotes.php:50
+msgid "Patch-offertes"
+msgstr "Devis d’écussons"
+
+#: includes/woo/class-quotes.php:48
+msgid "Patch-offerte"
+msgstr "Devis d’écusson"
+
+#: includes/woo/class-quotes.php:51
+msgid "Offerte-aanvraag bekijken"
+msgstr "Voir la demande de devis"
+
+#: includes/woo/class-quotes.php:52
+msgid "Offertes zoeken"
+msgstr "Rechercher des devis"
+
+#: includes/woo/class-quotes.php:53
+msgid "Nog geen offerte-aanvragen."
+msgstr "Pas encore de demandes de devis."
+
+#: includes/woo/class-quotes.php:54
+msgid "Geen offertes in de prullenbak."
+msgstr "Aucun devis dans la corbeille."
+
+#: includes/woo/class-quotes.php:95
+msgid "Je aanvraag kon niet bewaard worden. Probeer het nog eens of mail ons."
+msgstr "Votre demande n’a pas pu être enregistrée. Réessayez ou envoyez-nous un e-mail."
+
+#: includes/woo/class-quotes.php:185
+msgid "Offerte-aanvraag"
+msgstr "Demande de devis"
+
+#: includes/woo/class-quotes.php:207 templates/emails/plain/quote-admin.php:27 templates/emails/quote-admin.php:31 templates/emails/quote-customer.php:67
+msgid "Gewenste datum"
+msgstr "Date souhaitée"
+
+#: includes/woo/class-quotes.php:208
+msgid "Taal"
+msgstr "Langue"
+
+#: includes/woo/class-quotes.php:234
+msgid "Bericht van de klant"
+msgstr "Message du client"
+
+#: includes/woo/class-quotes.php:237 templates/emails/plain/quote-admin.php:43 templates/emails/quote-admin.php:84
+msgid "Originele bestand downloaden"
+msgstr "Télécharger le fichier original"
+
+#. translators: %d: number of colours
+#: includes/woo/class-quotes.php:288
+msgid "%d kleur"
+msgid_plural "%d kleuren"
+msgstr[0] "%d couleur"
+msgstr[1] "%d couleurs"
+
+#. translators: %s: mm
+#: includes/woo/class-quotes.php:292
+msgid "fijnste lijn ±%s mm"
+msgstr "ligne la plus fine ±%s mm"
+
+#. translators: %s: mm
+#: includes/woo/class-quotes.php:296
+msgid "kleinste tekst ±%s mm"
+msgstr "plus petit texte ±%s mm"
+
+#: includes/woo/class-quotes.php:299
+msgid "Analyse"
+msgstr "Analyse"
+
+#: includes/woo/class-quotes.php:303
+msgid "Advies"
+msgstr "Conseil"
+
+#: includes/woo/class-quotes.php:306
+msgid "Opmerking bij het ontwerp"
+msgstr "Remarque sur le dessin"
+
+#: includes/woo/class-quotes.php:335
+msgid "Offerte"
+msgstr "Devis"
+
+#: includes/woo/class-quotes.php:337 templates/emails/quote-admin.php:50
+msgid "Klant"
+msgstr "Client"
+
+#: includes/woo/emails/class-quote-admin.php:33
+msgid "Patch Studio: nieuwe offerte-aanvraag"
+msgstr "Patch Studio : nouvelle demande de devis"
+
+#: includes/woo/emails/class-quote-admin.php:34
+msgid "Wordt naar de winkel gestuurd wanneer een klant in de Patch Studio een prijs op maat vraagt. Antwoorden gaat rechtstreeks naar de klant (Reply-To)."
+msgstr "Envoyé à la boutique lorsqu’un client demande un prix sur mesure dans le Patch Studio. Une réponse va directement au client (Reply-To)."
+
+#: includes/woo/emails/class-quote-admin.php:50
+msgid "[{site_name}] Nieuwe offerte-aanvraag {ref} van {customer_name}"
+msgstr "[{site_name}] Nouvelle demande de devis {ref} de {customer_name}"
+
+#: includes/woo/emails/class-quote-admin.php:57
+msgid "Nieuwe offerte-aanvraag {ref}"
+msgstr "Nouvelle demande de devis {ref}"
+
+#. translators: %s: admin email
+#: includes/woo/emails/class-quote-admin.php:112
+msgid "Komma-gescheiden. Standaard: %s"
+msgstr "Séparés par des virgules. Par défaut : %s"
+
+#: includes/woo/emails/class-quote-customer.php:30
+msgid "Patch Studio: bevestiging offerte-aanvraag"
+msgstr "Patch Studio : confirmation de demande de devis"
+
+#: includes/woo/emails/class-quote-customer.php:31
+msgid "Bevestiging naar de klant na een offerte-aanvraag in de Patch Studio, in de taal van de klant."
+msgstr "Confirmation au client après une demande de devis dans le Patch Studio, dans la langue du client."
+
+#: includes/woo/emails/class-quote-customer.php:42
+msgid "We hebben je aanvraag {ref} goed ontvangen"
+msgstr "Nous avons bien reçu votre demande {ref}"
+
+#: includes/woo/emails/class-quote-customer.php:49
+msgid "Bedankt voor je aanvraag"
+msgstr "Merci pour votre demande"
+
+#: includes/woo/emails/class-saved-design.php:32
+msgid "Patch Studio: bewaard ontwerp"
+msgstr "Patch Studio : dessin enregistré"
+
+#: includes/woo/emails/class-saved-design.php:33
+msgid "Wordt naar de klant gestuurd die \"Bewaar & mail mijn ontwerp\" kiest: voorbeeld, samenvatting, prijs en een link om verder te gaan."
+msgstr "Envoyé au client qui choisit « Enregistrer & envoyer mon dessin » : aperçu, résumé, prix et un lien pour continuer."
+
+#: includes/woo/emails/class-saved-design.php:44
+msgid "Je patch-ontwerp {ref} staat klaar"
+msgstr "Votre dessin d’écusson {ref} est prêt"
+
+#: includes/woo/emails/class-saved-design.php:51
+msgid "Je ontwerp is bewaard"
+msgstr "Votre dessin est enregistré"
+
+#. translators: 1: customer, 2: ref, 3: round
+#: templates/admin/emails/plain/proof-response.php:20 templates/admin/emails/proof-response.php:39 templates/admin/emails/proof-response.php:41
+msgid "De klant"
+msgstr "Le client"
+
+#. translators: 1: customer, 2: ref, 3: round
+#: templates/admin/emails/plain/proof-response.php:27 templates/admin/emails/proof-response.php:39
+msgid "%1$s vraagt een aanpassing aan de proef van patch %2$s (ronde %3$d)."
+msgstr "%1$s demande une modification de l’épreuve de l’écusson %2$s (n° %3$d)."
+
+#. translators: 1: customer, 2: ref, 3: round
+#: templates/admin/emails/plain/proof-response.php:29 templates/admin/emails/proof-response.php:41
+msgid "%1$s keurde de proef van patch %2$s goed (ronde %3$d). Deze patch mag in productie."
+msgstr "%1$s a approuvé l’épreuve de l’écusson %2$s (n° %3$d). Cet écusson peut passer en production."
+
+#: templates/admin/emails/plain/proof-response.php:32 templates/admin/emails/proof-response.php:46 templates/admin/fiche-card.php:106 templates/admin/fiche-print.php:149
+msgid "Opmerking van de klant"
+msgstr "Remarque du client"
+
+#. translators: %s: first name
+#. translators: %s: customer first name
+#: templates/admin/emails/plain/proof.php:35 templates/admin/emails/proof.php:45
+msgid "Hallo %s,"
+msgstr "Bonjour %s,"
+
+#. translators: %s: first name
+#. translators: %s: customer first name
+#: templates/admin/emails/plain/proof.php:35 templates/admin/emails/proof.php:45 templates/emails/plain/save-design.php:24 templates/emails/save-design.php:28
+msgid "Hallo,"
+msgstr "Bonjour,"
+
+#. translators: 1: design ref, 2: order number
+#: templates/admin/emails/plain/proof.php:37 templates/admin/emails/proof.php:51
+msgid "Hier is de digitale proef van je patch %1$s (bestelling #%2$s). Kijk je alles even na?"
+msgstr "Voici l’épreuve numérique de votre écusson %1$s (commande n° %2$s). Pouvez-vous tout vérifier ?"
+
+#: templates/admin/emails/plain/proof.php:39 templates/admin/emails/proof.php:61
+msgid "Bericht van ons atelier"
+msgstr "Message de notre atelier"
+
+#: templates/admin/emails/plain/proof.php:42 templates/admin/emails/proof.php:68 templates/admin/proof-response.php:115 templates/admin/proof-response.php:162
+msgid "Digitale proef van je patch"
+msgstr "Épreuve numérique de votre écusson"
+
+#: templates/admin/emails/plain/proof.php:47 templates/admin/emails/proof.php:90
+msgid "Klopt alles? Dan starten we de productie zodra je goedkeurt."
+msgstr "Tout est correct ? Nous lançons alors la production dès votre approbation."
+
+#: templates/admin/emails/plain/proof.php:48 templates/admin/emails/proof.php:96
+msgid "Ik keur goed"
+msgstr "J’approuve"
+
+#: templates/admin/emails/plain/proof.php:49 templates/admin/emails/proof.php:103
+msgid "Ik wil iets aanpassen"
+msgstr "Je veux modifier quelque chose"
+
+#: templates/admin/emails/plain/proof.php:50 templates/admin/emails/proof.php:109
+msgid "Pas na jouw akkoord starten we de productie. Garen- en drukkleuren kunnen licht afwijken van je scherm."
+msgstr "La production ne démarre qu’après votre accord. Les couleurs de fil et d’impression peuvent légèrement différer de votre écran."
+
+#. translators: %s: phone
+#. translators: %s: phone number
+#: templates/admin/emails/plain/proof.php:52 templates/admin/emails/proof.php:115
+msgid "Vragen? Antwoord gewoon op deze e-mail of bel %s."
+msgstr "Des questions ? Répondez simplement à cet e-mail ou appelez le %s."
+
+#. translators: %s: phone
+#: templates/admin/emails/plain/proof.php:52 templates/admin/emails/proof.php:116
+msgid "Vragen? Antwoord gewoon op deze e-mail."
+msgstr "Des questions ? Répondez simplement à cet e-mail."
+
+#. translators: %s: order number
+#: templates/admin/emails/proof-response.php:56
+msgid "Open bestelling #%s"
+msgstr "Ouvrir la commande n° %s"
+
+#. translators: %d: proof round
+#. translators: %d: round
+#: templates/admin/emails/proof.php:54 templates/admin/proof-response.php:106
+msgid "Proefronde %d"
+msgstr "Épreuve n° %d"
+
+#: templates/admin/fiche-card.php:20 templates/admin/fiche-print.php:24
+msgid "Belangrijk"
+msgstr "Important"
+
+#: templates/admin/fiche-card.php:21 templates/admin/fiche-print.php:25
+msgid "Let op"
+msgstr "Attention"
+
+#: templates/admin/fiche-card.php:48
+msgid "Het ontwerp werd intussen opgeruimd; je ziet de gegevens zoals ze bij de bestelling bewaard werden."
+msgstr "Le dessin a entre-temps été nettoyé ; vous voyez les données telles qu’elles ont été conservées avec la commande."
+
+#. translators: %s: design ref
+#. translators: %s: ref
+#: templates/admin/fiche-card.php:57 templates/admin/fiche-print.php:158
+msgid "Voorbeeld van patch %s"
+msgstr "Aperçu de l’écusson %s"
+
+#: templates/admin/fiche-card.php:60
+msgid "Geen voorbeeld beschikbaar"
+msgstr "Aucun aperçu disponible"
+
+#: templates/admin/fiche-card.php:65
+msgid "Voorbeeld uit de ontwerptool, zoals de klant het zag."
+msgstr "Aperçu de l’outil de conception, tel que le client l’a vu."
+
+#: templates/admin/fiche-card.php:71
+msgid "Origineel bestand downloaden"
+msgstr "Télécharger le fichier original"
+
+#: templates/admin/fiche-card.php:86
+msgid "Geen bestand: de klant ontwierp een patch met enkel tekst."
+msgstr "Pas de fichier : le client a conçu un écusson avec texte uniquement."
+
+#: templates/admin/fiche-card.php:88
+msgid "Het originele bestand is niet (meer) beschikbaar."
+msgstr "Le fichier original n’est pas (ou plus) disponible."
+
+#: templates/admin/fiche-card.php:92
+msgid "Fiche van deze patch afdrukken"
+msgstr "Imprimer la fiche de cet écusson"
+
+#: templates/admin/fiche-card.php:97
+msgid "Garencodes kopiëren"
+msgstr "Copier les codes de fil"
+
+#: templates/admin/fiche-card.php:134
+msgid "Geen aandachtspunten uit de automatische analyse. Kijk het bestand zoals altijd zelf na bij het digitaliseren."
+msgstr "Aucun point d’attention issu de l’analyse automatique. Vérifiez comme toujours le fichier vous-même lors de la digitalisation."
+
+#. translators: %s: order number
+#: templates/admin/fiche-print.php:29
+msgid "Productiefiche bestelling #%s"
+msgstr "Fiche de production commande n° %s"
+
+#: templates/admin/fiche-print.php:102
+msgid "Afdrukken"
+msgstr "Imprimer"
+
+#: templates/admin/fiche-print.php:103
+msgid "Terug naar de bestelling"
+msgstr "Retour à la commande"
+
+#: templates/admin/fiche-print.php:104
+msgid "Tip: druk af op 100 % (geen \"passend maken\"), dan klopt het voorbeeld op ware grootte."
+msgstr "Astuce : imprimez à 100 % (pas « ajuster à la page ») ; l’aperçu est alors en taille réelle."
+
+#: templates/admin/fiche-print.php:121
+msgid "Productiefiche"
+msgstr "Fiche de production"
+
+#. translators: %s: order number
+#: templates/admin/fiche-print.php:125 templates/admin/proof-response.php:102
+msgid "Bestelling #%s"
+msgstr "Commande n° %s"
+
+#: templates/admin/fiche-print.php:135
+msgid "QR-code naar de bestelling"
+msgstr "Code QR vers la commande"
+
+#: templates/admin/fiche-print.php:136
+msgid "Scan: open bestelling"
+msgstr "Scanner : ouvrir la commande"
+
+#: templates/admin/fiche-print.php:142
+msgid "Maat (b × h)"
+msgstr "Taille (l × h)"
+
+#: templates/admin/fiche-print.php:160
+msgid "Geen voorbeeld"
+msgstr "Pas d’aperçu"
+
+#: templates/admin/fiche-print.php:167
+msgid "± ware grootte (1:1) bij afdrukken op 100 %"
+msgstr "± taille réelle (1:1) à l’impression à 100 %"
+
+#. translators: %s: scale percentage
+#: templates/admin/fiche-print.php:169
+msgid "Verkleind tot %s %%"
+msgstr "Réduit à %s %%"
+
+#: templates/admin/fiche-print.php:249
+msgid "Werkvolgorde"
+msgstr "Ordre de travail"
+
+#: templates/admin/fiche-print.php:251
+msgid "Bestand nagekeken"
+msgstr "Fichier vérifié"
+
+#: templates/admin/fiche-print.php:252
+msgid "Gedigitaliseerd"
+msgstr "Digitalisé"
+
+#: templates/admin/fiche-print.php:252
+msgid "Drukbestand klaar"
+msgstr "Fichier d’impression prêt"
+
+#: templates/admin/fiche-print.php:253 templates/admin/proof-status.php:18
+msgid "Proef verstuurd"
+msgstr "Épreuve envoyée"
+
+#: templates/admin/fiche-print.php:255
+msgid "Geproduceerd"
+msgstr "Produit"
+
+#: templates/admin/fiche-print.php:256
+msgid "Gecontroleerd en verpakt"
+msgstr "Contrôlé et emballé"
+
+#: templates/admin/fiche-print.php:258
+msgid "Status proef:"
+msgstr "Statut de l’épreuve :"
+
+#. translators: %d: round
+#: templates/admin/fiche-print.php:261
+msgid "ronde %d"
+msgstr "n° %d"
+
+#. translators: %s: date
+#: templates/admin/fiche-print.php:267
+msgid "afgedrukt op %s"
+msgstr "imprimé le %s"
+
+#. translators: 1: page number, 2: total
+#: templates/admin/fiche-print.php:271
+msgid "Patch %1$d van %2$d"
+msgstr "Écusson %1$d sur %2$d"
+
+#. translators: %d: number of patches
+#: templates/admin/order-metabox.php:24
+msgid "%d patch op maat in deze bestelling. Alles wat het atelier nodig heeft staat hieronder."
+msgid_plural "%d patches op maat in deze bestelling. Alles wat het atelier nodig heeft staat hieronder."
+msgstr[0] "%d écusson sur mesure dans cette commande. Tout ce dont l’atelier a besoin figure ci-dessous."
+msgstr[1] "%d écussons sur mesure dans cette commande. Tout ce dont l’atelier a besoin figure ci-dessous."
+
+#: templates/admin/order-metabox.php:32
+msgid "Productiefiche afdrukken"
+msgstr "Imprimer la fiche de production"
+
+#: templates/admin/order-metabox.php:32
+msgid "Alle productiefiches afdrukken"
+msgstr "Imprimer toutes les fiches de production"
+
+#: templates/admin/order-metabox.php:54 templates/admin/proof-status.php:65
+msgid "Digitale proef versturen"
+msgstr "Envoyer l’épreuve numérique"
+
+#: templates/admin/order-metabox.php:57
+msgid "Proefafbeelding"
+msgstr "Image d’épreuve"
+
+#: templates/admin/order-metabox.php:59
+msgid "Andere afbeelding kiezen"
+msgstr "Choisir une autre image"
+
+#: templates/admin/order-metabox.php:60
+msgid "Terug naar het voorbeeld uit de tool"
+msgstr "Revenir à l’aperçu de l’outil"
+
+#: templates/admin/order-metabox.php:65
+msgid "Ontvanger"
+msgstr "Destinataire"
+
+#: templates/admin/order-metabox.php:69
+msgid "Bericht aan de klant"
+msgstr "Message au client"
+
+#: templates/admin/order-metabox.php:73
+msgid "De klant krijgt de afbeelding, een samenvatting van de patch en twee knoppen: \"Ik keur goed\" en \"Ik wil iets aanpassen\". Het antwoord verschijnt hier en als notitie bij de bestelling."
+msgstr "Le client reçoit l’image, un résumé de l’écusson et deux boutons : « J’approuve » et « Je veux modifier quelque chose ». La réponse apparaît ici et comme note sur la commande."
+
+#: templates/admin/order-metabox.php:78
+msgid "Annuleren"
+msgstr "Annuler"
+
+#: templates/admin/order-metabox.php:79
+msgid "Proef versturen"
+msgstr "Envoyer l’épreuve"
+
+#: templates/admin/proof-response.php:34
+msgid "Aanpassing vragen"
+msgstr "Demander une modification"
+
+#: templates/admin/proof-response.php:34
+msgid "Proef goedkeuren"
+msgstr "Approuver l’épreuve"
+
+#: templates/admin/proof-response.php:36
+msgid "Bedankt, we hebben je opmerking ontvangen"
+msgstr "Merci, nous avons bien reçu votre remarque"
+
+#: templates/admin/proof-response.php:36
+msgid "Bedankt, je proef is goedgekeurd"
+msgstr "Merci, votre épreuve est approuvée"
+
+#: templates/admin/proof-response.php:38
+msgid "Je reactie op de digitale proef"
+msgstr "Votre réaction à l’épreuve numérique"
+
+#: templates/admin/proof-response.php:40
+msgid "Er is intussen een nieuwere proef verstuurd"
+msgstr "Une épreuve plus récente a entre-temps été envoyée"
+
+#: templates/admin/proof-response.php:42
+msgid "Deze link werkt niet (meer)"
+msgstr "Ce lien ne fonctionne pas (ou plus)"
+
+#. translators: %s: design ref
+#: templates/admin/proof-response.php:99
+msgid "Patch %s"
+msgstr "Écusson %s"
+
+#: templates/admin/proof-response.php:132
+msgid "Bekijk je proef en bevestig hieronder. Pas na jouw akkoord starten we de productie."
+msgstr "Regardez votre épreuve et confirmez ci-dessous. La production ne démarre qu’après votre accord."
+
+#: templates/admin/proof-response.php:141
+msgid "Wat wil je aanpassen?"
+msgstr "Que souhaitez-vous modifier ?"
+
+#: templates/admin/proof-response.php:143
+msgid "Beschrijf zo concreet mogelijk wat er anders moet, bijvoorbeeld een kleur, de maat of een tekst."
+msgstr "Décrivez le plus concrètement possible ce qui doit changer, par exemple une couleur, la taille ou un texte."
+
+#: templates/admin/proof-response.php:144
+msgid "Verstuur mijn opmerking"
+msgstr "Envoyer ma remarque"
+
+#: templates/admin/proof-response.php:146
+msgid "Opmerking (optioneel)"
+msgstr "Remarque (facultative)"
+
+#: templates/admin/proof-response.php:149
+msgid "Ja, ik keur deze proef goed"
+msgstr "Oui, j’approuve cette épreuve"
+
+#: templates/admin/proof-response.php:155
+msgid "Toch goedkeuren"
+msgstr "Approuver quand même"
+
+#: templates/admin/proof-response.php:155
+msgid "Toch iets aanpassen"
+msgstr "Modifier quand même quelque chose"
+
+#: templates/admin/proof-response.php:168
+msgid "We passen je ontwerp aan en sturen je een nieuwe digitale proef."
+msgstr "Nous adaptons votre dessin et vous envoyons une nouvelle épreuve numérique."
+
+#: templates/admin/proof-response.php:169
+msgid "We starten de productie van je patch. Je hoort van ons zodra je bestelling onderweg is."
+msgstr "Nous lançons la production de votre écusson. Nous vous prévenons dès que votre commande est en route."
+
+#: templates/admin/proof-response.php:174
+msgid "Je opmerking"
+msgstr "Votre remarque"
+
+#. translators: %s: date
+#: templates/admin/proof-response.php:184
+msgid "Je hebt deze proef al goedgekeurd op %s."
+msgstr "Vous avez déjà approuvé cette épreuve le %s."
+
+#. translators: %s: date
+#: templates/admin/proof-response.php:187
+msgid "Je vroeg op %s een aanpassing. We sturen je een nieuwe proef."
+msgstr "Vous avez demandé une modification le %s. Nous vous envoyons une nouvelle épreuve."
+
+#: templates/admin/proof-response.php:191
+msgid "Wil je toch nog iets wijzigen? Neem dan contact met ons op."
+msgstr "Vous souhaitez quand même modifier quelque chose ? Contactez-nous."
+
+#: templates/admin/proof-response.php:194
+msgid "Gebruik de knoppen in de laatste e-mail met je digitale proef."
+msgstr "Utilisez les boutons du dernier e-mail contenant votre épreuve numérique."
+
+#: templates/admin/proof-response.php:197
+msgid "Controleer of je de volledige link uit de e-mail gebruikt, of neem contact met ons op."
+msgstr "Vérifiez que vous utilisez le lien complet de l’e-mail, ou contactez-nous."
+
+#: templates/admin/proof-response.php:216
+msgid "Terug naar de website"
+msgstr "Retour au site"
+
+#: templates/admin/proof-status.php:19
+msgid "Goedgekeurd door de klant"
+msgstr "Approuvée par le client"
+
+#: templates/admin/proof-status.php:20
+msgid "Aanpassing gevraagd door de klant"
+msgstr "Modification demandée par le client"
+
+#: templates/admin/proof-status.php:21
+msgid "Manueel op goedgekeurd gezet"
+msgstr "Mis manuellement sur approuvée"
+
+#: templates/admin/proof-status.php:22
+msgid "Manueel op \"aanpassing gevraagd\" gezet"
+msgstr "Mis manuellement sur « modification demandée »"
+
+#: templates/admin/proof-status.php:23
+msgid "Proefstatus manueel teruggezet"
+msgstr "Statut de l’épreuve réinitialisé manuellement"
+
+#. translators: 1: round, 2: date, 3: e-mail
+#: templates/admin/proof-status.php:35
+msgid "Ronde %1$d · verstuurd op %2$s %3$s"
+msgstr "N° %1$d · envoyée le %2$s %3$s"
+
+#. translators: %s: e-mail
+#: templates/admin/proof-status.php:35
+msgid "naar %s"
+msgstr "à %s"
+
+#. translators: %s: date
+#: templates/admin/proof-status.php:44
+msgid "Antwoord ontvangen op %s"
+msgstr "Réponse reçue le %s"
+
+#: templates/admin/proof-status.php:52
+msgid "De klant gaf akkoord: deze patch mag in productie."
+msgstr "Le client a donné son accord : cet écusson peut passer en production."
+
+#: templates/admin/proof-status.php:54
+msgid "Pas het ontwerp aan en stuur een nieuwe proef."
+msgstr "Adaptez le dessin et envoyez une nouvelle épreuve."
+
+#: templates/admin/proof-status.php:56
+msgid "Klaar met digitaliseren? Stuur de klant de proef ter goedkeuring. Pas na akkoord start de productie."
+msgstr "Digitalisation terminée ? Envoyez l’épreuve au client pour approbation. La production ne démarre qu’après accord."
+
+#: templates/admin/proof-status.php:65
+msgid "Nieuwe proef versturen"
+msgstr "Envoyer une nouvelle épreuve"
+
+#: templates/admin/proof-status.php:68
+msgid "Status manueel aanpassen"
+msgstr "Modifier le statut manuellement"
+
+#: templates/admin/proof-status.php:69
+msgid "Bijvoorbeeld als de klant telefonisch of per mail goedkeurde."
+msgstr "Par exemple si le client a approuvé par téléphone ou par e-mail."
+
+#: templates/admin/proof-status.php:71
+msgid "Nieuwe status"
+msgstr "Nouveau statut"
+
+#: templates/admin/proof-status.php:75
+msgid "Nog geen proef"
+msgstr "Pas encore d’épreuve"
+
+#: templates/admin/proof-status.php:79
+msgid "Notitie (optioneel)"
+msgstr "Note (facultative)"
+
+#: templates/admin/proof-status.php:82
+msgid "Status opslaan"
+msgstr "Enregistrer le statut"
+
+#: templates/admin/proof-status.php:85
+msgid "Het ontwerp bestaat niet meer; een proef versturen kan hier niet meer."
+msgstr "Le dessin n’existe plus ; il n’est plus possible d’envoyer une épreuve ici."
+
+#: templates/admin/proof-status.php:92
+msgid "Verstuurde proefafbeelding"
+msgstr "Image d’épreuve envoyée"
+
+#. translators: %d: number of events
+#: templates/admin/proof-status.php:101
+msgid "Geschiedenis (%d)"
+msgid_plural "Geschiedenis (%d)"
+msgstr[0] "Historique (%d)"
+msgstr[1] "Historique (%d)"
+
+#. translators: %d: round
+#: templates/admin/proof-status.php:117
+msgid "(ronde %d)"
+msgstr "(n° %d)"
+
+#: templates/admin/proof-status.php:121
+msgid "klant"
+msgstr "client"
+
+#: templates/emails/plain/quote-admin.php:26 templates/emails/quote-admin.php:30
+msgid "Gewenste techniek"
+msgstr "Technique souhaitée"
+
+#: templates/emails/plain/quote-admin.php:45 templates/emails/quote-admin.php:86
+msgid "Bekijk de aanvraag in WordPress"
+msgstr "Voir la demande dans WordPress"
+
+#. translators: %s: customer name
+#: templates/emails/plain/quote-customer.php:18 templates/emails/quote-customer.php:26
+msgid "Dag %s,"
+msgstr "Bonjour %s,"
+
+#. translators: %s: quote reference
+#: templates/emails/plain/quote-customer.php:20 templates/emails/quote-customer.php:32
+msgid "Bedankt voor je aanvraag. We hebben ze goed ontvangen onder referentie %s."
+msgstr "Merci pour votre demande. Nous l’avons bien reçue sous la référence %s."
+
+#: templates/emails/plain/quote-customer.php:22 templates/emails/quote-customer.php:41
+msgid "Onze vakman bekijkt je ontwerp en stuurt je een prijs op maat."
+msgstr "Notre spécialiste examine votre dessin et vous envoie un prix sur mesure."
+
+#: templates/emails/plain/quote-customer.php:23 templates/emails/quote-customer.php:42
+msgid "Ga je akkoord, dan krijg je een digitale proef van je patch."
+msgstr "Si vous êtes d’accord, vous recevez une épreuve numérique de votre écusson."
+
+#: templates/emails/plain/quote-customer.php:24 templates/emails/quote-customer.php:43
+msgid "Pas na jouw akkoord op de proef starten we de productie."
+msgstr "La production ne démarre qu’après votre accord sur l’épreuve."
+
+#: templates/emails/plain/quote-customer.php:25 templates/emails/quote-customer.php:45
+msgid "Een offerte is vrijblijvend. Je zit pas vast als je de offerte en daarna de digitale proef goedkeurt."
+msgstr "Le devis est sans engagement. Vous ne vous engagez qu’en acceptant le devis, puis l’épreuve numérique."
+
+#: templates/emails/plain/quote-customer.php:31 templates/emails/quote-customer.php:73
+msgid "Je bericht"
+msgstr "Votre message"
+
+#: templates/emails/plain/quote-customer.php:35 templates/emails/quote-customer.php:82
+msgid "Iets vergeten of een vraag? Antwoord gewoon op deze e-mail of contacteer ons:"
+msgstr "Un oubli ou une question ? Répondez simplement à cet e-mail ou contactez-nous :"
+
+#. translators: %s: design reference
+#: templates/emails/plain/save-design.php:27 templates/emails/save-design.php:32
+msgid "Hier is je patch-ontwerp %s. Je kan er op elk moment mee verder gaan: alles staat nog zoals je het achterliet."
+msgstr "Voici votre dessin d’écusson %s. Vous pouvez le reprendre à tout moment : tout est resté tel que vous l’avez laissé."
+
+#. translators: 1: total, 2: price per piece
+#: templates/emails/plain/save-design.php:34 templates/emails/plain/save-design.php:36 templates/emails/save-design.php:55
+msgid "Prijs"
+msgstr "Prix"
+
+#. translators: 1: total, 2: price per piece
+#: templates/emails/plain/save-design.php:34
+msgid "%1$s (%2$s per stuk, alles inbegrepen, incl. btw)"
+msgstr "%1$s (%2$s par pièce, tout compris, TVAC)"
+
+#: templates/emails/plain/save-design.php:36 templates/emails/save-design.php:65
+msgid "Prijs op aanvraag: we maken graag een offerte op maat."
+msgstr "Prix sur demande : nous établissons volontiers un devis sur mesure."
+
+#: templates/emails/plain/save-design.php:38 templates/emails/save-design.php:74
+msgid "Verder met mijn ontwerp"
+msgstr "Continuer mon dessin"
+
+#. translators: %d: number of days
+#: templates/emails/plain/save-design.php:40 templates/emails/save-design.php:81
+msgid "De link werkt %d dagen na je laatste bezoek. We mailen je enkel deze link: geen nieuwsbrief."
+msgstr "Le lien fonctionne %d jours après votre dernière visite. Nous vous envoyons uniquement ce lien : pas de newsletter."
+
+#: templates/emails/plain/save-design.php:41 templates/emails/save-design.php:85
+msgid "Je krijgt altijd eerst een digitale proef ter goedkeuring vóór we starten. Bestellen kan vanaf 1 stuk."
+msgstr "Vous recevez toujours d’abord une épreuve numérique à approuver avant que nous commencions. Commande possible à partir de 1 pièce."
+
+#: templates/emails/quote-admin.php:32
+msgid "Taal klant"
+msgstr "Langue du client"
+
+#. translators: 1: customer name, 2: quote reference
+#: templates/emails/quote-admin.php:40
+msgid "%1$s vraagt een prijs op maat (%2$s). Antwoord op deze e-mail om de klant rechtstreeks te bereiken."
+msgstr "%1$s demande un prix sur mesure (%2$s). Répondez à cet e-mail pour joindre directement le client."
+
+#: templates/emails/quote-admin.php:88
+msgid "De downloadknop werkt alleen als je in WordPress bent aangemeld."
+msgstr "Le bouton de téléchargement ne fonctionne que si vous êtes connecté à WordPress."
+
+#. translators: %s: price per piece
+#: templates/emails/save-design.php:61
+msgid "%s per stuk, alles inbegrepen"
+msgstr "%s par pièce, tout compris"
+
+#: templates/emails/save-design.php:63
+msgid "Incl. btw en eenmalige kosten. De verzending zie je in je winkelmand."
+msgstr "TVA et frais uniques compris. Vous voyez la livraison dans votre panier."
+
+#: templates/emails/save-design.php:87
+msgid "Vragen? Antwoord gewoon op deze e-mail of contacteer ons:"
+msgstr "Des questions ? Répondez simplement à cet e-mail ou contactez-nous :"

@@ -1,0 +1,1455 @@
+[
+ {
+  "name": "kassa: embroidered 4 cm x 1",
+  "input": {
+   "technique": "embroidered",
+   "sizeCm": 4,
+   "qty": 1,
+   "options": [
+    "cut_from_fabric",
+    "sew_on",
+    "thickness_normal"
+   ]
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": true,
+   "mode": "order",
+   "errors": [],
+   "unitExcl": 2.5,
+   "lineExcl": 2.5,
+   "lineIncl": 3.03,
+   "feesIncl": 54.45,
+   "extrasIncl": 0,
+   "subtotalIncl": 57.48,
+   "shippingIncl": 12.1,
+   "totalIncl": 69.58,
+   "perPieceAllInIncl": 57.48,
+   "tierDiscount": 0
+  }
+ },
+ {
+  "name": "kassa: embroidered 4 cm x 10",
+  "input": {
+   "technique": "embroidered",
+   "sizeCm": 4,
+   "qty": 10,
+   "options": [
+    "cut_from_fabric",
+    "sew_on",
+    "thickness_normal"
+   ]
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": true,
+   "mode": "order",
+   "errors": [],
+   "unitExcl": 2.375,
+   "lineExcl": 23.75,
+   "lineIncl": 28.74,
+   "feesIncl": 54.45,
+   "extrasIncl": 0,
+   "subtotalIncl": 83.19,
+   "shippingIncl": 12.1,
+   "totalIncl": 95.29,
+   "perPieceAllInIncl": 8.32,
+   "tierDiscount": 0.05
+  }
+ },
+ {
+  "name": "kassa: embroidered 12 cm x 1",
+  "input": {
+   "technique": "embroidered",
+   "sizeCm": 12,
+   "qty": 1,
+   "options": [
+    "cut_from_fabric",
+    "sew_on",
+    "thickness_normal"
+   ]
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": true,
+   "mode": "order",
+   "errors": [],
+   "unitExcl": 7.17,
+   "lineExcl": 7.17,
+   "lineIncl": 8.68,
+   "feesIncl": 54.45,
+   "extrasIncl": 0,
+   "subtotalIncl": 63.13,
+   "shippingIncl": 12.1,
+   "totalIncl": 75.23,
+   "perPieceAllInIncl": 63.13,
+   "tierDiscount": 0
+  }
+ },
+ {
+  "name": "kassa: embroidered 10 cm x 25 + iron_on + on_film",
+  "note": "230.175 must round to 230.18 (float-noise-proof half-up)",
+  "input": {
+   "technique": "embroidered",
+   "sizeCm": 10,
+   "qty": 25,
+   "options": [
+    "on_film",
+    "iron_on",
+    "thickness_normal"
+   ]
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": true,
+   "mode": "order",
+   "errors": [],
+   "unitExcl": 9.207,
+   "lineExcl": 230.18,
+   "lineIncl": 278.52,
+   "feesIncl": 54.45,
+   "extrasIncl": 0,
+   "subtotalIncl": 332.97,
+   "shippingIncl": 0,
+   "totalIncl": 332.97,
+   "perPieceAllInIncl": 13.32,
+   "tierDiscount": 0.1,
+   "shipping.free": true
+  }
+ },
+ {
+  "name": "kassa: printed 4 cm x 1",
+  "input": {
+   "technique": "printed",
+   "sizeCm": 4,
+   "qty": 1,
+   "options": [
+    "embroidered_border",
+    "sew_on",
+    "thickness_normal"
+   ]
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": true,
+   "mode": "order",
+   "errors": [],
+   "unitExcl": 3.5,
+   "lineExcl": 3.5,
+   "lineIncl": 4.24,
+   "feesIncl": 24.2,
+   "extrasIncl": 0,
+   "subtotalIncl": 28.44,
+   "shippingIncl": 12.1,
+   "totalIncl": 40.54,
+   "perPieceAllInIncl": 28.44,
+   "tierDiscount": 0
+  }
+ },
+ {
+  "name": "kassa: printed 4 cm x 10",
+  "input": {
+   "technique": "printed",
+   "sizeCm": 4,
+   "qty": 10,
+   "options": [
+    "embroidered_border",
+    "sew_on",
+    "thickness_normal"
+   ]
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": true,
+   "mode": "order",
+   "errors": [],
+   "unitExcl": 3.325,
+   "lineExcl": 33.25,
+   "lineIncl": 40.23,
+   "feesIncl": 24.2,
+   "extrasIncl": 0,
+   "subtotalIncl": 64.43,
+   "shippingIncl": 12.1,
+   "totalIncl": 76.53,
+   "perPieceAllInIncl": 6.44,
+   "tierDiscount": 0.05
+  }
+ },
+ {
+  "name": "kassa: sublimated 4 cm x 1 carrier_standard",
+  "input": {
+   "technique": "sublimated",
+   "sizeCm": 4,
+   "qty": 1,
+   "options": [
+    "embroidered_border",
+    "sew_on",
+    "thickness_normal",
+    "carrier_standard"
+   ]
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": true,
+   "mode": "order",
+   "errors": [],
+   "unitExcl": 2.5,
+   "lineExcl": 2.5,
+   "lineIncl": 3.03,
+   "feesIncl": 24.2,
+   "extrasIncl": 0,
+   "subtotalIncl": 27.23,
+   "shippingIncl": 12.1,
+   "totalIncl": 39.33,
+   "perPieceAllInIncl": 27.23,
+   "tierDiscount": 0
+  }
+ },
+ {
+  "name": "kassa: pvc 4 cm x 50",
+  "input": {
+   "technique": "pvc",
+   "sizeCm": 4,
+   "qty": 50,
+   "options": [
+    "molded",
+    "sew_on"
+   ]
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": true,
+   "mode": "order",
+   "errors": [],
+   "unitExcl": 2.55,
+   "lineExcl": 127.5,
+   "lineIncl": 154.28,
+   "feesIncl": 96.8,
+   "extrasIncl": 0,
+   "subtotalIncl": 251.08,
+   "shippingIncl": 0,
+   "totalIncl": 251.08,
+   "perPieceAllInIncl": 5.02,
+   "tierDiscount": 0.15
+  }
+ },
+ {
+  "name": "kassa: pvc 8 cm x 100 + velcro_hook (PVC price 1.00)",
+  "input": {
+   "technique": "pvc",
+   "sizeCm": 8,
+   "qty": 100,
+   "options": [
+    "molded",
+    "velcro_hook"
+   ]
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": true,
+   "mode": "order",
+   "errors": [],
+   "unitExcl": 4.8,
+   "lineExcl": 480,
+   "lineIncl": 580.8,
+   "feesIncl": 96.8,
+   "extrasIncl": 0,
+   "subtotalIncl": 677.6,
+   "shippingIncl": 0,
+   "totalIncl": 677.6,
+   "perPieceAllInIncl": 6.78,
+   "tierDiscount": 0.2
+  }
+ },
+ {
+  "name": "7 cm is priced as 8 cm",
+  "input": {
+   "technique": "embroidered",
+   "sizeCm": 7,
+   "qty": 10,
+   "options": [
+    "cut_from_fabric",
+    "sew_on",
+    "thickness_normal"
+   ]
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": true,
+   "mode": "order",
+   "errors": [],
+   "unitExcl": 4.94,
+   "lineExcl": 49.4,
+   "lineIncl": 59.77,
+   "feesIncl": 54.45,
+   "extrasIncl": 0,
+   "subtotalIncl": 114.22,
+   "shippingIncl": 12.1,
+   "totalIncl": 126.32,
+   "perPieceAllInIncl": 11.42,
+   "tierDiscount": 0.05,
+   "pricedSizeCm": 8
+  }
+ },
+ {
+  "name": "7.5 cm label uses decimal comma",
+  "input": {
+   "technique": "embroidered",
+   "sizeCm": 7.5,
+   "qty": 10,
+   "options": [
+    "cut_from_fabric",
+    "sew_on",
+    "thickness_normal"
+   ]
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": true,
+   "mode": "order",
+   "errors": [],
+   "unitExcl": 4.94,
+   "lineExcl": 49.4,
+   "lineIncl": 59.77,
+   "feesIncl": 54.45,
+   "extrasIncl": 0,
+   "subtotalIncl": 114.22,
+   "shippingIncl": 12.1,
+   "totalIncl": 126.32,
+   "perPieceAllInIncl": 11.42,
+   "tierDiscount": 0.05,
+   "pricedSizeCm": 8,
+   "breakdown.0.label": "10 × Geborduurd 7,5 cm",
+   "breakdown.1.label": "Borduurkaart en instelkosten (eenmalig)",
+   "breakdown.2.label": "Verzending (schatting)"
+  }
+ },
+ {
+  "name": "13 cm -> quote (size_too_large)",
+  "input": {
+   "technique": "embroidered",
+   "sizeCm": 13,
+   "qty": 10,
+   "options": [
+    "cut_from_fabric",
+    "sew_on",
+    "thickness_normal"
+   ]
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": false,
+   "mode": "quote",
+   "errors": [
+    "size_too_large"
+   ],
+   "errors.0.params.max": 12,
+   "unitExcl": 0,
+   "lineExcl": 0,
+   "lineIncl": 0,
+   "feesIncl": 0,
+   "extrasIncl": 0,
+   "subtotalIncl": 0,
+   "shippingIncl": 0,
+   "totalIncl": 0,
+   "perPieceAllInIncl": 0,
+   "tierDiscount": 0
+  }
+ },
+ {
+  "name": "woven -> quote_only",
+  "input": {
+   "technique": "woven",
+   "sizeCm": 8,
+   "qty": 100,
+   "options": [
+    "merrow",
+    "sew_on"
+   ]
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": false,
+   "mode": "quote",
+   "errors": [
+    "quote_only"
+   ],
+   "unitExcl": 0,
+   "lineExcl": 0,
+   "lineIncl": 0,
+   "feesIncl": 0,
+   "extrasIncl": 0,
+   "subtotalIncl": 0,
+   "shippingIncl": 0,
+   "totalIncl": 0,
+   "perPieceAllInIncl": 0,
+   "tierDiscount": 0
+  }
+ },
+ {
+  "name": "unknown technique",
+  "input": {
+   "technique": "glitter",
+   "sizeCm": 8,
+   "qty": 10,
+   "options": []
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": false,
+   "mode": "order",
+   "errors": [
+    "unknown_technique"
+   ],
+   "unitExcl": 0,
+   "lineExcl": 0,
+   "lineIncl": 0,
+   "feesIncl": 0,
+   "extrasIncl": 0,
+   "subtotalIncl": 0,
+   "shippingIncl": 0,
+   "totalIncl": 0,
+   "perPieceAllInIncl": 0,
+   "tierDiscount": 0
+  }
+ },
+ {
+  "name": "3 cm -> size_too_small",
+  "input": {
+   "technique": "embroidered",
+   "sizeCm": 3,
+   "qty": 10,
+   "options": [
+    "cut_from_fabric",
+    "sew_on",
+    "thickness_normal"
+   ]
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": false,
+   "mode": "order",
+   "errors": [
+    "size_too_small"
+   ],
+   "errors.0.params.min": 4,
+   "unitExcl": 0,
+   "lineExcl": 0,
+   "lineIncl": 0,
+   "feesIncl": 0,
+   "extrasIncl": 0,
+   "subtotalIncl": 0,
+   "shippingIncl": 0,
+   "totalIncl": 0,
+   "perPieceAllInIncl": 0,
+   "tierDiscount": 0
+  }
+ },
+ {
+  "name": "qty 0 -> below_min_qty, no amounts",
+  "input": {
+   "technique": "embroidered",
+   "sizeCm": 8,
+   "qty": 0,
+   "options": [
+    "cut_from_fabric",
+    "sew_on",
+    "thickness_normal"
+   ]
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": false,
+   "mode": "order",
+   "errors": [
+    "below_min_qty"
+   ],
+   "unitExcl": 0,
+   "lineExcl": 0,
+   "lineIncl": 0,
+   "feesIncl": 0,
+   "extrasIncl": 0,
+   "subtotalIncl": 0,
+   "shippingIncl": 0,
+   "totalIncl": 0,
+   "perPieceAllInIncl": 0,
+   "tierDiscount": 0
+  }
+ },
+ {
+  "name": "pvc x 40 -> below_min_qty (price still shown for 40)",
+  "input": {
+   "technique": "pvc",
+   "sizeCm": 4,
+   "qty": 40,
+   "options": [
+    "molded",
+    "sew_on"
+   ]
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": false,
+   "mode": "order",
+   "errors": [
+    "below_min_qty"
+   ],
+   "unitExcl": 2.7,
+   "lineExcl": 108,
+   "lineIncl": 130.68,
+   "feesIncl": 96.8,
+   "extrasIncl": 0,
+   "subtotalIncl": 227.48,
+   "shippingIncl": 12.1,
+   "totalIncl": 239.58,
+   "perPieceAllInIncl": 5.69,
+   "tierDiscount": 0.1,
+   "errors.0.params.min": 50
+  }
+ },
+ {
+  "name": "pvc x 55 -> qty_step",
+  "input": {
+   "technique": "pvc",
+   "sizeCm": 4,
+   "qty": 55,
+   "options": [
+    "molded",
+    "sew_on"
+   ]
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": false,
+   "mode": "order",
+   "errors": [
+    "qty_step"
+   ],
+   "unitExcl": 2.55,
+   "lineExcl": 140.25,
+   "lineIncl": 169.7,
+   "feesIncl": 96.8,
+   "extrasIncl": 0,
+   "subtotalIncl": 266.5,
+   "shippingIncl": 0,
+   "totalIncl": 266.5,
+   "perPieceAllInIncl": 4.85,
+   "tierDiscount": 0.15,
+   "errors.0.params.step": 10
+  }
+ },
+ {
+  "name": "self_cut -10 % combined with tier",
+  "note": "108.25/10 = 10.825 -> 10.83",
+  "input": {
+   "technique": "embroidered",
+   "sizeCm": 8,
+   "qty": 10,
+   "options": [
+    "self_cut",
+    "sew_on",
+    "thickness_normal"
+   ]
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": true,
+   "mode": "order",
+   "errors": [],
+   "unitExcl": 4.446,
+   "lineExcl": 44.46,
+   "lineIncl": 53.8,
+   "feesIncl": 54.45,
+   "extrasIncl": 0,
+   "subtotalIncl": 108.25,
+   "shippingIncl": 12.1,
+   "totalIncl": 120.35,
+   "perPieceAllInIncl": 10.83,
+   "tierDiscount": 0.05
+  }
+ },
+ {
+  "name": "flock is per_line (once per line)",
+  "input": {
+   "technique": "sublimated",
+   "sizeCm": 4,
+   "qty": 10,
+   "options": [
+    "embroidered_border",
+    "sew_on",
+    "thickness_normal",
+    "carrier_flock"
+   ]
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": true,
+   "mode": "order",
+   "errors": [],
+   "unitExcl": 2.5,
+   "lineExcl": 25,
+   "lineIncl": 30.25,
+   "feesIncl": 24.2,
+   "extrasIncl": 0.91,
+   "subtotalIncl": 55.36,
+   "shippingIncl": 12.1,
+   "totalIncl": 67.46,
+   "perPieceAllInIncl": 5.54,
+   "tierDiscount": 0,
+   "extras.0.key": "extra:carrier_flock"
+  }
+ },
+ {
+  "name": "extras: thread roll + curved scissors",
+  "input": {
+   "technique": "embroidered",
+   "sizeCm": 8,
+   "qty": 1,
+   "options": [
+    "cut_from_fabric",
+    "sew_on",
+    "thickness_normal",
+    "thread_roll_black",
+    "scissors_curved"
+   ]
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": true,
+   "mode": "order",
+   "errors": [],
+   "unitExcl": 5.2,
+   "lineExcl": 5.2,
+   "lineIncl": 6.29,
+   "feesIncl": 54.45,
+   "extrasIncl": 36.3,
+   "subtotalIncl": 97.04,
+   "shippingIncl": 12.1,
+   "totalIncl": 109.14,
+   "perPieceAllInIncl": 97.04,
+   "tierDiscount": 0
+  }
+ },
+ {
+  "name": "poolQty 15 + qty 10 -> 10 % tier",
+  "input": {
+   "technique": "embroidered",
+   "sizeCm": 8,
+   "qty": 10,
+   "options": [
+    "cut_from_fabric",
+    "sew_on",
+    "thickness_normal"
+   ],
+   "poolQty": 15
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": true,
+   "mode": "order",
+   "errors": [],
+   "unitExcl": 4.68,
+   "lineExcl": 46.8,
+   "lineIncl": 56.63,
+   "feesIncl": 54.45,
+   "extrasIncl": 0,
+   "subtotalIncl": 111.08,
+   "shippingIncl": 12.1,
+   "totalIncl": 123.18,
+   "perPieceAllInIncl": 11.11,
+   "tierDiscount": 0.1,
+   "tierQty": 25
+  }
+ },
+ {
+  "name": "pool disabled by config",
+  "input": {
+   "technique": "embroidered",
+   "sizeCm": 8,
+   "qty": 10,
+   "options": [
+    "cut_from_fabric",
+    "sew_on",
+    "thickness_normal"
+   ],
+   "poolQty": 15
+  },
+  "configOverrides": {
+   "tiers": {
+    "pooled": false
+   }
+  },
+  "expect": {
+   "ok": true,
+   "mode": "order",
+   "errors": [],
+   "unitExcl": 4.94,
+   "lineExcl": 49.4,
+   "lineIncl": 59.77,
+   "feesIncl": 54.45,
+   "extrasIncl": 0,
+   "subtotalIncl": 114.22,
+   "shippingIncl": 12.1,
+   "totalIncl": 126.32,
+   "perPieceAllInIncl": 11.42,
+   "tierDiscount": 0.05,
+   "tierQty": 10
+  }
+ },
+ {
+  "name": "sublimated x 100 -> no tier discount",
+  "input": {
+   "technique": "sublimated",
+   "sizeCm": 8,
+   "qty": 100,
+   "options": [
+    "embroidered_border",
+    "sew_on",
+    "thickness_normal",
+    "carrier_standard"
+   ],
+   "poolQty": 50
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": true,
+   "mode": "order",
+   "errors": [],
+   "unitExcl": 4,
+   "lineExcl": 400,
+   "lineIncl": 484,
+   "feesIncl": 24.2,
+   "extrasIncl": 0,
+   "subtotalIncl": 508.2,
+   "shippingIncl": 0,
+   "totalIncl": 508.2,
+   "perPieceAllInIncl": 5.08,
+   "tierDiscount": 0,
+   "nextTier": null,
+   "ladder": []
+  }
+ },
+ {
+  "name": "feesAlreadyCharged skips the fee",
+  "input": {
+   "technique": "embroidered",
+   "sizeCm": 4,
+   "qty": 1,
+   "options": [
+    "cut_from_fabric",
+    "sew_on",
+    "thickness_normal"
+   ],
+   "feesAlreadyCharged": [
+    "embroidery"
+   ]
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": true,
+   "mode": "order",
+   "errors": [],
+   "unitExcl": 2.5,
+   "lineExcl": 2.5,
+   "lineIncl": 3.03,
+   "feesIncl": 0,
+   "extrasIncl": 0,
+   "subtotalIncl": 3.03,
+   "shippingIncl": 12.1,
+   "totalIncl": 15.13,
+   "perPieceAllInIncl": 3.03,
+   "tierDiscount": 0,
+   "fees": []
+  }
+ },
+ {
+  "name": "other cart items make shipping free",
+  "input": {
+   "technique": "embroidered",
+   "sizeCm": 4,
+   "qty": 10,
+   "options": [
+    "cut_from_fabric",
+    "sew_on",
+    "thickness_normal"
+   ],
+   "otherItemsInclVat": 140
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": true,
+   "mode": "order",
+   "errors": [],
+   "unitExcl": 2.375,
+   "lineExcl": 23.75,
+   "lineIncl": 28.74,
+   "feesIncl": 54.45,
+   "extrasIncl": 0,
+   "subtotalIncl": 83.19,
+   "shippingIncl": 0,
+   "totalIncl": 83.19,
+   "perPieceAllInIncl": 8.32,
+   "tierDiscount": 0.05,
+   "shipping.remainingForFreeInclVat": null
+  }
+ },
+ {
+  "name": "shipping hint: remaining for free shipping",
+  "input": {
+   "technique": "embroidered",
+   "sizeCm": 4,
+   "qty": 1,
+   "options": [
+    "cut_from_fabric",
+    "sew_on",
+    "thickness_normal"
+   ]
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": true,
+   "mode": "order",
+   "errors": [],
+   "unitExcl": 2.5,
+   "lineExcl": 2.5,
+   "lineIncl": 3.03,
+   "feesIncl": 54.45,
+   "extrasIncl": 0,
+   "subtotalIncl": 57.48,
+   "shippingIncl": 12.1,
+   "totalIncl": 69.58,
+   "perPieceAllInIncl": 57.48,
+   "tierDiscount": 0,
+   "shipping.remainingForFreeInclVat": 146.97
+  }
+ },
+ {
+  "name": "velcro hook + colour + counterpart",
+  "input": {
+   "technique": "embroidered",
+   "sizeCm": 8,
+   "qty": 1,
+   "options": [
+    "cut_from_fabric",
+    "velcro_hook",
+    "velcro_black",
+    "velcro_counterpart",
+    "thickness_normal"
+   ]
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": true,
+   "mode": "order",
+   "errors": [],
+   "unitExcl": 9.2,
+   "lineExcl": 9.2,
+   "lineIncl": 11.13,
+   "feesIncl": 54.45,
+   "extrasIncl": 0,
+   "subtotalIncl": 65.58,
+   "shippingIncl": 12.1,
+   "totalIncl": 77.68,
+   "perPieceAllInIncl": 65.58,
+   "tierDiscount": 0
+  }
+ },
+ {
+  "name": "velcro colour without velcro is dropped silently",
+  "input": {
+   "technique": "embroidered",
+   "sizeCm": 8,
+   "qty": 1,
+   "options": [
+    "cut_from_fabric",
+    "sew_on",
+    "velcro_white",
+    "thickness_normal"
+   ]
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": true,
+   "mode": "order",
+   "errors": [],
+   "unitExcl": 5.2,
+   "lineExcl": 5.2,
+   "lineIncl": 6.29,
+   "feesIncl": 54.45,
+   "extrasIncl": 0,
+   "subtotalIncl": 60.74,
+   "shippingIncl": 12.1,
+   "totalIncl": 72.84,
+   "perPieceAllInIncl": 60.74,
+   "tierDiscount": 0,
+   "options": [
+    "cut_from_fabric",
+    "sew_on",
+    "thickness_normal"
+   ]
+  }
+ },
+ {
+  "name": "velcro without colour -> missing_required_option",
+  "input": {
+   "technique": "embroidered",
+   "sizeCm": 8,
+   "qty": 1,
+   "options": [
+    "cut_from_fabric",
+    "velcro_hook",
+    "thickness_normal"
+   ]
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": false,
+   "mode": "order",
+   "errors": [
+    "missing_required_option"
+   ],
+   "errors.0.params.group": "velcro_color",
+   "unitExcl": 7.2,
+   "totalIncl": 75.26
+  }
+ },
+ {
+  "name": "missing edge and thickness",
+  "input": {
+   "technique": "embroidered",
+   "sizeCm": 8,
+   "qty": 1,
+   "options": [
+    "sew_on"
+   ]
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": false,
+   "mode": "order",
+   "errors": [
+    "missing_required_option",
+    "missing_required_option"
+   ],
+   "errors.0.params.group": "edge",
+   "errors.1.params.group": "thickness",
+   "unitExcl": 5.2
+  }
+ },
+ {
+  "name": "two edges -> option_conflict",
+  "input": {
+   "technique": "embroidered",
+   "sizeCm": 8,
+   "qty": 1,
+   "options": [
+    "cut_from_fabric",
+    "on_film",
+    "sew_on",
+    "thickness_normal"
+   ]
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": false,
+   "mode": "order",
+   "errors": [
+    "option_conflict"
+   ],
+   "errors.0.params.group": "edge"
+  }
+ },
+ {
+  "name": "option of another technique -> invalid_option",
+  "input": {
+   "technique": "printed",
+   "sizeCm": 4,
+   "qty": 1,
+   "options": [
+    "embroidered_border",
+    "sew_on",
+    "thickness_normal",
+    "on_film"
+   ]
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": false,
+   "mode": "order",
+   "errors": [
+    "invalid_option"
+   ],
+   "errors.0.params.id": "on_film",
+   "unitExcl": 3.5,
+   "totalIncl": 40.54
+  }
+ },
+ {
+  "name": "no priced size above 10 cm -> quote_only",
+  "input": {
+   "technique": "embroidered",
+   "sizeCm": 11,
+   "qty": 10,
+   "options": [
+    "cut_from_fabric",
+    "sew_on",
+    "thickness_normal"
+   ]
+  },
+  "configOverrides": {
+   "sizes": {
+    "pricedCm": [
+     4,
+     6,
+     8,
+     10
+    ]
+   }
+  },
+  "expect": {
+   "ok": false,
+   "mode": "quote",
+   "errors": [
+    "quote_only"
+   ],
+   "unitExcl": 0,
+   "lineExcl": 0,
+   "lineIncl": 0,
+   "feesIncl": 0,
+   "extrasIncl": 0,
+   "subtotalIncl": 0,
+   "shippingIncl": 0,
+   "totalIncl": 0,
+   "perPieceAllInIncl": 0,
+   "tierDiscount": 0
+  }
+ },
+ {
+  "name": "french labels",
+  "input": {
+   "technique": "embroidered",
+   "sizeCm": 4,
+   "qty": 1,
+   "options": [
+    "cut_from_fabric",
+    "sew_on",
+    "thickness_normal"
+   ],
+   "locale": "fr-BE"
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": true,
+   "mode": "order",
+   "errors": [],
+   "unitExcl": 2.5,
+   "lineExcl": 2.5,
+   "lineIncl": 3.03,
+   "feesIncl": 54.45,
+   "extrasIncl": 0,
+   "subtotalIncl": 57.48,
+   "shippingIncl": 12.1,
+   "totalIncl": 69.58,
+   "perPieceAllInIncl": 57.48,
+   "tierDiscount": 0,
+   "breakdown.0.label": "1 × Brodé 4 cm",
+   "breakdown.1.label": "Programme de broderie et frais de mise en route (unique)",
+   "breakdown.2.label": "Livraison (estimation)"
+  }
+ },
+ {
+  "name": "free shipping label",
+  "input": {
+   "technique": "pvc",
+   "sizeCm": 4,
+   "qty": 50,
+   "options": [
+    "molded",
+    "sew_on"
+   ]
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": true,
+   "mode": "order",
+   "errors": [],
+   "unitExcl": 2.55,
+   "lineExcl": 127.5,
+   "lineIncl": 154.28,
+   "feesIncl": 96.8,
+   "extrasIncl": 0,
+   "subtotalIncl": 251.08,
+   "shippingIncl": 0,
+   "totalIncl": 251.08,
+   "perPieceAllInIncl": 5.02,
+   "tierDiscount": 0.15,
+   "breakdown.2.label": "Verzending: gratis"
+  }
+ },
+ {
+  "name": "next tier: pvc 60 -> 100",
+  "input": {
+   "technique": "pvc",
+   "sizeCm": 4,
+   "qty": 60,
+   "options": [
+    "molded",
+    "sew_on"
+   ]
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": true,
+   "mode": "order",
+   "errors": [],
+   "unitExcl": 2.55,
+   "lineExcl": 153,
+   "lineIncl": 185.13,
+   "feesIncl": 96.8,
+   "extrasIncl": 0,
+   "subtotalIncl": 281.93,
+   "shippingIncl": 0,
+   "totalIncl": 281.93,
+   "perPieceAllInIncl": 4.7,
+   "tierDiscount": 0.15,
+   "unitIncl": 3.09,
+   "nextTier.qty": 100,
+   "nextTier.min": 100,
+   "nextTier.unitIncl": 2.9,
+   "nextTier.totalIncl": 387.2,
+   "nextTier.savingPerPieceIncl": 0.19,
+   "nextTier.extraCostIncl": 105.27,
+   "nextTier.withinReach": true,
+   "ladder.0.min": 50,
+   "ladder.1.min": 100,
+   "ladder.2": null
+  }
+ },
+ {
+  "name": "next tier cheaper in total: 24 -> 25 pieces",
+  "note": "SPEC example: 'Bij 25 stuks betaal je EUR 5,66 per stuk (nu EUR 5,98)'; 25 pieces are even cheaper in total than 24",
+  "input": {
+   "technique": "embroidered",
+   "sizeCm": 8,
+   "qty": 24,
+   "options": [
+    "cut_from_fabric",
+    "sew_on",
+    "thickness_normal"
+   ]
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": true,
+   "mode": "order",
+   "errors": [],
+   "unitExcl": 4.94,
+   "lineExcl": 118.56,
+   "lineIncl": 143.46,
+   "feesIncl": 54.45,
+   "extrasIncl": 0,
+   "subtotalIncl": 197.91,
+   "shippingIncl": 12.1,
+   "totalIncl": 210.01,
+   "perPieceAllInIncl": 8.25,
+   "tierDiscount": 0.05,
+   "unitIncl": 5.98,
+   "nextTier.qty": 25,
+   "nextTier.unitIncl": 5.66,
+   "nextTier.totalIncl": 208.12,
+   "nextTier.savingPerPieceIncl": 0.32,
+   "nextTier.extraCostIncl": -1.89,
+   "nextTier.extraPieces": 1
+  }
+ },
+ {
+  "name": "next tier with pool: qty is min - pool",
+  "input": {
+   "technique": "embroidered",
+   "sizeCm": 8,
+   "qty": 10,
+   "options": [
+    "cut_from_fabric",
+    "sew_on",
+    "thickness_normal"
+   ],
+   "poolQty": 12
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": true,
+   "mode": "order",
+   "errors": [],
+   "unitExcl": 4.94,
+   "lineExcl": 49.4,
+   "lineIncl": 59.77,
+   "feesIncl": 54.45,
+   "extrasIncl": 0,
+   "subtotalIncl": 114.22,
+   "shippingIncl": 12.1,
+   "totalIncl": 126.32,
+   "perPieceAllInIncl": 11.42,
+   "tierDiscount": 0.05,
+   "nextTier.min": 25,
+   "nextTier.qty": 13,
+   "nextTier.discount": 0.1,
+   "tierQty": 22
+  }
+ },
+ {
+  "name": "withLadder false -> no ladder, no next tier",
+  "input": {
+   "technique": "embroidered",
+   "sizeCm": 8,
+   "qty": 10,
+   "options": [
+    "cut_from_fabric",
+    "sew_on",
+    "thickness_normal"
+   ],
+   "withLadder": false
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": true,
+   "mode": "order",
+   "errors": [],
+   "unitExcl": 4.94,
+   "lineExcl": 49.4,
+   "lineIncl": 59.77,
+   "feesIncl": 54.45,
+   "extrasIncl": 0,
+   "subtotalIncl": 114.22,
+   "shippingIncl": 12.1,
+   "totalIncl": 126.32,
+   "perPieceAllInIncl": 11.42,
+   "tierDiscount": 0.05,
+   "ladder": [],
+   "nextTier": null
+  }
+ },
+ {
+  "name": "ladder for embroidered 8 cm x 10",
+  "input": {
+   "technique": "embroidered",
+   "sizeCm": 8,
+   "qty": 10,
+   "options": [
+    "cut_from_fabric",
+    "sew_on",
+    "thickness_normal"
+   ]
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": true,
+   "mode": "order",
+   "errors": [],
+   "unitExcl": 4.94,
+   "lineExcl": 49.4,
+   "lineIncl": 59.77,
+   "feesIncl": 54.45,
+   "extrasIncl": 0,
+   "subtotalIncl": 114.22,
+   "shippingIncl": 12.1,
+   "totalIncl": 126.32,
+   "perPieceAllInIncl": 11.42,
+   "tierDiscount": 0.05,
+   "ladder.0.min": 1,
+   "ladder.0.unitIncl": 6.29,
+   "ladder.1.min": 10,
+   "ladder.1.unitIncl": 5.98,
+   "ladder.1.current": true,
+   "ladder.2.min": 25,
+   "ladder.2.unitIncl": 5.66,
+   "ladder.3.min": 50,
+   "ladder.4.min": 100,
+   "ladder.4.discount": 0.2,
+   "nextTier.qty": 25
+  }
+ },
+ {
+  "name": "thick + extra option per piece",
+  "input": {
+   "technique": "printed",
+   "sizeCm": 6,
+   "qty": 25,
+   "options": [
+    "embroidered_border",
+    "iron_on",
+    "thick"
+   ]
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": true,
+   "mode": "order",
+   "errors": [],
+   "unitExcl": 6.3,
+   "lineExcl": 157.5,
+   "lineIncl": 190.58,
+   "feesIncl": 24.2,
+   "extrasIncl": 0,
+   "subtotalIncl": 214.78,
+   "shippingIncl": 0,
+   "totalIncl": 214.78,
+   "perPieceAllInIncl": 8.59,
+   "tierDiscount": 0.1
+  }
+ },
+ {
+  "name": "vat override 0 %",
+  "input": {
+   "technique": "embroidered",
+   "sizeCm": 4,
+   "qty": 1,
+   "options": [
+    "cut_from_fabric",
+    "sew_on",
+    "thickness_normal"
+   ]
+  },
+  "configOverrides": {
+   "vat": {
+    "rate": 0
+   }
+  },
+  "expect": {
+   "ok": true,
+   "mode": "order",
+   "errors": [],
+   "unitExcl": 2.5,
+   "lineExcl": 2.5,
+   "lineIncl": 2.5,
+   "feesIncl": 45,
+   "extrasIncl": 0,
+   "subtotalIncl": 47.5,
+   "shippingIncl": 10,
+   "totalIncl": 57.5,
+   "perPieceAllInIncl": 47.5,
+   "tierDiscount": 0
+  }
+ },
+ {
+  "name": "string numbers are accepted",
+  "input": {
+   "technique": "embroidered",
+   "sizeCm": "4",
+   "qty": "10",
+   "options": [
+    "cut_from_fabric",
+    "sew_on",
+    "thickness_normal"
+   ]
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": true,
+   "mode": "order",
+   "errors": [],
+   "unitExcl": 2.375,
+   "lineExcl": 23.75,
+   "lineIncl": 28.74,
+   "feesIncl": 54.45,
+   "extrasIncl": 0,
+   "subtotalIncl": 83.19,
+   "shippingIncl": 12.1,
+   "totalIncl": 95.29,
+   "perPieceAllInIncl": 8.32,
+   "tierDiscount": 0.05
+  }
+ },
+ {
+  "name": "duplicate options count once",
+  "input": {
+   "technique": "embroidered",
+   "sizeCm": 4,
+   "qty": 1,
+   "options": [
+    "cut_from_fabric",
+    "sew_on",
+    "thickness_normal",
+    "sew_on",
+    "cut_from_fabric"
+   ]
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": true,
+   "mode": "order",
+   "errors": [],
+   "unitExcl": 2.5,
+   "lineExcl": 2.5,
+   "lineIncl": 3.03,
+   "feesIncl": 54.45,
+   "extrasIncl": 0,
+   "subtotalIncl": 57.48,
+   "shippingIncl": 12.1,
+   "totalIncl": 69.58,
+   "perPieceAllInIncl": 57.48,
+   "tierDiscount": 0
+  }
+ },
+ {
+  "name": "articles exactly at the free-shipping threshold -> free",
+  "input": {
+   "technique": "embroidered",
+   "sizeCm": 4,
+   "qty": 1,
+   "options": [
+    "cut_from_fabric",
+    "sew_on",
+    "thickness_normal"
+   ],
+   "otherItemsInclVat": 146.97
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": true,
+   "mode": "order",
+   "errors": [],
+   "unitExcl": 2.5,
+   "lineExcl": 2.5,
+   "lineIncl": 3.03,
+   "feesIncl": 54.45,
+   "extrasIncl": 0,
+   "subtotalIncl": 57.48,
+   "shippingIncl": 0,
+   "totalIncl": 57.48,
+   "perPieceAllInIncl": 57.48,
+   "tierDiscount": 0,
+   "shipping.free": true
+  }
+ },
+ {
+  "name": "one cent below the threshold -> paid shipping",
+  "input": {
+   "technique": "embroidered",
+   "sizeCm": 4,
+   "qty": 1,
+   "options": [
+    "cut_from_fabric",
+    "sew_on",
+    "thickness_normal"
+   ],
+   "otherItemsInclVat": 146.96
+  },
+  "configOverrides": {},
+  "expect": {
+   "ok": true,
+   "mode": "order",
+   "errors": [],
+   "unitExcl": 2.5,
+   "lineExcl": 2.5,
+   "lineIncl": 3.03,
+   "feesIncl": 54.45,
+   "extrasIncl": 0,
+   "subtotalIncl": 57.48,
+   "shippingIncl": 12.1,
+   "totalIncl": 69.58,
+   "perPieceAllInIncl": 57.48,
+   "tierDiscount": 0,
+   "shipping.remainingForFreeInclVat": 0.01
+  }
+ }
+]

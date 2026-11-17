@@ -1,0 +1,697 @@
+{
+  "schema": 1,
+  "version": "1.0.0",
+  "_doc": "Patch Studio standaardconfig. Bedragen in EUR EXCL. btw (zoals WooCommerce). Bron prijzen: docs/research/02-huidig-aanbod.md (kassa gemeten 16-11-2026). Velden met _note/_openPoint moeten door de eigenaar bevestigd worden. Zie docs/SPEC.md §8.",
+  "currency": "EUR",
+  "locale": "nl-BE",
+  "locales": ["nl-BE", "fr-BE"],
+
+  "vat": { "rate": 0.21, "displayInclVat": true, "showExclToggle": true },
+  "rounding": { "unitDecimals": 4, "lineDecimals": 2 },
+
+  "sizes": {
+    "minCm": 4,
+    "maxOrderCm": 12,
+    "maxQuoteCm": 30,
+    "stepCm": 0.5,
+    "pricedCm": [4, 6, 8, 10, 12],
+    "pricing": "next_priced_size",
+    "defaultCm": 8,
+    "defaultTextOnlyCm": 6,
+    "hints": [
+      { "upToCm": 5, "label": { "nl": "mouw, kraag of pet-zijkant", "fr": "manche, col ou côté de casquette" } },
+      { "upToCm": 8, "label": { "nl": "borstlogo (8,6 cm = breedte van een bankkaart)", "fr": "logo poitrine (8,6 cm = largeur d'une carte bancaire)" } },
+      { "upToCm": 10, "label": { "nl": "clubbadge, pet of rugzak", "fr": "badge de club, casquette ou sac à dos" } },
+      { "upToCm": 12, "label": { "nl": "grote badge of jasmouw", "fr": "grand badge ou manche de veste" } },
+      { "upToCm": 30, "label": { "nl": "rugpatch (via offerte)", "fr": "écusson dorsal (sur devis)" } }
+    ]
+  },
+
+  "quantity": { "default": 10, "max": 10000, "presets": [1, 10, 25, 50, 100] },
+
+  "tiers": {
+    "pooled": true,
+    "steps": [
+      { "min": 1, "discount": 0 },
+      { "min": 10, "discount": 0.05 },
+      { "min": 25, "discount": 0.10 },
+      { "min": 50, "discount": 0.15 },
+      { "min": 100, "discount": 0.20 }
+    ],
+    "_note": "Woo Discount Rules op de site: 10/25/50/100 = 5/10/15/20 %, opgeteld over alle patchregels in de mand."
+  },
+
+  "fees": {
+    "scope": "order",
+    "_openPoint": "Kassa rekent elke fee 1x per bestelling; teksten op de site zeggen 'per ontwerp' en noemen soms EUR 29,95 (borduurkaart) of EUR 150 (PVC-mal). Eigenaar beslist (02 §8). scope: 'order' | 'design'.",
+    "groups": {
+      "embroidery": {
+        "amount": 45.00,
+        "label": { "nl": "Borduurkaart en instelkosten (eenmalig)", "fr": "Programme de broderie et frais de mise en route (unique)" },
+        "help": { "nl": "De borduurkaart is het borduurprogramma dat onze digitaliseerder voor jouw ontwerp maakt. Je betaalt die één keer per bestelling, ongeacht het aantal stuks.", "fr": "Le programme de broderie est réalisé par notre digitaliseur pour votre design. Vous le payez une seule fois par commande, quel que soit le nombre de pièces." }
+      },
+      "print": {
+        "amount": 20.00,
+        "label": { "nl": "Instelkosten (eenmalig)", "fr": "Frais de mise en route (uniques)" },
+        "help": { "nl": "Eenmalige kosten om je ontwerp drukklaar te maken en de machine in te stellen.", "fr": "Frais uniques pour préparer votre design à l'impression et régler la machine." }
+      },
+      "pvc_mold": {
+        "amount": 80.00,
+        "label": { "nl": "Aanmaak van de mal (eenmalig)", "fr": "Création du moule (unique)" },
+        "help": { "nl": "Voor PVC gieten we je ontwerp in een mal die speciaal voor jou gemaakt wordt.", "fr": "Pour le PVC, votre design est coulé dans un moule fabriqué spécialement pour vous." }
+      }
+    }
+  },
+
+  "shipping": {
+    "flat": 10.00,
+    "freeFromInclVat": 150,
+    "hintFromInclVat": 100,
+    "countries": ["BE", "NL"],
+    "_note": "Schatting voor de tool; WooCommerce berekent de echte verzending. Drempel = artikelen incl. btw, eenmalige kosten tellen niet mee (gemeten)."
+  },
+
+  "techniqueOrder": ["embroidered", "woven", "printed", "sublimated", "pvc", "chenille", "leather"],
+
+  "techniques": {
+    "embroidered": {
+      "enabled": true,
+      "mode": "order",
+      "label": { "nl": "Geborduurd", "fr": "Brodé" },
+      "pitch": { "nl": "Garen met glans en reliëf. Klassiek, stevig en rijk van uitstraling.", "fr": "Fil brillant avec du relief. Classique, solide et élégant." },
+      "minQty": 1,
+      "qtyStep": 1,
+      "tiers": true,
+      "feeGroup": "embroidery",
+      "basePrice": { "4": 2.50, "6": 4.04, "8": 5.20, "10": 6.23, "12": 7.17 },
+      "priceSource": "kassa borduurservicebelgie.be 16-11-2026",
+      "minCm": 4,
+      "maxOrderCm": 12,
+      "maxCm": 30,
+      "threadBased": true,
+      "fabricList": "fabrics",
+      "defaultFabric": "auto",
+      "defaultEdge": "cut_from_fabric",
+      "defaults": { "edge": "cut_from_fabric", "backing": "sew_on", "thickness": "thickness_normal", "velcro_color": "velcro_black" },
+      "render": "embroidered",
+      "leadTime": { "nl": "", "fr": "" },
+      "rules": {
+        "sizeMm": { "hard": 25, "comfortMin": 50, "comfortMax": 120, "max": 300 },
+        "textCapsMm": { "hard": 4, "comfort": 6 },
+        "textLowerXHeightMm": { "hard": 3, "comfort": 4 },
+        "serifScriptFactor": 1.5,
+        "lineMm": { "hard": 1.0, "comfort": 1.5, "runStitchHard": 0.4 },
+        "gapMm": { "hard": 1.0, "comfort": 1.5 },
+        "smallestElementMm": { "hard": 1.5, "comfort": 3 },
+        "colors": { "max": 12, "comfortMax": 8, "gradients": "simplify", "photo": false, "shadedIllustration": "simplify" }
+      },
+      "legacy": { "productId": 29902, "variations": { "4": 30260, "6": 30261, "8": 30262, "10": 30254, "12": 30255 } }
+    },
+
+    "woven": {
+      "enabled": true,
+      "mode": "quote",
+      "label": { "nl": "Geweven", "fr": "Tissé" },
+      "pitch": { "nl": "Heel fijn garen, in de stof geweven. Het meeste detail, plat en soepel.", "fr": "Fil très fin tissé dans l'étoffe. Le plus de détails, plat et souple." },
+      "minQty": 100,
+      "qtyStep": 1,
+      "tiers": false,
+      "feeGroup": null,
+      "basePrice": null,
+      "minCm": 3,
+      "maxOrderCm": 0,
+      "maxCm": 19,
+      "threadBased": true,
+      "fabricList": "fabrics",
+      "defaultFabric": "auto",
+      "defaultEdge": "merrow",
+      "defaults": { "edge": "merrow", "backing": "sew_on" },
+      "render": "woven",
+      "leadTime": { "nl": "", "fr": "" },
+      "rules": {
+        "sizeMm": { "hard": 25, "hardWithMerrow": 38, "comfortMin": 30, "comfortMax": 100, "max": 190 },
+        "textCapsMm": { "hard": 2, "comfort": 3 },
+        "textLowerXHeightMm": { "hard": 1.5, "comfort": 2 },
+        "serifScriptFactor": 1.25,
+        "lineMm": { "hard": 0.3, "comfort": 0.5 },
+        "gapMm": { "hard": 0.3, "comfort": 0.5 },
+        "smallestElementMm": { "hard": 0.5, "comfort": 1 },
+        "colors": { "max": 12, "comfortMax": 8, "gradients": "limited", "photo": false, "shadedIllustration": "good" }
+      },
+      "_note": "Geen webshopproduct; site: 'vanaf 100 stuks'. Offerte-route."
+    },
+
+    "printed": {
+      "enabled": true,
+      "mode": "order",
+      "label": { "nl": "Bedrukt", "fr": "Imprimé" },
+      "pitch": { "nl": "Je ontwerp exact zoals het bestand, met een geborduurde rand. Ook foto's en kleurverlopen.", "fr": "Votre design exactement comme le fichier, avec une bordure brodée. Photos et dégradés compris." },
+      "minQty": 1,
+      "qtyStep": 1,
+      "tiers": true,
+      "feeGroup": "print",
+      "basePrice": { "4": 3.50, "6": 4.00, "8": 4.50, "10": 5.50, "12": 6.50 },
+      "priceSource": "kassa borduurservicebelgie.be 16-11-2026",
+      "minCm": 4,
+      "maxOrderCm": 12,
+      "maxCm": 30,
+      "threadBased": false,
+      "fabricList": "fabrics",
+      "defaultFabric": "auto",
+      "defaultEdge": "embroidered_border",
+      "defaults": { "edge": "embroidered_border", "backing": "sew_on", "thickness": "thickness_normal", "velcro_color": "velcro_black" },
+      "render": "printed",
+      "leadTime": { "nl": "", "fr": "" },
+      "rules": {
+        "sizeMm": { "hard": 25, "comfortMin": 40, "comfortMax": 300, "max": 300 },
+        "textCapsMm": { "hard": 1.6, "comfort": 2.5 },
+        "textLowerXHeightMm": { "hard": 1.2, "comfort": 2 },
+        "serifScriptFactor": 1.0,
+        "lineMm": { "hard": 0.25, "comfort": 0.4 },
+        "gapMm": { "hard": 0.25, "comfort": 0.4 },
+        "smallestElementMm": { "hard": 0.3, "comfort": 0.5 },
+        "colors": { "max": null, "gradients": true, "photo": true, "shadedIllustration": "exact" }
+      },
+      "legacy": { "productId": 30484, "variations": { "4": 30485, "6": 30486, "8": 30487, "10": 30488, "12": 30489 } }
+    },
+
+    "sublimated": {
+      "enabled": true,
+      "mode": "order",
+      "label": { "nl": "Gesublimeerd", "fr": "Sublimé" },
+      "pitch": { "nl": "Inkt in de vezel van wit polyester: kleurvast, zacht en scherp. Ideaal voor foto's.", "fr": "Encre dans la fibre du polyester blanc : grand teint, doux et net. Idéal pour les photos." },
+      "minQty": 1,
+      "qtyStep": 1,
+      "tiers": false,
+      "_openPoint": "Kassa geeft gesublimeerd GEEN staffelkorting en telt het niet mee in de pool, terwijl de staffeltabel op de pagina staat (02 §3). Tool volgt de kassa tot de eigenaar beslist.",
+      "feeGroup": "print",
+      "basePrice": { "4": 2.50, "6": 3.50, "8": 4.00, "10": 4.50, "12": 5.00 },
+      "priceSource": "kassa borduurservicebelgie.be 16-11-2026",
+      "minCm": 4,
+      "maxOrderCm": 12,
+      "maxCm": 30,
+      "threadBased": false,
+      "noWhiteInk": true,
+      "fabricList": "fabrics",
+      "defaultFabric": "auto",
+      "defaultEdge": "embroidered_border",
+      "defaults": { "edge": "embroidered_border", "backing": "sew_on", "thickness": "thickness_normal", "carrier": "carrier_standard", "velcro_color": "velcro_black" },
+      "render": "sublimated",
+      "leadTime": { "nl": "", "fr": "" },
+      "rules": {
+        "sizeMm": { "hard": 25, "comfortMin": 40, "comfortMax": 300, "max": 300 },
+        "textCapsMm": { "hard": 1.6, "comfort": 2.5 },
+        "textLowerXHeightMm": { "hard": 1.2, "comfort": 2 },
+        "serifScriptFactor": 1.0,
+        "lineMm": { "hard": 0.25, "comfort": 0.4 },
+        "gapMm": { "hard": 0.25, "comfort": 0.4 },
+        "smallestElementMm": { "hard": 0.3, "comfort": 0.5 },
+        "colors": { "max": null, "gradients": true, "photo": true, "shadedIllustration": "exact" }
+      },
+      "legacy": { "productId": 36158, "variations": { "4": 36159, "6": 36160, "8": 36161, "10": 36162, "12": 36163 } }
+    },
+
+    "pvc": {
+      "enabled": true,
+      "mode": "order",
+      "label": { "nl": "PVC / rubber", "fr": "PVC / caoutchouc" },
+      "pitch": { "nl": "Gegoten in een mal: waterdicht, met reliëf en bijna onverwoestbaar.", "fr": "Coulé dans un moule : étanche, en relief et quasi indestructible." },
+      "minQty": 50,
+      "qtyStep": 10,
+      "tiers": true,
+      "feeGroup": "pvc_mold",
+      "basePrice": { "4": 3.00, "6": 4.00, "8": 5.00, "10": 6.00, "12": 7.00 },
+      "priceSource": "kassa borduurservicebelgie.be 16-11-2026",
+      "minCm": 4,
+      "maxOrderCm": 12,
+      "maxCm": 15,
+      "threadBased": false,
+      "fabricList": "fabrics",
+      "defaultFabric": "auto",
+      "defaultEdge": "molded",
+      "defaults": { "edge": "molded", "backing": "sew_on" },
+      "render": "pvc",
+      "leadTime": { "nl": "± 4 weken na goedkeuring van je proef", "fr": "± 4 semaines après validation de votre épreuve" },
+      "rules": {
+        "sizeMm": { "hard": 13, "comfortMin": 40, "comfortMax": 100, "max": 150 },
+        "textCapsMm": { "hard": 3, "comfort": 4 },
+        "textLowerXHeightMm": { "hard": 2.5, "comfort": 3 },
+        "serifScriptFactor": 1.25,
+        "lineMm": { "hard": 0.6, "comfort": 1.0 },
+        "gapMm": { "hard": 0.6, "comfort": 1.0 },
+        "smallestElementMm": { "hard": 0.6, "comfort": 1.0 },
+        "colors": { "max": 8, "comfortMax": 6, "gradients": false, "photo": false, "shadedIllustration": "flatten_or_3d" }
+      },
+      "legacy": { "productId": 30541, "variations": { "4": 30542, "6": 30543, "8": 30544, "10": 30545, "12": 30546 } }
+    },
+
+    "chenille": {
+      "enabled": true,
+      "mode": "quote",
+      "label": { "nl": "Chenille", "fr": "Chenille" },
+      "pitch": { "nl": "Dikke, zachte lussen op vilt. De varsity-look voor grote letters en eenvoudige vormen.", "fr": "Boucles épaisses et douces sur feutrine. Le look varsity pour grandes lettres et formes simples." },
+      "minQty": 1,
+      "qtyStep": 1,
+      "tiers": false,
+      "feeGroup": null,
+      "basePrice": null,
+      "minCm": 5,
+      "maxOrderCm": 0,
+      "maxCm": 30,
+      "threadBased": true,
+      "fabricList": "fabrics",
+      "defaultFabric": "auto",
+      "defaultEdge": "felt_border",
+      "defaults": { "edge": "felt_border", "backing": "sew_on" },
+      "render": "chenille",
+      "leadTime": { "nl": "", "fr": "" },
+      "rules": {
+        "sizeMm": { "hard": 50, "comfortMin": 75, "comfortMax": 300, "max": 400 },
+        "textCapsMm": { "hard": 30, "comfort": 40 },
+        "textLowerXHeightMm": { "hard": 25, "comfort": 30 },
+        "serifScriptFactor": 1.25,
+        "lineMm": { "hard": 3, "comfort": 5 },
+        "gapMm": { "hard": 3, "comfort": 5 },
+        "smallestElementMm": { "hard": 3, "comfort": 6 },
+        "colors": { "max": 6, "comfortMax": 4, "gradients": false, "photo": false, "shadedIllustration": "no" }
+      },
+      "_note": "Enkel vermeld op de site; offerte-route."
+    },
+
+    "leather": {
+      "enabled": true,
+      "mode": "quote",
+      "label": { "nl": "Leder (gelaserd)", "fr": "Cuir (gravé au laser)" },
+      "pitch": { "nl": "Ingebrand in (kunst)leder, in één tint. Premium look voor petten, jeans en tassen.", "fr": "Gravé dans le cuir (synthétique), en une teinte. Look premium pour casquettes, jeans et sacs." },
+      "minQty": 1,
+      "qtyStep": 1,
+      "tiers": false,
+      "feeGroup": null,
+      "basePrice": null,
+      "minCm": 3,
+      "maxOrderCm": 0,
+      "maxCm": 30,
+      "threadBased": false,
+      "monochrome": true,
+      "fabricList": "leathers",
+      "defaultFabric": "leather_cognac",
+      "defaultEdge": "laser",
+      "defaults": { "edge": "laser", "backing": "sew_on" },
+      "render": "leather",
+      "leadTime": { "nl": "", "fr": "" },
+      "rules": {
+        "sizeMm": { "hard": 13, "comfortMin": 40, "comfortMax": 100, "max": 300 },
+        "textCapsMm": { "hard": 1.5, "comfort": 2.5 },
+        "textLowerXHeightMm": { "hard": 1.2, "comfort": 2 },
+        "serifScriptFactor": 1.0,
+        "lineMm": { "hard": 0.3, "comfort": 0.5 },
+        "gapMm": { "hard": 0.3, "comfort": 0.5 },
+        "smallestElementMm": { "hard": 0.5, "comfort": 1 },
+        "colors": { "max": 1, "comfortMax": 1, "gradients": "grayscale", "photo": "grayscale_engraving", "shadedIllustration": "grayscale" }
+      },
+      "_note": "Komt niet voor op de site; offerte-route. Eigenaar kan uitschakelen."
+    }
+  },
+
+  "optionGroups": {
+    "edge": { "type": "radio", "required": true, "step": 4, "label": { "nl": "Rand", "fr": "Bordure" } },
+    "backing": { "type": "radio", "required": true, "step": 4, "label": { "nl": "Achterkant", "fr": "Dos" } },
+    "velcro_color": { "type": "radio", "required": true, "step": 4, "showIfAny": ["velcro_hook", "velcro_loop"], "label": { "nl": "Kleur klittenband", "fr": "Couleur du velcro" } },
+    "backing_extra": { "type": "checkbox", "required": false, "step": 4, "showIfAny": ["velcro_hook", "velcro_loop"], "label": { "nl": "Klittenband-extra's", "fr": "Options velcro" } },
+    "thickness": { "type": "radio", "required": true, "step": 4, "advanced": true, "label": { "nl": "Dikte", "fr": "Épaisseur" } },
+    "carrier": { "type": "radio", "required": true, "step": 4, "label": { "nl": "Drager", "fr": "Support" } },
+    "extras": { "type": "checkbox", "required": false, "step": 4, "advanced": true, "label": { "nl": "Handig erbij", "fr": "Utile en plus" } }
+  },
+
+  "options": [
+    {
+      "id": "cut_from_fabric", "group": "edge", "enabled": true, "default": true,
+      "techniques": ["embroidered"],
+      "price": { "type": "per_piece", "amount": 0 },
+      "render": { "style": "satin", "widthMm": 2.5, "safeZoneMm": 2, "fray": true },
+      "label": { "nl": "Geborduurde rand, uit de stof geknipt", "fr": "Bordure brodée, découpée dans le tissu" },
+      "help": { "nl": "Onze standaard. Een stevige geborduurde rand; aan de snijkant zijn lichte rafeltjes mogelijk.", "fr": "Notre standard. Une bordure brodée solide ; de légers effilochages sont possibles au bord." },
+      "legacy": { "addon": "Rand afwerking", "label": "Patch geknipt uit doek (lichte rafels mogelijk)" }
+    },
+    {
+      "id": "on_film", "group": "edge", "enabled": true,
+      "techniques": ["embroidered"],
+      "price": { "type": "per_piece", "amount": 2.50 },
+      "render": { "style": "satin", "widthMm": 2.5, "safeZoneMm": 2, "fray": false },
+      "label": { "nl": "Op folie: strakke, verfijnde rand", "fr": "Sur film : bordure nette et raffinée" },
+      "help": { "nl": "Geborduurd op folie, zodat de rand helemaal strak is zonder rafels. Mooi voor kleine patches en uniformen.", "fr": "Brodé sur film pour un bord parfaitement net, sans effilochage. Idéal pour petits écussons et uniformes." },
+      "legacy": { "addon": "Rand afwerking", "label": "Patch op folie (verfijnde rand)" }
+    },
+    {
+      "id": "self_cut", "group": "edge", "enabled": true,
+      "techniques": ["embroidered"],
+      "price": { "type": "percent", "amount": -0.10 },
+      "render": { "style": "uncut", "widthMm": 2.5, "safeZoneMm": 2, "fray": false },
+      "label": { "nl": "Ik knip ze zelf uit (−10 %)", "fr": "Je les découpe moi-même (−10 %)" },
+      "help": { "nl": "Je krijgt je patches op een stuk stof en knipt ze zelf uit. Voordelig als je tijd hebt.", "fr": "Vous recevez vos écussons sur une pièce de tissu et les découpez vous-même. Avantageux si vous avez le temps." },
+      "legacy": { "addon": "Rand afwerking", "label": "Ik wil besparen, en knip ze zelf uit (van een backing stof)" }
+    },
+    {
+      "id": "embroidered_border", "group": "edge", "enabled": true, "default": true,
+      "techniques": ["printed", "sublimated"],
+      "price": { "type": "per_piece", "amount": 0 },
+      "render": { "style": "satin", "widthMm": 2.5, "safeZoneMm": 2, "fray": false },
+      "label": { "nl": "Geborduurde rand", "fr": "Bordure brodée" },
+      "help": { "nl": "De rand wordt op de borduurmachine afgewerkt, in een garenkleur naar keuze.", "fr": "La bordure est finie sur la machine à broder, dans la couleur de fil de votre choix." }
+    },
+    {
+      "id": "merrow", "group": "edge", "enabled": true,
+      "techniques": ["woven"],
+      "price": { "type": "per_piece", "amount": 0 },
+      "render": { "style": "merrow", "widthMm": 3, "safeZoneMm": 3 },
+      "shapes": ["circle", "oval", "rect", "rounded", "shield"],
+      "label": { "nl": "Omgezoomde rand (merrow)", "fr": "Bordure surjetée (merrow)" },
+      "help": { "nl": "De klassieke, dikke omgezoomde rand. Volgt eenvoudige vormen zoals rond, ovaal en rechthoek.", "fr": "La bordure surjetée classique et épaisse. Suit les formes simples : rond, ovale, rectangle." }
+    },
+    {
+      "id": "laser", "group": "edge", "enabled": true,
+      "techniques": ["woven", "leather"],
+      "price": { "type": "per_piece", "amount": 0 },
+      "render": { "style": "laser", "widthMm": 0, "safeZoneMm": 3 },
+      "label": { "nl": "Lasergesneden op vorm", "fr": "Découpé au laser à la forme" },
+      "help": { "nl": "Precies op de contour gesneden, zonder dikke rand.", "fr": "Découpé précisément sur le contour, sans bordure épaisse." }
+    },
+    {
+      "id": "molded", "group": "edge", "enabled": true, "default": true,
+      "techniques": ["pvc"],
+      "price": { "type": "per_piece", "amount": 0 },
+      "render": { "style": "molded", "widthMm": 1.5, "safeZoneMm": 1 },
+      "label": { "nl": "Gegoten rand", "fr": "Bord moulé" },
+      "help": { "nl": "De rand zit mee in de mal en volgt elke vorm.", "fr": "La bordure fait partie du moule et suit toute forme." }
+    },
+    {
+      "id": "felt_border", "group": "edge", "enabled": true, "default": true,
+      "techniques": ["chenille"],
+      "price": { "type": "per_piece", "amount": 0 },
+      "render": { "style": "felt", "widthMm": 4, "safeZoneMm": 6 },
+      "label": { "nl": "Viltrand", "fr": "Bordure en feutrine" },
+      "help": { "nl": "Een rand van vilt rond de chenille, op vorm gesneden.", "fr": "Une bordure en feutrine autour de la chenille, découpée à la forme." }
+    },
+
+    {
+      "id": "sew_on", "group": "backing", "enabled": true, "default": true,
+      "techniques": ["embroidered", "printed", "sublimated", "pvc", "woven", "chenille", "leather"],
+      "price": { "type": "per_piece", "amount": 0 },
+      "label": { "nl": "Opnaaien (zonder rug)", "fr": "À coudre (sans dos)" },
+      "help": { "nl": "Het sterkst. Aan te raden voor leer en kleding die vaak gewassen wordt.", "fr": "Le plus solide. Recommandé pour le cuir et les vêtements souvent lavés." }
+    },
+    {
+      "id": "iron_on", "group": "backing", "enabled": true,
+      "techniques": ["embroidered", "printed", "sublimated", "woven", "chenille"],
+      "price": { "type": "per_piece", "amount": 1.50 },
+      "label": { "nl": "Opstrijkbare lijmlaag", "fr": "Thermocollant" },
+      "help": { "nl": "Makkelijk zelf aan te brengen op katoen en katoen-polyester. Niet op leer, nylon, fleece of gecoate stof.", "fr": "Facile à appliquer soi-même sur coton et polycoton. Pas sur cuir, nylon, polaire ou tissu enduit." },
+      "legacy": { "addon": "Afwerking achterkant Patch", "label": "Opstrijkbare lijmlaag" }
+    },
+    {
+      "id": "velcro_hook", "group": "backing", "enabled": true,
+      "techniques": ["embroidered", "printed", "sublimated", "pvc", "woven", "leather"],
+      "price": { "type": "per_piece", "amount": 2.00 },
+      "priceByTechnique": { "pvc": { "type": "per_piece", "amount": 1.00 } },
+      "label": { "nl": "Klittenband: haakzijde (hard)", "fr": "Velcro : côté crochet (dur)" },
+      "help": { "nl": "De patch kan je wisselen. Haakzijde op de patch, past op een lusvlak (bv. tactische kleding).", "fr": "Écusson amovible. Côté crochet sur l'écusson, se fixe sur une surface boucle (p. ex. vêtements tactiques)." },
+      "legacy": { "addon": "Afwerking achterkant Patch", "label": "Klittenband haak (hard) {color} (niet gesneden)" }
+    },
+    {
+      "id": "velcro_loop", "group": "backing", "enabled": true,
+      "techniques": ["embroidered", "printed", "sublimated", "pvc", "woven", "leather"],
+      "price": { "type": "per_piece", "amount": 2.00 },
+      "priceByTechnique": { "pvc": { "type": "per_piece", "amount": 1.00 } },
+      "label": { "nl": "Klittenband: luszijde (zacht)", "fr": "Velcro : côté boucle (doux)" },
+      "help": { "nl": "Zachte luszijde op de patch, voor op een haakvlak.", "fr": "Côté boucle doux sur l'écusson, pour une surface crochet." },
+      "legacy": { "addon": "Afwerking achterkant Patch", "label": "Klittenband lus (zacht) {color} (niet gesneden)" }
+    },
+    {
+      "id": "velcro_black", "group": "velcro_color", "enabled": true, "default": true,
+      "techniques": ["embroidered", "printed", "sublimated"],
+      "requiresAny": ["velcro_hook", "velcro_loop"],
+      "price": { "type": "per_piece", "amount": 0 },
+      "label": { "nl": "Zwart", "fr": "Noir" }, "swatch": "#1e1b1b"
+    },
+    {
+      "id": "velcro_white", "group": "velcro_color", "enabled": true,
+      "techniques": ["embroidered", "printed", "sublimated"],
+      "requiresAny": ["velcro_hook", "velcro_loop"],
+      "price": { "type": "per_piece", "amount": 0 },
+      "label": { "nl": "Wit", "fr": "Blanc" }, "swatch": "#ffffff"
+    },
+    {
+      "id": "velcro_counterpart", "group": "backing_extra", "enabled": true,
+      "techniques": ["embroidered", "printed", "sublimated"],
+      "requiresAny": ["velcro_hook", "velcro_loop"],
+      "price": { "type": "per_piece", "amount": 2.00 },
+      "label": { "nl": "Los tegenstuk erbij (om op je kledij te naaien)", "fr": "Contrepartie séparée (à coudre sur le vêtement)" },
+      "legacy": { "addon": "Diverse extra's", "label": "Klittenband {side} {color} (los, tegenstuk)" }
+    },
+    {
+      "id": "velcro_cut_to_shape", "group": "backing_extra", "enabled": true,
+      "techniques": ["embroidered", "printed", "sublimated"],
+      "requiresAny": ["velcro_hook", "velcro_loop"],
+      "price": { "type": "per_piece", "amount": 1.00 },
+      "label": { "nl": "Klittenband op de vorm van de patch gesneden", "fr": "Velcro découpé à la forme de l'écusson" },
+      "legacy": { "addon": "Afwerking achterkant Patch", "label": "Gesneden (klittenband op vorm gesneden)" }
+    },
+    {
+      "id": "thickness_normal", "group": "thickness", "enabled": true, "default": true,
+      "techniques": ["embroidered", "printed", "sublimated"],
+      "price": { "type": "per_piece", "amount": 0 },
+      "label": { "nl": "Normale dikte", "fr": "Épaisseur normale" }
+    },
+    {
+      "id": "thick", "group": "thickness", "enabled": true,
+      "techniques": ["embroidered", "printed", "sublimated"],
+      "price": { "type": "per_piece", "amount": 1.50 },
+      "label": { "nl": "Dikke patch (dubbele onderlaag)", "fr": "Écusson épais (double sous-couche)" },
+      "help": { "nl": "Stugger en steviger, mooi voor petten en jassen.", "fr": "Plus rigide, idéal pour casquettes et vestes." },
+      "legacy": { "addon": "Afwerking achterkant Patch", "label": "Dikke patch (dubbele onderlaag)" }
+    },
+    {
+      "id": "extra_thick", "group": "thickness", "enabled": true,
+      "techniques": ["embroidered", "printed", "sublimated"],
+      "price": { "type": "per_piece", "amount": 3.00 },
+      "label": { "nl": "Extra dikke patch (driedubbele onderlaag)", "fr": "Écusson extra épais (triple sous-couche)" },
+      "legacy": { "addon": "Afwerking achterkant Patch", "label": "Extra dikke patch (drie dubbele onderlaag)" }
+    },
+    {
+      "id": "carrier_standard", "group": "carrier", "enabled": true, "default": true,
+      "techniques": ["sublimated"],
+      "price": { "type": "per_piece", "amount": 0 },
+      "label": { "nl": "Glad wit polyester", "fr": "Polyester blanc lisse" }
+    },
+    {
+      "id": "carrier_flock", "group": "carrier", "enabled": true,
+      "techniques": ["sublimated"],
+      "price": { "type": "per_line", "amount": 0.75 },
+      "_openPoint": "Kassa rekent flock eenmalig per regel (EUR 0,75), waarschijnlijk bedoeld per stuk (02 §8).",
+      "label": { "nl": "Flock: mat en fluweelzacht", "fr": "Flock : mat et doux comme du velours" }
+    },
+    {
+      "id": "thread_roll_edge", "group": "extras", "enabled": true,
+      "techniques": ["embroidered", "sublimated", "pvc"],
+      "price": { "type": "per_line", "amount": 5.00 },
+      "label": { "nl": "Rol garen in de kleur van de rand", "fr": "Bobine de fil de la couleur de la bordure" },
+      "help": { "nl": "Handig om je patches zelf onzichtbaar op te naaien.", "fr": "Pratique pour coudre vos écussons vous-même de façon invisible." }
+    },
+    {
+      "id": "thread_roll_black", "group": "extras", "enabled": true,
+      "techniques": ["embroidered", "sublimated", "pvc"],
+      "price": { "type": "per_line", "amount": 5.00 },
+      "label": { "nl": "Rol zwart garen", "fr": "Bobine de fil noir" }
+    },
+    {
+      "id": "scissors_curved", "group": "extras", "enabled": true,
+      "techniques": ["embroidered", "sublimated", "pvc"],
+      "price": { "type": "per_line", "amount": 25.00 },
+      "label": { "nl": "Gebogen stofschaar", "fr": "Ciseaux à tissu courbés" }
+    },
+    {
+      "id": "scissors_straight", "group": "extras", "enabled": true,
+      "techniques": ["sublimated"],
+      "price": { "type": "per_line", "amount": 19.95 },
+      "label": { "nl": "Rechte stofschaar", "fr": "Ciseaux à tissu droits" }
+    }
+  ],
+
+  "specials": {
+    "puff3d": {
+      "enabled": true, "availability": "on_request",
+      "techniques": ["embroidered"],
+      "label": { "nl": "3D-puff borduurwerk", "fr": "Broderie 3D puff" },
+      "minTextCapsMm": 11, "minColumnMm": 5, "maxColors": 3,
+      "_openPoint": "Aanbod en meerprijs te bevestigen door de eigenaar (04 §15)."
+    },
+    "metallic": {
+      "enabled": true, "availability": "on_request",
+      "techniques": ["embroidered"],
+      "label": { "nl": "Metallic garen (goud/zilver)", "fr": "Fil métallisé (or/argent)" },
+      "minTextCapsMm": 5,
+      "_openPoint": "Aanbod en meerprijs te bevestigen door de eigenaar."
+    }
+  },
+
+  "shapes": {
+    "circle": { "label": { "nl": "Rond", "fr": "Rond" } },
+    "oval": { "label": { "nl": "Ovaal", "fr": "Ovale" } },
+    "rect": { "label": { "nl": "Rechthoek", "fr": "Rectangle" } },
+    "rounded": { "label": { "nl": "Afgeronde rechthoek", "fr": "Rectangle arrondi" }, "cornerRatio": 0.18 },
+    "shield": { "label": { "nl": "Schild", "fr": "Écu" } },
+    "contour": { "label": { "nl": "Op de vorm van je ontwerp", "fr": "À la forme de votre design" }, "offsetMm": 3 }
+  },
+  "shapeOrder": ["circle", "oval", "rect", "rounded", "shield", "contour"],
+
+  "layout": {
+    "aspectMin": 0.4,
+    "aspectMax": 2.5,
+    "fill": { "circle": 0.8, "oval": 0.8, "rect": 0.94, "rounded": 0.92, "shield": 0.8, "contour": 1 },
+    "artScaleMin": 0.2,
+    "artScaleMax": 2.0
+  },
+
+  "fabrics": [
+    { "id": "white", "hex": "#ffffff", "label": { "nl": "Wit", "fr": "Blanc" } },
+    { "id": "black", "hex": "#151515", "label": { "nl": "Zwart", "fr": "Noir" } },
+    { "id": "navy", "hex": "#1b2a4a", "label": { "nl": "Marineblauw", "fr": "Bleu marine" } },
+    { "id": "royal", "hex": "#1f5aa6", "label": { "nl": "Koningsblauw", "fr": "Bleu roi" } },
+    { "id": "red", "hex": "#b3262d", "label": { "nl": "Rood", "fr": "Rouge" } },
+    { "id": "bottle", "hex": "#24452f", "label": { "nl": "Flessengroen", "fr": "Vert bouteille" } },
+    { "id": "olive", "hex": "#3e4f2a", "label": { "nl": "Legergroen", "fr": "Vert armée" } },
+    { "id": "sand", "hex": "#d9c7a3", "label": { "nl": "Zand", "fr": "Sable" } },
+    { "id": "grey", "hex": "#6b6f76", "label": { "nl": "Grijs", "fr": "Gris" } }
+  ],
+  "_fabricsNote": "Twillkleuren zijn een voorbeeldlijst; de eigenaar past ze aan in Beheer > Kleuren.",
+  "leathers": [
+    { "id": "leather_cognac", "hex": "#9a5b2e", "engrave": "#4a2810", "label": { "nl": "Cognac", "fr": "Cognac" } },
+    { "id": "leather_brown", "hex": "#5b3a24", "engrave": "#2a160a", "label": { "nl": "Donkerbruin", "fr": "Brun foncé" } },
+    { "id": "leather_tan", "hex": "#c89a6a", "engrave": "#6b4321", "label": { "nl": "Lichtbruin", "fr": "Brun clair" } },
+    { "id": "leather_black", "hex": "#232020", "engrave": "#6e6460", "label": { "nl": "Zwart", "fr": "Noir" } }
+  ],
+
+  "threadBrand": "Madeira Polyneon",
+  "threadSpecial": { "black": "1800", "white": "1801", "_openPoint": "Standaard zwart/wit garencode bevestigen (site-swatches zijn grijzig)." },
+  "threadsDisabled": [],
+  "_threadsNote": "De garenlijst zelf staat in config/thread-palette.json (eigenaar: colors) en wordt door Settings/buildPublicConfig in config.threads gezet.",
+
+  "fonts": [
+    { "id": "Sora", "label": { "nl": "Sora (strak)", "fr": "Sora (net)" }, "weight": 700, "fallback": "sans-serif", "thin": false, "file": "sora-700.woff2" },
+    { "id": "Oswald", "label": { "nl": "Oswald (smal en sterk)", "fr": "Oswald (étroit et fort)" }, "weight": 600, "fallback": "sans-serif", "thin": false, "file": "oswald-600.woff2" },
+    { "id": "Graduate", "label": { "nl": "Graduate (college)", "fr": "Graduate (college)" }, "weight": 400, "fallback": "serif", "thin": false, "file": "graduate-400.woff2" },
+    { "id": "Roboto Slab", "label": { "nl": "Roboto Slab (schreef)", "fr": "Roboto Slab (à empattements)" }, "weight": 700, "fallback": "serif", "thin": false, "serif": true, "file": "roboto-slab-700.woff2" },
+    { "id": "Cinzel", "label": { "nl": "Cinzel (klassiek)", "fr": "Cinzel (classique)" }, "weight": 700, "fallback": "serif", "thin": true, "serif": true, "file": "cinzel-700.woff2" },
+    { "id": "Pacifico", "label": { "nl": "Pacifico (handschrift)", "fr": "Pacifico (manuscrite)" }, "weight": 400, "fallback": "cursive", "thin": true, "script": true, "file": "pacifico-400.woff2" }
+  ],
+  "text": { "maxLayers": 10, "maxChars": 60, "minHeightMm": 3, "maxHeightMm": 40, "defaultHeightMm": 6 },
+
+  "mockups": {
+    "polo_chest": { "label": { "nl": "Op een polo (borst)", "fr": "Sur un polo (poitrine)" }, "garmentHex": "#1b2a4a", "patchCenterMm": [0, 0], "scaleRefMm": 520 },
+    "cap_front": { "label": { "nl": "Op een pet", "fr": "Sur une casquette" }, "garmentHex": "#222222", "patchCenterMm": [0, 0], "scaleRefMm": 200 },
+    "jacket_back": { "label": { "nl": "Op een jas (rug)", "fr": "Sur une veste (dos)" }, "garmentHex": "#2d2d2d", "patchCenterMm": [0, 0], "scaleRefMm": 600 }
+  },
+
+  "analysis": {
+    "sizes": { "a": 600, "b": 360, "preview": 700, "svgRaster": 2048 },
+    "maxFileMb": 25,
+    "acceptAnalyse": ["image/png", "image/jpeg", "image/webp", "image/gif", "image/svg+xml"],
+    "acceptStore": ["application/pdf", ".ai", ".eps", ".psd"],
+    "alphaBg": 128, "alphaStat": 200,
+    "floodNeighborDE": 6, "floodBgDE": 35, "floodPhotoDL": 10, "floodPhotoDC": 4,
+    "white": { "L": 92, "C": 6 }, "black": { "L": 15, "C": 8 },
+    "kmeans": { "k": 16, "iters": 12, "seed": 1 },
+    "mergeDE00": 7, "minShare": 0.004, "mixMaxShare": 0.08, "fringeBgDE": 12,
+    "embroideryMergeSteps": [7, 10, 14, 18],
+    "classify": { "flatFakeMax": 0.08, "flatCoverMax": 12, "photoCoverMin": 70, "photoHardMax": 0.04, "gradientHardMax": 0.012, "gradientChgMax": 0.03, "gradientCoverMax": 40, "softShadingFakeMin": 0.15 },
+    "mockup": { "textureMin": 0.6, "hardMin": 0.04 },
+    "text": { "hMin": 0.008, "hMax": 0.15, "aspectMin": 0.08, "aspectMax": 1.6, "fillMin": 0.15, "fillMax": 0.85, "swMin": 0.05, "swMax": 0.35, "cvMax": 0.6, "serifCv": 0.4, "minRun": 3 },
+    "lowResMinPx": 500,
+    "shapeMinConfidence": 0.75
+  },
+
+  "stitches": {
+    "fillPerMm2": 1.6, "satinPerMm": 5.0, "runPerMm": 0.4, "perColor": 30, "perObject": 15, "satinBorderPerMm": 6.0,
+    "classifyMm": { "runBelow": 1.0, "fillAbove": 7.0 },
+    "range": [0.8, 1.25], "roundTo": 100,
+    "quoteSignal": { "maxStitchesUpTo120mm": 25000 },
+    "showToCustomer": true,
+    "_note": "Constanten uit 07 §11.2; kalibreren met echte borduurbestanden. Het steekaantal verandert de prijs NIET (kassa rekent per maat)."
+  },
+
+  "advice": {
+    "closeScoreDelta": 8,
+    "maxUpsells": 2,
+    "contrast": { "badDE": 8, "lowDE": 15, "minShareForBad": 0.05 },
+    "defaultMaxThreadColors": 8,
+    "threadColorChoices": [6, 8, 10, 12],
+    "textOnlyTechnique": "embroidered",
+    "preferOrderable": true
+  },
+
+  "promises": {
+    "proofDays": null,
+    "fromOne": true,
+    "cancelUntilProof": false,
+    "payAfterProof": false,
+    "reorderKeepsSetup": false,
+    "proof": { "nl": "Digitale proef vóór productie: pas na jouw akkoord starten we.", "fr": "Épreuve numérique avant production : nous ne démarrons qu'après votre accord." },
+    "fromOneText": { "nl": "Vanaf 1 stuk, gemaakt op eigen machines in Kalmthout.", "fr": "Dès 1 pièce, fabriqué sur nos propres machines à Kalmthout." },
+    "responseTime": { "nl": "We antwoorden meestal binnen één werkdag.", "fr": "Nous répondons généralement sous un jour ouvrable." },
+    "leadTimeFallback": { "nl": "We bevestigen de levertijd samen met je digitale proef.", "fr": "Nous confirmons le délai avec votre épreuve numérique." },
+    "testimonial": {
+      "enabled": false,
+      "name": "Jasper",
+      "role": { "nl": "student grafisch ontwerp", "fr": "étudiant en graphisme" },
+      "text": { "nl": "Super service. Zelfs voor mijn kleine bestelling van 3 stuks kreeg ik professioneel advies.", "fr": "Super service. Même pour ma petite commande de 3 pièces, j'ai reçu des conseils professionnels." },
+      "_note": "Letterlijk van de homepage; standaard uit tot de eigenaar bevestigt (05 R14)."
+    },
+    "deadline": { "enabled": false, "text": { "nl": "", "fr": "" } }
+  },
+
+  "contact": {
+    "phone": "0491 06 32 01",
+    "whatsapp": "32491063201",
+    "email": "info@borduurservicebelgie.be",
+    "city": "Kalmthout",
+    "quoteUrl": "/offerte-aanvragen/",
+    "privacyUrl": "/privacy-policy/",
+    "termsUrl": "/algemene-voorwaarden/"
+  },
+
+  "legal": {
+    "rightsTextVersion": "2026-11-1",
+    "showWithdrawalNotice": true,
+    "fixOrderButton": true,
+    "privacyVariant": "local_first"
+  },
+
+  "features": {
+    "textLayers": true,
+    "garmentView": true,
+    "compare": true,
+    "saveDesign": true,
+    "quote": true,
+    "exclVatToggle": true,
+    "cartPoolHint": true,
+    "analyticsEvents": false
+  },
+
+  "woo": {
+    "cartMode": "own_product",
+    "productId": null,
+    "productName": { "nl": "Patch op maat", "fr": "Écusson sur mesure" },
+    "productVisibility": "hidden",
+    "redirectToCart": true,
+    "skipFeeIfLegacyInCart": true,
+    "poolIncludeLegacy": false,
+    "quoteRecipient": "",
+    "maxUploadMb": 25,
+    "rateLimits": { "designsPerHour": 30, "quotesPerHour": 5, "emailsPerHour": 5, "quotePerMinute": 120 },
+    "trustCloudflareIp": "auto"
+  },
+
+  "retention": { "orphanDays": 30, "savedDays": 90, "quoteDays": 365, "orderYears": 3 },
+
+  "admin": { "deleteDataOnUninstall": false, "_note": "Privé (nooit naar de browser). Alles verwijderen bij deïnstalleren: standaard uit, want bestellingen verwijzen naar de ontwerpen." }
+}
