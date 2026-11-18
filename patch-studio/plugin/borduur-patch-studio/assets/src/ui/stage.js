@@ -133,7 +133,7 @@ export function createStage(ctx) {
   el.addEventListener('pointerdown', () => { el.classList.add('is-touched'); });
 
   let renderer = null, broken = false, lastResult = null, queued = false, quality = 'high', hiTimer = 0;
-  let state = null, d = null, zoom = 1, center = null, light = null, lastTech = null, warmedJob = null;
+  let state = null, d = null, zoom = 1, center = null, light = null, lastTech = null, warmedJob = null, garmentTouched = false;
 
   /* ------------------------------- views -------------------------------- */
   function viewLabel(id) {
@@ -388,7 +388,8 @@ export function createStage(ctx) {
   function placeOverlay() {
     const tgt = ctx.dragTarget;
     const b = state && d && lastResult && tgt ? boxOf(tgt) : null;
-    const editable = !!b && !editing;
+    // on a garment the mockup stays clean: handles and toolbar only after a tap on the patch (critique-2 #7)
+    const editable = !!b && !editing && (!garmentOf() || garmentTouched);
     sel.hidden = !editable;
     if (!editable) selArc.style.display = 'none';
     ctxbar.hidden = !editable || !!drag;
@@ -411,12 +412,15 @@ export function createStage(ctx) {
     const minY = 8;
     let y = c.y - (b.rot ? extent : hh / 2) - bh - 12;
     // a selection in the lower half (arc under the design): the toolbar goes under the patch, not over the design
-    const pb = toPx(0, d.layout.patchHmm / 2).y;
-    if (b.y > d.layout.patchHmm * 0.15 && pb + 10 + bh <= wh - 8) y = pb + 10;
-    if (y < minY) y = Math.min(wh - bh - 64, c.y + (b.rot ? extent : hh / 2) + 12);
-    if (y < minY) y = minY;
+    const pb = toPx(0, d.layout.patchHmm / 2).y, pt = toPx(0, -d.layout.patchHmm / 2).y;
+    let outside = false;
+    if (b.y > d.layout.patchHmm * 0.15) {
+      if (pb + 10 + bh <= wh - 8) { y = pb + 10; outside = true; } else if (pt - bh - 2 >= 4) { y = Math.max(4, pt - bh - 10); outside = true; }
+    }
+    if (!outside && y < minY) y = Math.min(wh - bh - 64, c.y + (b.rot ? extent : hh / 2) + 12);
+    if (!outside && y < minY) y = minY;
     ctxbar.style.left = clamp(c.x - bw / 2, 8, Math.max(8, ww - bw - 8)) + 'px';
-    ctxbar.style.top = Math.max(minY, Math.min(y, wh - bh - 8)) + 'px';
+    ctxbar.style.top = Math.max(4, Math.min(y, wh - bh - 8)) + 'px';
   }
 
   /**
@@ -591,6 +595,7 @@ export function createStage(ctx) {
     stopEdit();
     const p = toMm(ev);
     const target = ev.altKey || ctx.spaceDown ? null : hitTest(p);
+    garmentTouched = !!garmentOf() && !!target;
     if (target) {
       ctx.setDragTarget(target);
       const l = state.texts.find((x) => x.id === target);
@@ -716,6 +721,7 @@ export function createStage(ctx) {
       if (uo && uo.fast) interacting(220);
       // Crossfade when the technique or the view (close-up / garment) changes; render v2 needs one full render then.
       const techChanged = state && lastTech && (s.technique !== lastTech || (s.mockup || 'none') !== (state.mockup || 'none'));
+      if (state && (s.mockup || 'none') !== (state.mockup || 'none')) garmentTouched = false;
       state = s;
       d = derived;
       if (!s || !derived) return;

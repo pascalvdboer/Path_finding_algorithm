@@ -307,7 +307,8 @@ final class Products {
 		if ( $found ) {
 			return (int) $found[0];
 		}
-		$price = function_exists( 'wc_prices_include_tax' ) && wc_prices_include_tax() ? Pricing::round_half_up( $price_excl * 1.21, 2 ) : $price_excl;
+		// Prijs zoals WooCommerce hem invoert: incl. btw met het echte basistarief als de winkel zo werkt (woo-compat-1).
+		$price = \BorduurPatchStudio\Woo\Config::woo_unit_price( $price_excl, null );
 		$p     = new \WC_Product_Simple();
 		$p->set_name( $name );
 		$p->set_status( 'publish' );

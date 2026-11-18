@@ -7,6 +7,8 @@
 
 namespace BorduurPatchStudio\Woo;
 
+use BorduurPatchStudio\Logger;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -19,13 +21,16 @@ final class Product {
 	const STUDIO_OPTION = 'bps_studio_page_id';
 	const META_FLAG     = '_bps_patch_product';
 
+	/** WooCommerce Product Add-Ons: never apply global add-on groups to this product (woo-compat-9). */
+	const ADDONS_EXCLUDE = '_product_addons_exclude_global';
+
 	/**
 	 * Hooks.
 	 */
 	public static function register(): void {
 		add_action( 'init', array( __CLASS__, 'maybe_ensure' ), 20 );
 		add_action( 'bps_settings_updated', array( __CLASS__, 'sync_settings' ) );
-		add_filter( 'woocommerce_add_to_cart_validation', array( __CLASS__, 'block_direct_add' ), 5, 2 );
+		add_filter( 'woocommerce_add_to_cart_validation', array( __CLASS__, 'block_direct_add' ), 5, 6 );
 		add_action( 'woocommerce_store_api_validate_add_to_cart', array( __CLASS__, 'block_store_api_add' ), 5, 2 );
 		add_action( 'template_redirect', array( __CLASS__, 'redirect_product_page' ) );
 		add_filter( 'wp_robots', array( __CLASS__, 'robots' ) );
@@ -118,9 +123,13 @@ final class Product {
 		$p->set_catalog_visibility( self::visibility() );
 		// No short description: block cart/checkout would print it under every patch line.
 		$p->update_meta_data( self::META_FLAG, '1' );
+		$p->update_meta_data( self::ADDONS_EXCLUDE, '1' );
 		$id = (int) $p->save();
 		if ( $id > 0 ) {
 			update_option( self::OPTION, $id, true );
+			Logger::info( 'patch_product_created', array( 'product_id' => $id ) );
+		} else {
+			Logger::error( 'patch_product_create_failed', array() );
 		}
 		return $id;
 	}
@@ -134,6 +143,10 @@ final class Product {
 		$dirty = false;
 		if ( '1' !== (string) $p->get_meta( self::META_FLAG ) ) {
 			$p->update_meta_data( self::META_FLAG, '1' );
+			$dirty = true;
+		}
+		if ( '1' !== (string) $p->get_meta( self::ADDONS_EXCLUDE ) ) {
+			$p->update_meta_data( self::ADDONS_EXCLUDE, '1' );
 			$dirty = true;
 		}
 		if ( '' === (string) $p->get_regular_price() ) {
@@ -150,6 +163,7 @@ final class Product {
 		}
 		if ( $dirty ) {
 			$p->save();
+			Logger::info( 'patch_product_repaired', array( 'product_id' => (int) $p->get_id() ) );
 		}
 		if ( (int) get_option( self::OPTION ) !== (int) $p->get_id() ) {
 			update_option( self::OPTION, (int) $p->get_id(), true );
@@ -199,13 +213,22 @@ final class Product {
 	}
 
 	/**
-	 * Classic add-to-cart (product page, ?add-to-cart=): never without a Patch Studio design.
+	 * Classic add-to-cart (product page, ?add-to-cart=): never without a Patch Studio design. The one exception
+	 * besides our own add_design(): WooCommerce "Order again", where Order_Again rebuilt the line server-side
+	 * (the cart item data arrives as 6th argument only from WC_Cart_Session::populate_cart_from_order()).
 	 *
-	 * @param bool $passed     Passed.
-	 * @param int  $product_id Product id.
+	 * @param bool  $passed         Passed.
+	 * @param int   $product_id     Product id.
+	 * @param int   $quantity       Quantity.
+	 * @param int   $variation_id   Variation id.
+	 * @param array $variations     Variations.
+	 * @param array $cart_item_data Cart item data (order again).
 	 */
-	public static function block_direct_add( $passed, $product_id ) {
+	public static function block_direct_add( $passed, $product_id, $quantity = 0, $variation_id = 0, $variations = array(), $cart_item_data = array() ) {
 		if ( ! self::is_ours( (int) $product_id ) || Cart::$internal_add ) {
+			return $passed;
+		}
+		if ( is_array( $cart_item_data ) && Order_Again::is_rebuilt( $cart_item_data ) ) {
 			return $passed;
 		}
 		wc_add_notice( self::direct_add_message(), 'error' );
@@ -220,7 +243,7 @@ final class Product {
 	 * @throws \Automattic\WooCommerce\StoreApi\Exceptions\RouteException When it is our product.
 	 */
 	public static function block_store_api_add( $product, $request ): void {
-		if ( ! $product instanceof \WC_Product || ! self::is_ours( (int) $product->get_id() ) || Cart::$internal_add ) {
+		if ( ! $product instanceof \WC_Product || ! self::is_ours( (int) $product->get_id() ) || Cart::$internal_add || Order_Again::$adding ) {
 			return;
 		}
 		$msg = wp_strip_all_tags( self::direct_add_message() );
@@ -242,9 +265,17 @@ final class Product {
 	}
 
 	/**
-	 * URL of the page that contains the studio (tracked by the shortcode), else the shop/home.
+	 * URL of the page that contains the studio: Frontend\Studio_Pages::url() (contract C8, P09) when available,
+	 * else the page tracked by the shortcode, else home.
 	 */
 	public static function studio_url(): string {
+		// Studio_Pages is delivered by another package (P09); until then the tracked page is used.
+		if ( method_exists( '\BorduurPatchStudio\Frontend\Studio_Pages', 'url' ) ) {
+			$url = (string) \BorduurPatchStudio\Frontend\Studio_Pages::url();
+			if ( '' !== $url ) {
+				return $url;
+			}
+		}
 		$page = (int) get_option( self::STUDIO_OPTION, 0 );
 		if ( $page > 0 && 'publish' === get_post_status( $page ) ) {
 			$url = get_permalink( $page );

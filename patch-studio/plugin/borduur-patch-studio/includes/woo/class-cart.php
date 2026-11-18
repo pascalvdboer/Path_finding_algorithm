@@ -7,6 +7,7 @@
 
 namespace BorduurPatchStudio\Woo;
 
+use BorduurPatchStudio\Logger;
 use BorduurPatchStudio\Pricing;
 use WP_Error;
 
@@ -24,6 +25,12 @@ final class Cart {
 	/** @var array<string,float> Unit prices set during the current calculation (cart key → unit excl). */
 	private static $unit_prices = array();
 
+	/** @var array<string,string> Lines whose price could not be computed in this request (cart key → ref). */
+	private static $price_errors = array();
+
+	/** @var int Depth of woocommerce_before_mini_cart … after_mini_cart (mini-cart shows a short summary). */
+	private static $mini_cart = 0;
+
 	/**
 	 * Hooks.
 	 */
@@ -31,7 +38,23 @@ final class Cart {
 		add_action( 'woocommerce_before_calculate_totals', array( __CLASS__, 'set_prices' ), 20 );
 		add_action( 'woocommerce_cart_calculate_fees', array( __CLASS__, 'add_fees' ), 20 );
 		add_action( 'woocommerce_cart_loaded_from_session', array( __CLASS__, 'drop_orphans' ), 20 );
+		// Requests that only load the cart (mini-cart fragments, Store API, Elementor menu cart) never run
+		// calculate_totals: price the lines as soon as the cart is loaded (woo-compat-2). After drop_orphans.
+		add_action( 'woocommerce_cart_loaded_from_session', array( __CLASS__, 'set_prices' ), 30 );
 		add_action( 'woocommerce_check_cart_items', array( __CLASS__, 'check_cart_items' ), 20 );
+
+		// Mini-cart: at most two meta lines per patch (woo-compat-13).
+		add_action( 'woocommerce_before_mini_cart', array( __CLASS__, 'mini_cart_start' ), 1 );
+		add_action( 'woocommerce_after_mini_cart', array( __CLASS__, 'mini_cart_end' ), 999 );
+
+		// Live pricing: shipping values from the WooCommerce zone (woo-compat-6) and health checks (C7).
+		add_filter( 'bps_pricing_live_config', array( Config::class, 'apply_shipping_zone' ) );
+		add_filter( 'bps_status_checks', array( Config::class, 'status_checks' ) );
+		add_action( 'bps_settings_updated', array( Config::class, 'reset_cache' ) );
+
+		// Sub-features of this package without an own registry entry.
+		Order_Again::register();
+		Variant_Names::register();
 
 		// Woo Discount Rules: our tiers are already in the price; never discount or count our lines (06 §5b-5).
 		add_filter( 'advanced_woo_discount_rules_calculate_discount_for_cart_item', array( __CLASS__, 'wdr_exclude' ), 10, 2 );
@@ -64,10 +87,13 @@ final class Cart {
 	 * Add a stored design to the cart (replaces an earlier line of the same design).
 	 *
 	 * @param array $design DesignRecord.
-	 * @param array $rights {v, accepted}.
+	 * @param array $rights {v, accepted}. The stored text version always comes from the server config
+	 *                      (legal.rightsTextVersion); a different client value is kept as client_v (gdpr-juridisch-8).
+	 * @param array $extra  Server-side only (never from request input): reorder_of {design_id, order_id, ref},
+	 *                      locked_unit_excl (float, atelier mode of P07).
 	 * @return array|WP_Error {key, quote}
 	 */
-	public static function add_design( array $design, array $rights ) {
+	public static function add_design( array $design, array $rights, array $extra = array() ) {
 		$p    = $design['payload'];
 		$tech = Config::technique( (string) ( $p['technique'] ?? '' ) );
 		if ( ! $tech || empty( $tech['enabled'] ) ) {
@@ -80,6 +106,7 @@ final class Cart {
 				'technique' => $p['technique'],
 				'size_cm'   => (float) $p['sizeCm'],
 				'options'   => (array) $p['options'],
+				'variants'  => count( Variant_Names::names( $p ) ),
 			),
 			(int) $p['qty'],
 			0,
@@ -87,7 +114,7 @@ final class Cart {
 			0,
 			(string) ( $p['locale'] ?? '' )
 		);
-		$err = self::quote_error( $probe, (string) $design['ref'] );
+		$err = isset( $extra['locked_unit_excl'] ) ? null : self::quote_error( $probe, (string) $design['ref'] );
 		if ( $err ) {
 			return $err;
 		}
@@ -104,7 +131,8 @@ final class Cart {
 			}
 		}
 
-		$data = array(
+		$names = Variant_Names::names( $p );
+		$data  = array(
 			'bps' => array(
 				'v'           => 1,
 				'design_id'   => (int) $design['id'],
@@ -118,26 +146,45 @@ final class Cart {
 				'texts'       => self::texts_brief( (array) ( $p['texts'] ?? array() ) ),
 				'preview_url' => (string) $design['preview_url'],
 				'locale'      => (string) ( $p['locale'] ?? 'nl-BE' ),
-				'rights'      => array(
-					'v'      => substr( sanitize_text_field( (string) ( $rights['v'] ?? '' ) ), 0, 20 ),
-					'at'     => gmdate( 'Y-m-d\TH:i:s\Z' ),
-					'locale' => Config::wp_locale( (string) ( $p['locale'] ?? '' ) ),
-				),
+				'rights'      => self::rights_record( $rights, (string) ( $p['locale'] ?? '' ) ),
 			),
 		);
+		if ( $names ) {
+			$data['bps']['variants'] = count( $names );
+		}
+		if ( ! empty( $extra['reorder_of'] ) && is_array( $extra['reorder_of'] ) ) {
+			$data['bps']['reorder_of'] = self::reorder_ref( $extra['reorder_of'] );
+		}
+		if ( isset( $extra['locked_unit_excl'] ) && is_numeric( $extra['locked_unit_excl'] ) && (float) $extra['locked_unit_excl'] >= 0 ) {
+			$data['bps']['locked_unit_excl'] = round( (float) $extra['locked_unit_excl'], 4 );
+		}
 
 		self::$internal_add = true;
 		$notices_before     = function_exists( 'wc_get_notices' ) ? wc_get_notices( 'error' ) : array();
+		$add_error = '';
 		try {
 			$key = $cart->add_to_cart( $product_id, (int) $p['qty'], 0, array(), $data );
 		} catch ( \Exception $e ) {
-			$key = false;
+			$key       = false;
+			$add_error = $e->getMessage(); // Logged below together with the Woo notices.
 		}
 		self::$internal_add = false;
 
 		if ( ! $key ) {
 			$errors = function_exists( 'wc_get_notices' ) ? wc_get_notices( 'error' ) : array();
-			$msg    = count( $errors ) > count( $notices_before ) ? wp_strip_all_tags( (string) ( end( $errors )['notice'] ?? '' ) ) : '';
+			$new    = array_slice( $errors, count( $notices_before ) );
+			$msg    = $new ? wp_strip_all_tags( (string) ( end( $new )['notice'] ?? '' ) ) : '';
+			// Another plugin (e.g. Product Add-Ons with a required global group) refused the line: keep the real reason.
+			Logger::warning(
+				'cart_add_failed',
+				array(
+					'ref'       => (string) $design['ref'],
+					'technique' => (string) $p['technique'],
+					'qty'       => (int) $p['qty'],
+					'notices'   => array_map( static fn( $n ) => wp_strip_all_tags( (string) ( $n['notice'] ?? '' ) ), $new ),
+					'exception' => $add_error,
+				)
+			);
 			wc_clear_notices();
 			return new WP_Error( 'bps_cart', '' !== $msg ? $msg : __( 'Toevoegen aan je winkelmand is niet gelukt. Probeer het nog eens.', 'borduur-patch-studio' ), array( 'status' => 400 ) );
 		}
@@ -178,8 +225,59 @@ final class Cart {
 				}
 			}
 		}
-		$fees = array_values( array_unique( array_merge( $own, self::legacy_fee_groups( $items ) ) ) );
+		$fees = array_merge( $own, self::legacy_fee_groups( $items ) );
+		if ( self::fee_waived( $bps ) ) {
+			// Reorder with promises.reorderKeepsSetup: the existing embroidery file is reused, no new setup fee.
+			$t = Config::technique( (string) $bps['technique'] );
+			if ( ! empty( $t['feeGroup'] ) ) {
+				$fees[] = (string) $t['feeGroup'];
+			}
+		}
+		$fees = array_values( array_unique( $fees ) );
 		return self::quote_for( $bps, (int) $item['quantity'], max( 0, $pool ), $fees, round( $other, 2 ), (string) ( $bps['locale'] ?? '' ), true );
+	}
+
+	/**
+	 * Rights record for the cart line: version from the server config, the client's value only for the record.
+	 *
+	 * @param array  $rights Client {v, accepted}.
+	 * @param string $locale Payload locale.
+	 */
+	public static function rights_record( array $rights, string $locale ): array {
+		$server = substr( (string) Config::path( 'legal.rightsTextVersion', '' ), 0, 20 );
+		$client = substr( sanitize_text_field( (string) ( $rights['v'] ?? '' ) ), 0, 20 );
+		$out    = array(
+			'v'      => $server,
+			'at'     => gmdate( 'Y-m-d\TH:i:s\Z' ),
+			'locale' => Config::wp_locale( $locale ),
+		);
+		if ( '' !== $client && $client !== $server ) {
+			$out['client_v'] = $client;
+		}
+		return $out;
+	}
+
+	/**
+	 * Sanitised reorder reference {design_id, order_id, ref}.
+	 *
+	 * @param array $r Raw (server-built) reference.
+	 */
+	public static function reorder_ref( array $r ): array {
+		return array(
+			'design_id' => (int) ( $r['design_id'] ?? 0 ),
+			'order_id'  => (int) ( $r['order_id'] ?? 0 ),
+			'ref'       => substr( sanitize_text_field( (string) ( $r['ref'] ?? '' ) ), 0, 40 ),
+		);
+	}
+
+	/**
+	 * Is the one-off setup fee of this line waived? Only for a reorder and only when the owner switched on
+	 * promises.reorderKeepsSetup (the single setting for this, contract C5; default off).
+	 *
+	 * @param array $bps Cart bps data.
+	 */
+	public static function fee_waived( array $bps ): bool {
+		return ! empty( $bps['reorder_of'] ) && true === (bool) Config::path( 'promises.reorderKeepsSetup', false );
 	}
 
 	/* ---------------------------------------------------------------------
@@ -187,12 +285,19 @@ final class Cart {
 	 * ------------------------------------------------------------------- */
 
 	/**
-	 * Set the unit price of each Patch Studio line (absolute price → idempotent).
+	 * Set the unit price of each Patch Studio line (absolute price → idempotent). Runs on before_calculate_totals and
+	 * when the cart is loaded from the session, for the whole cart (the tier pool depends on every line).
+	 *
+	 * The engine price is excl. VAT; WooCommerce gets it through Config::woo_unit_price() so shops that enter
+	 * prices incl. VAT charge the same net amount (woo-compat-1). Regular price = price and no sale price, so the
+	 * Store API and mini-cart never show a fake discount (woo-compat-2). A pricing error never becomes € 0: the line
+	 * is flagged (bps_price_error), logged, keeps its previous price and check_cart_items blocks the checkout with a
+	 * specific message (php-kwaliteit-4).
 	 *
 	 * @param \WC_Cart $cart Cart.
 	 */
 	public static function set_prices( $cart ): void {
-		if ( ! $cart instanceof \WC_Cart || ! class_exists( Pricing::class ) ) {
+		if ( ! $cart instanceof \WC_Cart ) {
 			return;
 		}
 		$items = $cart->get_cart();
@@ -204,17 +309,118 @@ final class Cart {
 			$qty  = (int) $item['quantity'];
 			$bps  = $item['bps'];
 			$own  = self::in_pool( (string) $bps['technique'] ) ? $qty : 0;
-			try {
-				$unit = (float) Pricing::cart_unit_excl( $bps, $qty, max( 0, $pool - $own ) );
-			} catch ( \Throwable $e ) {
-				$unit = 0.0;
+			$unit = null;
+			$why  = '';
+			if ( isset( $bps['locked_unit_excl'] ) && is_numeric( $bps['locked_unit_excl'] ) ) {
+				// Price agreed by the atelier (P07 atelier mode); only ever set server-side in add_design().
+				$unit = (float) $bps['locked_unit_excl'];
+			} else {
+				try {
+					$unit = (float) self::engine_unit( $bps, $qty, max( 0, $pool - $own ) );
+				} catch ( \Throwable $e ) {
+					$why = $e->getMessage(); // Logged with context by flag_price_error() below.
+				}
 			}
-			if ( ! is_finite( $unit ) || $unit < 0 ) {
-				$unit = 0.0;
+			if ( null === $unit || ! is_finite( $unit ) || $unit <= 0 ) {
+				self::flag_price_error( $cart, (string) $key, $bps, $qty, '' !== $why ? $why : 'no_price' );
+				// Keep the last good price of this line (stored in the session) so it never shows € 0.
+				$last = (float) ( $item['bps_unit_excl'] ?? 0 );
+				if ( $last > 0 ) {
+					self::apply_price( $item['data'], Config::woo_unit_price( $last, $item['data'] ) );
+				}
+				continue;
+			}
+			unset( self::$price_errors[ $key ] );
+			if ( isset( $cart->cart_contents[ $key ] ) ) {
+				unset( $cart->cart_contents[ $key ]['bps_price_error'] );
+				$cart->cart_contents[ $key ]['bps_unit_excl'] = $unit;
 			}
 			self::$unit_prices[ $key ] = $unit;
-			$item['data']->set_price( $unit );
+			self::apply_price( $item['data'], Config::woo_unit_price( $unit, $item['data'] ) );
 		}
+	}
+
+	/**
+	 * The engine unit price excl. VAT (filterable for tests and integrations: bps_cart_unit_excl).
+	 *
+	 * @param array $bps  Cart bps data.
+	 * @param int   $qty  Line quantity.
+	 * @param int   $pool Pool quantity of the other lines.
+	 * @throws \RuntimeException When a filter reports a failure.
+	 */
+	private static function engine_unit( array $bps, int $qty, int $pool ): float {
+		$unit = Pricing::cart_unit_excl( $bps, $qty, $pool );
+		/**
+		 * Unit price excl. VAT of a Patch Studio cart line. A callback may throw to signal a pricing failure.
+		 *
+		 * @param float $unit Unit price excl. VAT.
+		 * @param array $bps  Cart bps data.
+		 * @param int   $qty  Quantity.
+		 * @param int   $pool Pool quantity of the other lines.
+		 */
+		return (float) apply_filters( 'bps_cart_unit_excl', $unit, $bps, $qty, $pool );
+	}
+
+	/**
+	 * Set price, regular price and no sale price on the cart line's product instance.
+	 *
+	 * @param \WC_Product $product Product instance of the line.
+	 * @param float       $price   Price as WooCommerce expects it (incl. VAT when prices are entered incl. VAT).
+	 */
+	public static function apply_price( \WC_Product $product, float $price ): void {
+		$product->set_price( $price );
+		$product->set_regular_price( $price );
+		$product->set_sale_price( '' );
+	}
+
+	/**
+	 * Mark a line whose price failed, log it with context, keep the previous price.
+	 *
+	 * @param \WC_Cart $cart Cart.
+	 * @param string   $key  Cart key.
+	 * @param array    $bps  Cart bps data.
+	 * @param int      $qty  Quantity.
+	 * @param string   $why  Error message.
+	 */
+	private static function flag_price_error( \WC_Cart $cart, string $key, array $bps, int $qty, string $why ): void {
+		$first = ! isset( self::$price_errors[ $key ] );
+		self::$price_errors[ $key ] = (string) ( $bps['ref'] ?? '' );
+		unset( self::$unit_prices[ $key ] );
+		if ( isset( $cart->cart_contents[ $key ] ) ) {
+			$cart->cart_contents[ $key ]['bps_price_error'] = true;
+		}
+		if ( $first ) {
+			Logger::error(
+				'cart_price_failed',
+				array(
+					'design_id' => (int) ( $bps['design_id'] ?? 0 ),
+					'ref'       => (string) ( $bps['ref'] ?? '' ),
+					'technique' => (string) ( $bps['technique'] ?? '' ),
+					'size_cm'   => (float) ( $bps['size_cm'] ?? 0 ),
+					'qty'       => $qty,
+					'error'     => $why,
+				)
+			);
+		}
+	}
+
+	/**
+	 * Refs of lines whose price failed in this request.
+	 *
+	 * @return array<string,string> Cart key → ref.
+	 */
+	public static function price_errors(): array {
+		return self::$price_errors;
+	}
+
+	/**
+	 * Customer message for a line without a price (NL source; FR in the plugin catalogue).
+	 *
+	 * @param string $ref Design reference.
+	 */
+	public static function price_error_message( string $ref ): string {
+		/* translators: %s: design reference, e.g. PS-2026-0042 */
+		return sprintf( __( 'We konden de prijs van ontwerp %s niet berekenen. Probeer opnieuw of neem contact op.', 'borduur-patch-studio' ), $ref );
 	}
 
 	/**
@@ -332,7 +538,8 @@ final class Cart {
 			}
 			$group = isset( $tech['feeGroup'] ) ? (string) $tech['feeGroup'] : '';
 			$def   = '' !== $group ? Config::path( 'fees.groups.' . $group ) : null;
-			if ( is_array( $def ) && ! in_array( $group, $skip, true ) ) {
+			// A reorder reuses the existing embroidery file when the owner promises that (promises.reorderKeepsSetup).
+			if ( is_array( $def ) && ! in_array( $group, $skip, true ) && ! self::fee_waived( $bps ) ) {
 				$amount = (float) ( $def['amount'] ?? 0 );
 				$label  = Config::label( $def['label'] ?? $group, $lang );
 				if ( 'design' === $scope ) {
@@ -416,16 +623,23 @@ final class Cart {
 	 * Re-validate every Patch Studio line before checkout (config may have changed since).
 	 */
 	public static function check_cart_items(): void {
-		if ( ! function_exists( 'WC' ) || ! WC()->cart || ! class_exists( Pricing::class ) ) {
+		if ( ! function_exists( 'WC' ) || ! WC()->cart ) {
 			return;
 		}
 		$items = WC()->cart->get_cart();
 		$pool  = self::pool_qty( $items );
-		foreach ( $items as $item ) {
+		foreach ( $items as $key => $item ) {
 			if ( empty( $item['bps'] ) ) {
 				continue;
 			}
 			$bps = $item['bps'];
+			if ( isset( self::$price_errors[ $key ] ) || ! empty( $item['bps_price_error'] ) ) {
+				wc_add_notice( esc_html( self::price_error_message( (string) $bps['ref'] ) ), 'error' );
+				continue;
+			}
+			if ( isset( $bps['locked_unit_excl'] ) ) {
+				continue; // Atelier price: the engine rules (min qty, quote-only sizes) were settled by the atelier.
+			}
 			if ( ! Designs::get( (int) $bps['design_id'] ) ) {
 				wc_add_notice(
 					/* translators: %s: design reference */
@@ -456,13 +670,6 @@ final class Cart {
 	 * @param bool   $with_ladder Include the tier ladder.
 	 */
 	public static function quote_for( array $bps, int $qty, int $pool, array $fees, float $other_incl, string $locale, bool $with_ladder = false ): array {
-		if ( ! class_exists( Pricing::class ) ) {
-			return array(
-				'ok'     => false,
-				'mode'   => 'order',
-				'errors' => array( array( 'code' => 'engine_missing', 'params' => array() ) ),
-			);
-		}
 		$input = array(
 			'technique'          => (string) ( $bps['technique'] ?? '' ),
 			'sizeCm'             => (float) ( $bps['size_cm'] ?? 0 ),
@@ -474,9 +681,22 @@ final class Cart {
 			'withLadder'         => $with_ladder,
 			'locale'             => Config::public_locale( '' !== $locale ? $locale : null ),
 		);
+		if ( ! empty( $bps['variants'] ) ) {
+			$input['variantCount'] = (int) $bps['variants'];
+		}
 		try {
 			return (array) Pricing::quote( $input );
 		} catch ( \Throwable $e ) {
+			Logger::error(
+				'quote_failed',
+				array(
+					'ref'       => (string) ( $bps['ref'] ?? '' ),
+					'technique' => (string) $input['technique'],
+					'size_cm'   => $input['sizeCm'],
+					'qty'       => $qty,
+					'error'     => $e->getMessage(),
+				)
+			);
 			return array(
 				'ok'     => false,
 				'mode'   => 'order',
@@ -517,7 +737,7 @@ final class Cart {
 			return new WP_Error(
 				'bps_min_qty',
 				/* translators: 1: technique, 2: minimum quantity */
-				$label . sprintf( __( '%1$s maken we vanaf %2$d stuks. Pas het aantal aan.', 'borduur-patch-studio' ), $tech, $min ),
+				$label . sprintf( _n( '%1$s maken we vanaf %2$s stuk. Pas het aantal aan.', '%1$s maken we vanaf %2$s stuks. Pas het aantal aan.', $min, 'borduur-patch-studio' ), $tech, number_format_i18n( $min ) ),
 				array( 'status' => 400, 'min' => $min )
 			);
 		}
@@ -526,7 +746,7 @@ final class Cart {
 			return new WP_Error(
 				'bps_min_qty',
 				/* translators: 1: technique, 2: step */
-				$label . sprintf( __( '%1$s bestel je per %2$d stuks. Pas het aantal aan.', 'borduur-patch-studio' ), $tech, $step ),
+				$label . sprintf( _n( '%1$s bestel je per %2$s stuk. Pas het aantal aan.', '%1$s bestel je per %2$s stuks. Pas het aantal aan.', $step, 'borduur-patch-studio' ), $tech, number_format_i18n( $step ) ),
 				array( 'status' => 400, 'step' => $step )
 			);
 		}
@@ -559,18 +779,85 @@ final class Cart {
 		$item_data = is_array( $item_data ) ? $item_data : array();
 		$b         = $cart_item['bps'];
 		$lang      = Config::lang();
-		$rows      = self::summary_rows( $b, $lang );
+		if ( self::$mini_cart > 0 ) {
+			// Mini-cart / side cart: the reference plus one summary line; the cart and checkout show everything.
+			$item_data[] = array(
+				'key'   => __( 'Ontwerp', 'borduur-patch-studio' ),
+				'value' => (string) ( $b['ref'] ?? '' ),
+			);
+			$item_data[] = array(
+				'key'   => __( 'Patch', 'borduur-patch-studio' ),
+				'value' => self::short_summary( $b, $lang ),
+			);
+			return apply_filters( 'bps_cart_item_display', $item_data, $b, 'mini' );
+		}
+		$rows = self::summary_rows( $b, $lang );
 		foreach ( $rows as $row ) {
 			$item_data[] = array(
 				'key'   => $row[0],
 				'value' => $row[1],
 			);
 		}
+		if ( ! empty( $b['reorder_of'] ) ) {
+			$item_data[] = array(
+				'key'   => __( 'Herbestelling', 'borduur-patch-studio' ),
+				'value' => self::reorder_text( (array) $b['reorder_of'], self::fee_waived( $b ) ),
+			);
+		}
 		$item_data[] = array(
 			'key'   => __( 'Maatwerk', 'borduur-patch-studio' ),
 			'value' => __( 'Geen herroepingsrecht · digitale proef vóór productie', 'borduur-patch-studio' ),
 		);
-		return apply_filters( 'bps_cart_item_display', $item_data, $b );
+		return apply_filters( 'bps_cart_item_display', $item_data, $b, 'full' );
+	}
+
+	/**
+	 * "Geborduurd · 8 cm · rond" for the mini-cart.
+	 *
+	 * @param array  $b    Bps data.
+	 * @param string $lang Language.
+	 */
+	public static function short_summary( array $b, string $lang ): string {
+		$parts = array(
+			Config::technique_label( (string) ( $b['technique'] ?? '' ), $lang ),
+			Config::num( (float) ( $b['size_cm'] ?? 0 ) ) . ' cm',
+			Config::shape_label( (string) ( $b['shape'] ?? '' ), $lang ),
+		);
+		return implode( ' · ', array_filter( $parts, 'strlen' ) );
+	}
+
+	/**
+	 * Honest reorder line: "Herbestelling van PS-2026-0042 (bestelling #1234)" + whether the setup fee is waived.
+	 *
+	 * @param array $r      Reorder reference.
+	 * @param bool  $waived Setup fee waived.
+	 */
+	public static function reorder_text( array $r, bool $waived = false ): string {
+		$ref   = (string) ( $r['ref'] ?? '' );
+		$order = (int) ( $r['order_id'] ?? 0 );
+		$text  = $order > 0
+			/* translators: 1: design reference, 2: order number */
+			? sprintf( __( 'Herbestelling van %1$s (bestelling #%2$s)', 'borduur-patch-studio' ), $ref, $order )
+			/* translators: %s: design reference */
+			: sprintf( __( 'Herbestelling van %s', 'borduur-patch-studio' ), $ref );
+		if ( $waived ) {
+			$text .= ' · ' . __( 'we gebruiken je bestaande borduurbestand, geen nieuwe instelkosten', 'borduur-patch-studio' );
+		}
+		return $text;
+	}
+
+	/**
+	 * Mini-cart rendering starts (classic widget, wc-ajax fragments, Elementor menu cart).
+	 */
+	public static function mini_cart_start(): void {
+		++self::$mini_cart;
+	}
+
+	/**
+	 * Mini-cart rendering ends.
+	 */
+	public static function mini_cart_end(): void {
+		self::$mini_cart = max( 0, self::$mini_cart - 1 );
 	}
 
 	/**
@@ -675,11 +962,41 @@ final class Cart {
 		if ( empty( $cart_item['bps']['preview_url'] ) ) {
 			return $html;
 		}
+		$img = self::preview_images( $cart_item['bps'] );
 		return sprintf(
-			'<img src="%1$s" alt="%2$s" width="300" height="300" class="bps-cart-preview skip-lazy attachment-woocommerce_thumbnail" data-no-lazy="1" loading="eager" decoding="async" />',
-			esc_url( (string) $cart_item['bps']['preview_url'] ),
+			'<img src="%1$s"%2$s alt="%3$s" width="300" height="300" class="bps-cart-preview skip-lazy attachment-woocommerce_thumbnail" data-no-lazy="1" loading="eager" decoding="async" />',
+			esc_url( $img['src'] ),
+			'' !== $img['srcset'] ? ' srcset="' . esc_attr( $img['srcset'] ) . '"' : '',
 			/* translators: %s: design reference */
 			esc_attr( sprintf( __( 'Voorbeeld van jouw patch %s', 'borduur-patch-studio' ), (string) ( $cart_item['bps']['ref'] ?? '' ) ) )
+		);
+	}
+
+	/**
+	 * Small preview variants for cart, mini-cart and Store API (prestatie-1): 300 px webp + 600 px for 2x screens
+	 * through Designs::preview_url() (contract C3). Older lines/designs without variants fall back to the PNG.
+	 *
+	 * @param array $bps Cart bps data (design_id, preview_url).
+	 * @return array{src:string,src2x:string,srcset:string}
+	 */
+	public static function preview_images( array $bps ): array {
+		$png = (string) ( $bps['preview_url'] ?? '' );
+		$id  = (int) ( $bps['design_id'] ?? 0 );
+		$src = $png;
+		$x2  = '';
+		// Designs::preview_url() arrives with P06 (C3); until then (and for old designs) the PNG is used.
+		if ( $id > 0 && method_exists( Designs::class, 'preview_url' ) ) {
+			$small = (string) Designs::preview_url( $id, 'cart' );
+			$large = (string) Designs::preview_url( $id, 'cart2x' );
+			if ( '' !== $small ) {
+				$src = $small;
+				$x2  = '' !== $large && $large !== $small ? $large : '';
+			}
+		}
+		return array(
+			'src'    => $src,
+			'src2x'  => $x2,
+			'srcset' => '' !== $x2 ? esc_url_raw( $src ) . ' 1x, ' . esc_url_raw( $x2 ) . ' 2x' : '',
 		);
 	}
 
@@ -693,14 +1010,15 @@ final class Cart {
 		if ( empty( $cart_item['bps']['preview_url'] ) ) {
 			return $images;
 		}
-		$url = esc_url_raw( (string) $cart_item['bps']['preview_url'] );
+		$img = self::preview_images( $cart_item['bps'] );
+		$url = esc_url_raw( $img['src'] );
 		return array(
 			(object) array(
 				'id'        => 0,
-				'src'       => $url,
+				'src'       => '' !== $img['src2x'] ? esc_url_raw( $img['src2x'] ) : $url,
 				'thumbnail' => $url,
-				'srcset'    => '',
-				'sizes'     => '',
+				'srcset'    => '' !== $img['src2x'] ? esc_url_raw( $img['src'] ) . ' 300w, ' . esc_url_raw( $img['src2x'] ) . ' 600w' : '',
+				'sizes'     => '' !== $img['src2x'] ? '(max-width: 600px) 100vw, 300px' : '',
 				'name'      => (string) ( $cart_item['bps']['ref'] ?? '' ),
 				'alt'       => __( 'Voorbeeld van jouw patch', 'borduur-patch-studio' ),
 			),
@@ -775,12 +1093,12 @@ final class Cart {
 		$tech               = Config::technique_label( (string) $values['bps']['technique'] );
 		if ( $quantity < $min ) {
 			/* translators: 1: technique, 2: minimum */
-			wc_add_notice( sprintf( __( '%1$s maken we vanaf %2$d stuks.', 'borduur-patch-studio' ), $tech, $min ), 'error' );
+			wc_add_notice( esc_html( sprintf( _n( '%1$s maken we vanaf %2$s stuk.', '%1$s maken we vanaf %2$s stuks.', $min, 'borduur-patch-studio' ), $tech, number_format_i18n( $min ) ) ), 'error' );
 			return false;
 		}
 		if ( 0 !== $quantity % $step ) {
 			/* translators: 1: technique, 2: step */
-			wc_add_notice( sprintf( __( '%1$s bestel je per %2$d stuks.', 'borduur-patch-studio' ), $tech, $step ), 'error' );
+			wc_add_notice( esc_html( sprintf( _n( '%1$s bestel je per %2$s stuk.', '%1$s bestel je per %2$s stuks.', $step, 'borduur-patch-studio' ), $tech, number_format_i18n( $step ) ) ), 'error' );
 			return false;
 		}
 		return $passed;
@@ -834,17 +1152,49 @@ final class Cart {
 	}
 
 	/**
-	 * Legal notice D text.
+	 * Does the current cart contain anything made to measure: a patch (bps), name tapes (bps_nt) or a cross-sell
+	 * product with the customer's design (bps_cs)? Drives the "no right of withdrawal" notices (gdpr-juridisch-4).
 	 */
-	public static function custom_made_text(): string {
-		return __( 'Je bestelling bevat maatwerk. Voor op maat gemaakte patches geldt geen herroepingsrecht (art. VI.53 WER). Je ontvangt eerst een digitale proef; de productie start pas na jouw akkoord.', 'borduur-patch-studio' );
+	public static function has_custom_made(): bool {
+		if ( ! function_exists( 'WC' ) || ! WC()->cart ) {
+			return false;
+		}
+		foreach ( WC()->cart->get_cart() as $item ) {
+			if ( self::is_custom_made_item( $item ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Custom-made cart item?
+	 *
+	 * @param mixed $item Cart item.
+	 */
+	public static function is_custom_made_item( $item ): bool {
+		return is_array( $item ) && ( ! empty( $item['bps'] ) || ! empty( $item['bps_nt'] ) || ! empty( $item['bps_cs'] ) );
+	}
+
+	/**
+	 * Legal notice D text. With a patch the proof promise is part of it; name tapes and cross-sell lines alone get
+	 * the plain custom-made sentence (no proof is promised for those).
+	 *
+	 * @param bool|null $with_proof Mention the digital proof (default: when the cart has a patch line).
+	 */
+	public static function custom_made_text( ?bool $with_proof = null ): string {
+		$with_proof = null === $with_proof ? self::has_design() : $with_proof;
+		if ( $with_proof ) {
+			return __( 'Je bestelling bevat maatwerk. Voor op maat gemaakte patches geldt geen herroepingsrecht (art. VI.53 WER). Je ontvangt eerst een digitale proef; de productie start pas na jouw akkoord.', 'borduur-patch-studio' );
+		}
+		return __( 'Je bestelling bevat maatwerk: producten die speciaal voor jou gemaakt worden. Daarvoor geldt geen herroepingsrecht (art. VI.53 WER).', 'borduur-patch-studio' );
 	}
 
 	/**
 	 * Classic checkout notice.
 	 */
 	public static function checkout_notice(): void {
-		if ( self::has_design() ) {
+		if ( self::has_custom_made() ) {
 			echo '<p class="bps-legal-note" role="note">' . esc_html( self::custom_made_text() ) . '</p>';
 		}
 	}
@@ -855,7 +1205,7 @@ final class Cart {
 	 * @param string $content Block HTML.
 	 */
 	public static function block_checkout_notice( $content ) {
-		if ( ! self::has_design() ) {
+		if ( ! self::has_custom_made() ) {
 			return $content;
 		}
 		return '<div class="woocommerce-info bps-legal-note" role="note">' . esc_html( self::custom_made_text() ) . '</div>' . $content;

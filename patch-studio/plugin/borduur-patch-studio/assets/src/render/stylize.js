@@ -62,10 +62,6 @@ export function analyzeComponents(labels) {
     radius: new Float32Array(n), thick: new Float32Array(n), mode: new Uint8Array(n), area: new Float32Array(n),
     ring: new Uint8Array(n), colW: new Float32Array(n), width: w, height: h,
   };
-  // column width per region = 2 × the deepest point of its distance field (label px). A digitiser chooses satin or
-  // tatami on this width, not on the topology (holes), so every letter of one text gets the same stitch (critique-2 #12).
-  const dist = regionDistance(labels);
-  for (let i = 0; i < N; i++) { const c = comp[i]; if (c >= 0 && dist[i] * 2 > out.colW[c]) out.colW[c] = dist[i] * 2; }
   for (let c = 0; c < n; c++) {
     const [k, sx, sy, sxx, syy, sxy, per] = acc[c];
     const mx = sx / k, my = sy / k;
@@ -82,6 +78,23 @@ export function analyzeComponents(labels) {
     out.radius[c] = spread;
     out.ring[c] = l1 / l2 < 2.2 && thick < spread * 0.35 && k > 60 ? 1 : 0;
   }
+  // rings: every pixel at about the same distance from the centre (a V or a C is no ring, even with a hollow centre)
+  const sr = new Float64Array(n), sr2 = new Float64Array(n);
+  for (let i = 0; i < N; i++) {
+    const c = comp[i];
+    if (c < 0) continue;
+    const x = i % w, r = Math.hypot(x - out.cx[c], (i - x) / w - out.cy[c]);
+    sr[c] += r; sr2[c] += r * r;
+  }
+  for (let c = 0; c < n; c++) {
+    if (!out.ring[c]) continue;
+    const m = sr[c] / out.area[c], v = Math.max(0, sr2[c] / out.area[c] - m * m);
+    if (Math.sqrt(v) > 0.22 * m) out.ring[c] = 0;
+  }
+  // column width per region = 2 × the deepest point of its distance field (label px). A digitiser chooses satin or
+  // tatami on this width, not on the topology (holes), so every letter of one text gets the same stitch (critique-2 #12).
+  const dist = regionDistance(labels);
+  for (let i = 0; i < N; i++) { const c = comp[i]; if (c >= 0 && dist[i] * 2 > out.colW[c]) out.colW[c] = dist[i] * 2; }
   return out;
 }
 

@@ -127,7 +127,7 @@ final class Module {
 		if ( ! Config::enabled() || ! self::bundle_exists() || wp_script_is( self::HANDLE, 'enqueued' ) ) {
 			return;
 		}
-		$ver = defined( 'BPS_VERSION' ) ? BPS_VERSION : '1.0.0';
+		$ver = defined( 'BPS_VERSION' ) ? BPS_VERSION : '2.0.0';
 		wp_enqueue_style( self::HANDLE, self::url() . self::CSS, array(), $ver . '-' . (int) @filemtime( self::dir() . self::CSS ) ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
 		wp_enqueue_script( self::HANDLE, self::url() . self::JS, array(), $ver . '-' . (int) @filemtime( self::dir() . self::JS ), array( 'in_footer' => true ) ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
 		wp_add_inline_script( self::HANDLE, 'window.BPSCrossSellConfig = ' . wp_json_encode( self::client_config(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE ) . ';', 'before' );

@@ -4,29 +4,30 @@
  * Served by admin-post.php?action=bps_print_fiche (capability edit_shop_orders + nonce).
  *
  * @package BorduurPatchStudio
- * @var \WC_Order $order
- * @var array     $fiches
- * @var string    $order_url  Admin URL of the order (QR code target).
+ * @var array     $pages      [{order, fiche, order_url}] (one A4 page each; may span several orders).
  * @var string    $js_url     URL of patch-studio-admin.js (QR rendering, print button).
  * @var string    $site_name
  * @var bool      $autoprint
  */
 
 use BorduurPatchStudio\Admin\Order_Production;
+use BorduurPatchStudio\Proof\Spec;
 
 defined( 'ABSPATH' ) || exit;
 
-$bps_total   = count( $fiches );
-$bps_created = $order->get_date_created();
-$bps_name    = trim( $order->get_formatted_billing_full_name() );
-$bps_company = trim( (string) $order->get_billing_company() );
-$bps_levels  = array(
+$bps_total  = count( $pages );
+$bps_first  = $pages[0]['order'];
+$bps_levels = array(
 	'bad'  => __( 'Belangrijk', 'borduur-patch-studio' ),
 	'warn' => __( 'Let op', 'borduur-patch-studio' ),
 	'ok'   => __( 'In orde', 'borduur-patch-studio' ),
 );
-/* translators: %s: order number */
-$bps_title = sprintf( __( 'Productiefiche bestelling #%s', 'borduur-patch-studio' ), $order->get_order_number() );
+$bps_orders = array_unique( array_map( static fn( $p ) => (int) $p['order']->get_id(), $pages ) );
+$bps_title  = 1 === count( $bps_orders )
+	/* translators: %s: order number */
+	? sprintf( __( 'Productiefiche bestelling #%s', 'borduur-patch-studio' ), $bps_first->get_order_number() )
+	/* translators: %d: number of patches */
+	: sprintf( __( 'Werkbonnen (%d patches)', 'borduur-patch-studio' ), $bps_total );
 ?><!doctype html>
 <html lang="<?php echo esc_attr( str_replace( '_', '-', get_user_locale() ) ); ?>">
 <head>
@@ -53,6 +54,12 @@ $bps_title = sprintf( __( 'Productiefiche bestelling #%s', 'borduur-patch-studio
 	.qr svg { width: 100%; height: 100%; display: block; }
 	.qr__label { font-size: 7pt; text-align: center; color: #444; margin-top: 1mm; }
 	.facts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2.5mm; }
+	.banner { border: 2pt solid #B42318; color: #B42318; background: #FEF3F2; font-weight: 800; font-size: 14pt; text-align: center; padding: 2mm; border-radius: 2mm; letter-spacing: .03em; }
+	.factrow { display: flex; flex-wrap: wrap; gap: 1.5mm 5mm; font-size: 10pt; margin: 0; padding: 0; list-style: none; }
+	.factrow li strong { font-weight: 800; }
+	.factrow .alert { color: #B42318; font-weight: 800; }
+	.approval { border: 1.2pt solid #15803D; border-radius: 2mm; padding: 2mm 3mm; display: flex; gap: 3mm; align-items: center; break-inside: avoid; }
+	.approval img { width: 18mm; height: 18mm; object-fit: contain; }
 	.fact { border: 1pt solid #111; border-radius: 2mm; padding: 2mm 3mm; }
 	.fact__k { display: block; font-size: 7.5pt; color: #444; text-transform: none; }
 	.fact__v { display: block; font-size: 13pt; font-weight: 800; line-height: 1.15; }
@@ -100,12 +107,22 @@ $bps_title = sprintf( __( 'Productiefiche bestelling #%s', 'borduur-patch-studio
 <body class="bps-fiche-print"<?php echo $autoprint ? ' data-bps-autoprint="1"' : ''; ?>>
 <div class="toolbar">
 	<button type="button" data-bps-print><?php esc_html_e( 'Afdrukken', 'borduur-patch-studio' ); ?></button>
-	<a href="<?php echo esc_url( $order_url ); ?>"><?php esc_html_e( 'Terug naar de bestelling', 'borduur-patch-studio' ); ?></a>
+	<?php if ( 1 === count( $bps_orders ) ) : ?>
+		<a href="<?php echo esc_url( $pages[0]['order_url'] ); ?>"><?php esc_html_e( 'Terug naar de bestelling', 'borduur-patch-studio' ); ?></a>
+	<?php endif; ?>
 	<span><?php esc_html_e( 'Tip: druk af op 100 % (geen "passend maken"), dan klopt het voorbeeld op ware grootte.', 'borduur-patch-studio' ); ?></span>
 </div>
 
 <?php
-foreach ( array_values( $fiches ) as $bps_i => $fiche ) :
+foreach ( array_values( $pages ) as $bps_i => $bps_page ) :
+	$fiche       = $bps_page['fiche'];
+	$order       = $bps_page['order'];
+	$order_url   = $bps_page['order_url'];
+	$bps_created = $order->get_date_created();
+	$bps_name    = trim( $order->get_formatted_billing_full_name() );
+	$bps_company = trim( (string) $order->get_billing_company() );
+	$bps_facts   = (array) ( $fiche['facts'] ?? array() );
+	$bps_vis     = (string) ( $fiche['visual_url'] ?? $fiche['preview_url'] );
 	$bps_w      = (float) $fiche['width_mm'];
 	$bps_h      = (float) $fiche['height_mm'];
 	$bps_fit    = min( 1, 66 / max( 1, $bps_w ), 80 / max( 1, $bps_h ) );
@@ -137,11 +154,29 @@ foreach ( array_values( $fiches ) as $bps_i => $fiche ) :
 			</div>
 		</header>
 
+		<?php if ( ! empty( $fiche['approval_banner'] ) ) : ?>
+			<div class="banner" role="alert"><?php esc_html_e( 'NOG NIET GOEDGEKEURD: niet produceren zonder akkoord van de klant', 'borduur-patch-studio' ); ?></div>
+		<?php endif; ?>
+		<?php if ( $bps_facts ) : ?>
+			<ul class="factrow">
+				<?php if ( '' !== $bps_facts['shipping'] ) : ?>
+					<li><?php esc_html_e( 'Verzending', 'borduur-patch-studio' ); ?>: <strong><?php echo esc_html( $bps_facts['shipping'] ); ?></strong></li>
+				<?php endif; ?>
+				<li class="<?php echo $bps_facts['paid'] ? '' : 'alert'; ?>"><?php echo esc_html( $bps_facts['paid'] ? __( 'Betaald', 'borduur-patch-studio' ) : __( 'ONBETAALD', 'borduur-patch-studio' ) ); ?><?php echo '' !== $bps_facts['payment'] ? esc_html( ' · ' . $bps_facts['payment'] ) : ''; ?></li>
+				<?php if ( '' !== $bps_facts['phone'] ) : ?>
+					<li><?php esc_html_e( 'Tel', 'borduur-patch-studio' ); ?>: <strong class="mono"><?php echo esc_html( $bps_facts['phone'] ); ?></strong></li>
+				<?php endif; ?>
+				<?php if ( ! empty( $bps_facts['rush'] ) ) : ?>
+					<li class="alert"><?php esc_html_e( 'SPOED', 'borduur-patch-studio' ); ?></li>
+				<?php endif; ?>
+			</ul>
+		<?php endif; ?>
+
 		<div class="facts">
 			<div class="fact"><span class="fact__k"><?php esc_html_e( 'Techniek', 'borduur-patch-studio' ); ?></span><span class="fact__v"><?php echo esc_html( $fiche['technique_lbl'] ); ?></span></div>
 			<div class="fact"><span class="fact__k"><?php esc_html_e( 'Maat (b × h)', 'borduur-patch-studio' ); ?></span><span class="fact__v mono"><?php echo esc_html( Order_Production::num( round( $bps_w ), 0 ) . ' × ' . Order_Production::num( round( $bps_h ), 0 ) . ' mm' ); ?></span></div>
 			<div class="fact"><span class="fact__k"><?php esc_html_e( 'Vorm', 'borduur-patch-studio' ); ?></span><span class="fact__v"><?php echo esc_html( $fiche['shape_lbl'] ); ?></span></div>
-			<div class="fact"><span class="fact__k"><?php esc_html_e( 'Aantal', 'borduur-patch-studio' ); ?></span><span class="fact__v mono"><?php echo esc_html( number_format( (int) $fiche['qty'], 0, ',', '.' ) ); ?></span></div>
+			<div class="fact"><span class="fact__k"><?php esc_html_e( 'Aantal', 'borduur-patch-studio' ); ?></span><span class="fact__v mono"><?php echo esc_html( Spec::int( (int) $fiche['qty'] ) ); ?></span></div>
 		</div>
 
 		<?php if ( '' !== $fiche['notes'] ) : ?>
@@ -154,12 +189,13 @@ foreach ( array_values( $fiches ) as $bps_i => $fiche ) :
 		<div class="cols">
 			<div class="visual">
 				<div class="visual__box">
-					<?php if ( '' !== $fiche['preview_url'] ) : ?>
-						<img class="visual__img" src="<?php echo esc_url( $fiche['preview_url'] ); ?>" alt="<?php echo esc_attr( sprintf( /* translators: %s: ref */ __( 'Voorbeeld van patch %s', 'borduur-patch-studio' ), $fiche['ref'] ) ); ?>" style="width:<?php echo esc_attr( (string) round( $bps_w * $bps_fit, 2 ) ); ?>mm;height:<?php echo esc_attr( (string) round( $bps_h * $bps_fit, 2 ) ); ?>mm">
+					<?php if ( '' !== $bps_vis ) : ?>
+						<img class="visual__img" src="<?php echo esc_url( $bps_vis ); ?>" alt="<?php echo esc_attr( (string) ( $fiche['visual_label'] ?? '' ) . ' · ' . $fiche['ref'] ); ?>" style="width:<?php echo esc_attr( (string) round( $bps_w * $bps_fit, 2 ) ); ?>mm;height:<?php echo esc_attr( (string) round( $bps_h * $bps_fit, 2 ) ); ?>mm">
 					<?php else : ?>
 						<span><?php esc_html_e( 'Geen voorbeeld', 'borduur-patch-studio' ); ?></span>
 					<?php endif; ?>
 				</div>
+				<p class="visual__cap"><strong><?php echo esc_html( (string) ( $fiche['visual_label'] ?? '' ) ); ?></strong></p>
 				<p class="visual__cap">
 					<?php
 					echo esc_html(
@@ -194,6 +230,10 @@ foreach ( array_values( $fiches ) as $bps_i => $fiche ) :
 						</table>
 					</div>
 					<?php unset( $bps_secs['specs'] ); ?>
+					<?php
+					/** This action is documented in templates/admin/fiche-card.php. */
+					do_action( 'bps_fiche_after_specs', $fiche, 'print' );
+					?>
 				<?php endif; ?>
 			</div>
 		</div>
@@ -248,12 +288,9 @@ foreach ( array_values( $fiches ) as $bps_i => $fiche ) :
 		<div class="sec">
 			<h2><?php esc_html_e( 'Werkvolgorde', 'borduur-patch-studio' ); ?></h2>
 			<ul class="check">
-				<li><?php esc_html_e( 'Bestand nagekeken', 'borduur-patch-studio' ); ?></li>
-				<li><?php echo esc_html( $fiche['thread_based'] ? __( 'Gedigitaliseerd', 'borduur-patch-studio' ) : __( 'Drukbestand klaar', 'borduur-patch-studio' ) ); ?></li>
-				<li class="<?php echo in_array( $bps_status, array( 'sent', 'approved', 'changes_requested' ), true ) ? 'done' : ''; ?>"><?php esc_html_e( 'Proef verstuurd', 'borduur-patch-studio' ); ?></li>
-				<li class="<?php echo 'approved' === $bps_status ? 'done' : ''; ?>"><?php esc_html_e( 'Proef goedgekeurd', 'borduur-patch-studio' ); ?></li>
-				<li><?php esc_html_e( 'Geproduceerd', 'borduur-patch-studio' ); ?></li>
-				<li><?php esc_html_e( 'Gecontroleerd en verpakt', 'borduur-patch-studio' ); ?></li>
+				<?php foreach ( Order_Production::work_steps( $fiche ) as $bps_step ) : ?>
+					<li class="<?php echo $bps_step['done'] ? 'done' : ''; ?>"><?php echo esc_html( $bps_step['label'] ); ?></li>
+				<?php endforeach; ?>
 			</ul>
 			<p><strong><?php esc_html_e( 'Status proef:', 'borduur-patch-studio' ); ?></strong> <?php echo esc_html( Order_Production::status_label( $bps_status ) ); ?>
 				<?php if ( $fiche['proof']['round'] > 0 ) : ?>
@@ -262,6 +299,15 @@ foreach ( array_values( $fiches ) as $bps_i => $fiche ) :
 				<?php endif; ?>
 			</p>
 		</div>
+
+		<?php if ( 'approved' === ( $fiche['visual_kind'] ?? '' ) ) : ?>
+			<div class="approval">
+				<?php if ( '' !== $bps_vis ) : ?>
+					<img src="<?php echo esc_url( $bps_vis ); ?>" alt="">
+				<?php endif; ?>
+				<div><strong><?php echo esc_html( (string) $fiche['visual_label'] ); ?></strong><br><?php esc_html_e( 'Door de klant goedgekeurd. Produceer exact volgens dit beeld en deze specificaties.', 'borduur-patch-studio' ); ?></div>
+			</div>
+		<?php endif; ?>
 
 		<footer class="foot">
 			<span><?php echo esc_html( $site_name . ' · ' . $fiche['ref'] . ' · ' . sprintf( /* translators: %s: date */ __( 'afgedrukt op %s', 'borduur-patch-studio' ), wp_date( 'd-m-Y H:i' ) ) ); ?></span>

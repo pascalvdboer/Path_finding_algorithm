@@ -13,27 +13,29 @@ const T = (text, o = {}) => ({ text, font: 'Sora', heightMm: 6, threadCode: 'aut
 
 /** use: club, company, workwear, motor, youth, event, name, gift */
 export const TEMPLATES = [
-  { id: 'emblem', use: ['club', 'youth'], shape: 'circle', sizeCm: 8, technique: 'embroidered', fabric: 'navy', edge: '1724',
+  { id: 'emblem', form: 'round', use: ['club', 'youth'], shape: 'circle', sizeCm: 8, technique: 'embroidered', fabric: 'navy', edge: '1724',
     texts: [T('KALMTHOUT', { path: 'arc_top', heightMm: 7, threadCode: '1724', letterSpacing: 0.12 }), T('SINDS 1985', { path: 'arc_bottom', heightMm: 5.5, threadCode: '1801', letterSpacing: 0.12 }), T('VC', { font: 'Graduate', heightMm: 16, threadCode: '1801', offsetMm: { x: 0, y: 1 } })] },
-  { id: 'puff', use: ['club', 'gift'], shape: 'circle', sizeCm: 7, technique: 'embroidered', options: ['extra_thick'], fabric: 'black', edge: '1508',
+  { id: 'puff', form: 'round', use: ['club', 'gift'], shape: 'circle', sizeCm: 7, technique: 'embroidered', options: ['extra_thick'], fabric: 'black', edge: '1508',
     texts: [T('24', { font: 'Graduate', heightMm: 26, threadCode: '1508', offsetMm: { x: 0, y: -2 } }), T('TEAM', { heightMm: 6, threadCode: '1801', offsetMm: { x: 0, y: 19 }, letterSpacing: 0.2 })] },
-  { id: 'shield', use: ['club', 'youth'], shape: 'shield', aspect: 0.86, sizeCm: 9, technique: 'woven', fabric: 'royal', edge: '1801',
+  { id: 'shield', form: 'shield', use: ['club', 'youth'], shape: 'shield', aspect: 0.86, sizeCm: 9, technique: 'woven', fabric: 'royal', edge: '1801',
     texts: [T('DE LEEUW', { font: 'Oswald', heightMm: 9, threadCode: '1924', offsetMm: { x: 0, y: -10 } }), T('JEUGD', { heightMm: 5, threadCode: '1801', offsetMm: { x: 0, y: 4 }, letterSpacing: 0.25 }), T('2026', { font: 'Oswald', heightMm: 7, threadCode: '1924', offsetMm: { x: 0, y: 17 } })] },
-  { id: 'banner', use: ['company', 'workwear'], shape: 'rect', aspect: 3.2, sizeCm: 10, technique: 'pvc', fabric: 'black', edge: 'auto',
+  { id: 'banner', form: 'banner', use: ['company', 'workwear'], shape: 'rect', aspect: 3.2, sizeCm: 10, technique: 'pvc', fabric: 'black', edge: 'auto',
     texts: [T('BOUWTEAM', { font: 'Oswald', heightMm: 12, threadCode: '1955', letterSpacing: 0.08 })] },
-  { id: 'name', use: ['name', 'workwear'], shape: 'rounded', aspect: 3.6, sizeCm: 10, technique: 'embroidered', fabric: 'olive', edge: '1798',
+  { id: 'name', form: 'nametape', use: ['name', 'workwear'], shape: 'rounded', aspect: 3.6, sizeCm: 10, technique: 'embroidered', fabric: 'olive', edge: '1798',
     texts: [T('J. JANSSENS', { font: 'Roboto Slab', heightMm: 9, threadCode: '1526', letterSpacing: 0.06 })] },
-  { id: 'vintage', use: ['motor', 'event'], shape: 'oval', aspect: 1.45, sizeCm: 10, technique: 'chenille', fabric: 'red', edge: '1803',
+  { id: 'vintage', form: 'round', use: ['motor', 'event'], shape: 'oval', aspect: 1.45, sizeCm: 10, technique: 'chenille', fabric: 'red', edge: '1803',
     texts: [T('ROAD CREW', { font: 'Cinzel', path: 'arc_top', heightMm: 7, threadCode: '1803', letterSpacing: 0.1 }), T('MC', { font: 'Pacifico', heightMm: 17, threadCode: '1803', offsetMm: { x: 0, y: 3 } })] },
-  { id: 'leather', use: ['gift', 'company'], shape: 'rounded', aspect: 1.5, sizeCm: 8, technique: 'leather', fabric: 'leather_cognac', edge: 'auto',
+  { id: 'leather', form: 'other', use: ['gift', 'company'], shape: 'rounded', aspect: 1.5, sizeCm: 8, technique: 'leather', fabric: 'leather_cognac', edge: 'auto',
     texts: [T('HANDMADE', { font: 'Cinzel', heightMm: 6.5, threadCode: '1800', offsetMm: { x: 0, y: -4 }, letterSpacing: 0.14 }), T('ATELIER · 2026', { heightMm: 4, threadCode: '1800', offsetMm: { x: 0, y: 8 }, letterSpacing: 0.14 })] },
-  { id: 'event', use: ['event', 'gift'], shape: 'circle', sizeCm: 7, technique: 'printed', fabric: 'white', edge: '1934',
+  { id: 'event', form: 'round', use: ['event', 'gift'], shape: 'circle', sizeCm: 7, technique: 'printed', fabric: 'white', edge: '1934',
     texts: [T('FUN RUN', { font: 'Oswald', path: 'arc_top', heightMm: 8, threadCode: '1934', letterSpacing: 0.08 }), T('2026', { font: 'Graduate', heightMm: 13, threadCode: '1965', offsetMm: { x: 0, y: 2 } }), T('10 KM', { path: 'arc_bottom', heightMm: 5.5, threadCode: '1934', letterSpacing: 0.15 })] },
-  { id: 'opa', use: ['gift'], shape: 'shield', aspect: 0.9, sizeCm: 7, technique: 'embroidered', fabric: 'bottle', edge: '1724',
+  { id: 'opa', form: 'shield', use: ['gift'], shape: 'shield', aspect: 0.9, sizeCm: 7, technique: 'embroidered', fabric: 'bottle', edge: '1724',
     texts: [T('BESTE', { font: 'Cinzel', heightMm: 5, threadCode: '1724', offsetMm: { x: 0, y: -12 }, letterSpacing: 0.2 }), T('OPA', { font: 'Graduate', heightMm: 14, threadCode: '1801', offsetMm: { x: 0, y: 2 } })] },
 ];
 
 export const USES = ['all', 'club', 'company', 'workwear', 'motor', 'youth', 'event', 'name', 'gift'];
+/** filter per shape (critique-2 #10) */
+export const FORMS = ['all', 'round', 'shield', 'banner', 'nametape'];
 
 /** Store state for a template (techniques/fabrics that are switched off fall back to what is available). */
 export function templateState(config, tpl, t) {
@@ -105,10 +107,11 @@ function renderTemplate(config, st, px) {
  */
 export function createGallery(ctx, { onPick, limit = 99, hero = false } = {}) {
   const { t, config } = ctx;
-  let use = 'all';
+  let use = 'all', form = 'all';
   const chips = h('div.bps-gal__chips', { role: 'group', 'aria-label': t('ui.gal.filter') });
+  const forms = h('div.bps-gal__chips.bps-gal__chips--form', { role: 'group', 'aria-label': t('ui.gal.formFilter') });
   const grid = h('ul.bps-gal__grid');
-  const el = h('section.bps-gal' + (hero ? '.bps-gal--hero' : ''), hero ? null : [h('div.bps-gal__head', h('h3.bps-h3', t('ui.gal.title')), h('p.bps-help', t('ui.gal.sub'))), chips], grid);
+  const el = h('section.bps-gal' + (hero ? '.bps-gal--hero' : ''), hero ? null : [h('div.bps-gal__head', h('h3.bps-h3', t('ui.gal.title')), h('p.bps-help', t('ui.gal.sub'))), h('div.bps-gal__filters', chips, forms)], grid);
   const cache = new Map();
   const tt = (k, p, fb) => { const s = t(k, p); return s === k ? fb : s; };
 
@@ -127,15 +130,17 @@ export function createGallery(ctx, { onPick, limit = 99, hero = false } = {}) {
     }));
     if (hit) vis.classList.add('is-ready');
     return h('li.bps-gal__item', h('button.bps-gal__card', { type: 'button', 'data-tpl': tpl.id, 'aria-label': t('ui.gal.pick', { name: t('ui.tpl.' + tpl.id), tech: ctx.L(tech.label) }), onclick: () => onPick(tpl) },
-      vis, hero ? null : h('span.bps-gal__name', t('ui.tpl.' + tpl.id)), hero ? null : h('span.bps-gal__tech', ctx.L(tech.label) + (tpl.options && tpl.options.includes('extra_thick') ? ' · ' + t('ui.gal.relief') : ''))));
+      vis, hero ? null : h('span.bps-gal__name', t('ui.tpl.' + tpl.id)), hero ? null : h('span.bps-gal__tech', tpl.options && tpl.options.includes('extra_thick') ? t('ui.gal.relief') : ctx.L(tech.label))));
   }
 
   function draw() {
-    const list = TEMPLATES.filter((x) => (config.techniques[x.technique] || {}).enabled !== false && (use === 'all' || x.use.includes(use))).slice(0, limit);
-    grid.replaceChildren(...list.map(card));
+    const list = TEMPLATES.filter((x) => (config.techniques[x.technique] || {}).enabled !== false && (use === 'all' || x.use.includes(use)) && (form === 'all' || x.form === form)).slice(0, limit);
+    grid.replaceChildren(...(list.length ? list.map(card) : [h('li.bps-gal__none', t('ui.gal.none'))]));
     chips.querySelectorAll('button').forEach((b) => { const on = b.dataset.use === use; b.classList.toggle('is-on', on); b.setAttribute('aria-pressed', String(on)); });
+    forms.querySelectorAll('button').forEach((b) => { const on = b.dataset.form === form; b.classList.toggle('is-on', on); b.setAttribute('aria-pressed', String(on)); });
   }
   if (!hero) chips.append(...USES.map((u) => h('button.bps-gal__chip', { type: 'button', dataset: { use: u }, onclick: () => { use = u; draw(); } }, t('ui.gal.use.' + u))));
+  if (!hero) forms.append(...FORMS.map((f) => h('button.bps-gal__chip.bps-gal__chip--form', { type: 'button', dataset: { form: f }, onclick: () => { form = f; draw(); } }, f === 'all' ? null : h('span.bps-formico.is-' + f, { 'aria-hidden': 'true' }), t('ui.gal.form.' + f))));
   draw();
   return { el, draw };
 }

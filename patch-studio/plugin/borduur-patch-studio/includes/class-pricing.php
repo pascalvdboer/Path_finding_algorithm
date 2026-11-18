@@ -8,8 +8,14 @@
  * (thousands of random inputs, JS vs PHP, full quote compared) enforce this.
  * Change one → change the other in the same order of operations (float sums are order dependent).
  *
- * Pure: no WordPress functions, except Settings::get() when no config is passed and the optional
- * `bps_price_quote` filter. Loadable standalone with define( 'BPS_TESTING', true ).
+ * Pure: no WordPress functions, except Settings::get() when no config is passed (live: then the filter
+ * `bps_pricing_live_config` may override e.g. the shipping values from the WooCommerce zone, and the quote gets an
+ * `estimate` from Lead_Time) and the optional `bps_price_quote` filter. Loadable standalone with
+ * define( 'BPS_TESTING', true ).
+ *
+ * Name variants (concurrentie-features-9): input `variantCount` > 0 adds fees.perVariantName per piece after the tier
+ * discount (one setup fee and the tier on the total stay as they are). Only present for such designs, so the
+ * JS/PHP parity of every other input is unchanged.
  *
  * @package BorduurPatchStudio
  */
@@ -53,9 +59,14 @@ final class Pricing {
 	 * @param array|null $config Config; null → Settings::get().
 	 */
 	public static function quote( array $input, ?array $config = null ): array {
+		$live   = null === $config;
 		$config = self::config( $config );
 		$ladder = ! array_key_exists( 'withLadder', $input ) || false !== $input['withLadder'];
 		$quote  = self::compute( $input, $config, $ladder );
+		if ( $live ) {
+			// Live quotes (REST /quote, cart) carry the calculated delivery estimate, or null when not configured.
+			$quote['estimate'] = Lead_Time::estimate( $config, (string) ( $input['technique'] ?? '' ) );
+		}
 		if ( function_exists( 'apply_filters' ) ) {
 			$filtered = apply_filters( 'bps_price_quote', $quote, $input );
 			if ( is_array( $filtered ) ) {
@@ -145,7 +156,7 @@ final class Pricing {
 				'options'    => isset( $bps['options'] ) && is_array( $bps['options'] ) ? array_values( $bps['options'] ) : array(),
 				'poolQty'    => $pool_qty,
 				'withLadder' => false,
-			),
+			) + ( ! empty( $bps['variants'] ) ? array( 'variantCount' => (int) $bps['variants'] ) : array() ),
 			$config,
 			false
 		);
@@ -397,8 +408,10 @@ final class Pricing {
 			$tier     = self::tier_for( $tier_qty, $config );
 		}
 
-		// 7. Line.
-		$unit_excl = self::r4( ( $base + $pp ) * ( 1 + $pct ) * ( 1 - $tier['discount'] ) );
+		// 7. Line (+ per-name fee for name variants: after the tier, never discounted).
+		$variants  = max( 0, self::int( $input['variantCount'] ?? null ) );
+		$per_name  = $variants > 0 ? max( 0.0, self::num( $config['fees']['perVariantName'] ?? null ) ) : 0.0;
+		$unit_excl = self::r4( ( $base + $pp ) * ( 1 + $pct ) * ( 1 - $tier['discount'] ) + $per_name );
 		$line_excl = self::r2( $unit_excl * $qty );
 		$line_tax  = self::r2( $line_excl * $vat );
 		$line_incl = self::r2( $line_excl + $line_tax );
@@ -503,6 +516,10 @@ final class Pricing {
 		$out['perPieceAllInExcl']   = self::r2( $subtotal_excl / $qty );
 		$out['perPieceAllInIncl']   = self::r2( $subtotal_incl / $qty );
 		$out['breakdown']           = array_merge( array( $item_line ), $extras, $fees, array( $ship_line ) );
+		if ( $variants > 0 ) {
+			$out['variantCount']       = $variants;
+			$out['perVariantNameExcl'] = $per_name;
+		}
 
 		// 12. Ladder + next tier.
 		if ( $with_ladder && $tiered ) {
@@ -649,7 +666,8 @@ final class Pricing {
 	 * ------------------------------------------------------------------- */
 
 	/**
-	 * Resolve the config.
+	 * Resolve the config: the given one (tests, admin samples) or the live one from Settings (the only reader of
+	 * the bundled default config file for the core config).
 	 *
 	 * @param array|null $config Config.
 	 */
@@ -657,12 +675,14 @@ final class Pricing {
 		if ( null !== $config ) {
 			return $config;
 		}
-		if ( class_exists( Settings::class ) ) {
-			return Settings::get();
+		$live = Settings::get();
+		if ( function_exists( 'apply_filters' ) ) {
+			$filtered = apply_filters( 'bps_pricing_live_config', $live );
+			if ( is_array( $filtered ) ) {
+				$live = $filtered;
+			}
 		}
-		$file = dirname( __DIR__ ) . '/config/defaults.json';
-		$data = is_readable( $file ) ? json_decode( (string) file_get_contents( $file ), true ) : null; // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
-		return is_array( $data ) ? $data : array();
+		return $live;
 	}
 
 	/**

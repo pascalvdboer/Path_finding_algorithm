@@ -8,6 +8,9 @@
  * @var string    $print_url  Printable sheet for the whole order.
  * @var bool      $can_proof  Current user may send proofs.
  * @var array     $admin_data Data for assets/src/admin/index.js.
+ * @var string    $order_proof Admin link to "Proef voor hele bestelling versturen" ('' when not offered).
+ * @var array     $notice      {type, text} result of a whole-order proof, or null.
+ * @var string    $stopped     Blocking order status ('' when proofs are allowed).
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -15,6 +18,12 @@ defined( 'ABSPATH' ) || exit;
 $bps_count = count( $fiches );
 ?>
 <div class="bps-prod" data-bps-production>
+	<?php if ( ! empty( $notice ) ) : ?>
+		<div class="notice notice-<?php echo esc_attr( $notice['type'] ); ?> inline" role="status"><p><?php echo esc_html( $notice['text'] ); ?></p></div>
+	<?php endif; ?>
+	<?php if ( ! empty( $stopped ) ) : ?>
+		<div class="notice notice-error inline"><p><strong><?php esc_html_e( 'Geannuleerd: proef en productie gestopt.', 'borduur-patch-studio' ); ?></strong> <?php esc_html_e( 'Deze bestelling is geannuleerd, terugbetaald of mislukt. Proeflinks werken niet meer en er kan geen proef verstuurd worden.', 'borduur-patch-studio' ); ?></p></div>
+	<?php endif; ?>
 	<div class="bps-prod__bar">
 		<p class="bps-prod__intro">
 			<?php
@@ -31,6 +40,12 @@ $bps_count = count( $fiches );
 			<span class="dashicons dashicons-printer" aria-hidden="true"></span>
 			<?php echo esc_html( 1 === $bps_count ? __( 'Productiefiche afdrukken', 'borduur-patch-studio' ) : __( 'Alle productiefiches afdrukken', 'borduur-patch-studio' ) ); ?>
 		</a>
+		<?php if ( ! empty( $order_proof ) ) : ?>
+			<a class="button button-primary bps-prod__orderproof" href="<?php echo esc_url( $order_proof ); ?>" data-bps-order-proof>
+				<span class="dashicons dashicons-email-alt" aria-hidden="true"></span>
+				<?php esc_html_e( 'Proef voor hele bestelling versturen', 'borduur-patch-studio' ); ?>
+			</a>
+		<?php endif; ?>
 	</div>
 
 	<?php

@@ -7,13 +7,14 @@
 
 namespace BorduurPatchStudio\Woo;
 
+use BorduurPatchStudio\Logger;
 use BorduurPatchStudio\Settings;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
  * Read-only helpers. All data comes from Settings::get() (SPEC §4.2): Settings is the only reader of
- * config/defaults.json for the core config (php-kwaliteit-7).
+ * the bundled default config file for the core config (php-kwaliteit-7).
  */
 final class Config {
 
@@ -116,7 +117,8 @@ final class Config {
 		return (int) Settings::product_id();
 	}
 
-	/* ---------------------------------------------------------------------
+	/*
+	---------------------------------------------------------------------
 	 * Locale helpers
 	 * ------------------------------------------------------------------- */
 
@@ -241,7 +243,8 @@ final class Config {
 		return $s;
 	}
 
-	/* ---------------------------------------------------------------------
+	/*
+	---------------------------------------------------------------------
 	 * WooCommerce prices and taxes (woo-compat-1, contract C5)
 	 * ------------------------------------------------------------------- */
 
@@ -295,7 +298,8 @@ final class Config {
 		return $factor - 1;
 	}
 
-	/* ---------------------------------------------------------------------
+	/*
+	---------------------------------------------------------------------
 	 * Shipping estimate from the WooCommerce zone (woo-compat-6)
 	 * ------------------------------------------------------------------- */
 
@@ -338,7 +342,7 @@ final class Config {
 				)
 			);
 		} catch ( \Throwable $e ) {
-			\BorduurPatchStudio\Logger::warning( 'shipping_zone_unreadable', array( 'error' => $e->getMessage() ) );
+			Logger::warning( 'shipping_zone_unreadable', array( 'error' => $e->getMessage() ) );
 			$out['reasons'][] = 'error';
 			return $out;
 		}
@@ -419,7 +423,8 @@ final class Config {
 		return $config;
 	}
 
-	/* ---------------------------------------------------------------------
+	/*
+	---------------------------------------------------------------------
 	 * Status checks (filter bps_status_checks, contract C7)
 	 * ------------------------------------------------------------------- */
 

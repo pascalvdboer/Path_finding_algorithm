@@ -165,7 +165,7 @@ final class Shortcode {
 		$c['assets']  = array(
 			'workerUrl' => BPS_URL . 'assets/dist/patch-studio-worker.js',
 			'fontsUrl'  => BPS_URL . 'assets/fonts/',
-			'version'   => defined( 'BPS_VERSION' ) ? BPS_VERSION : '1.0.0',
+			'version'   => defined( 'BPS_VERSION' ) ? BPS_VERSION : '2.0.0',
 		);
 		$c['strings'] = array();
 		$c['page']    = $page;
@@ -199,7 +199,7 @@ final class Shortcode {
 
 		ob_start();
 		?>
-<div class="<?php echo esc_attr( $classes ); ?>" id="<?php echo esc_attr( $uid ); ?>" data-bps-root data-bps-version="<?php echo esc_attr( defined( 'BPS_VERSION' ) ? BPS_VERSION : '1.0.0' ); ?>" lang="<?php echo esc_attr( $locale ); ?>">
+<div class="<?php echo esc_attr( $classes ); ?>" id="<?php echo esc_attr( $uid ); ?>" data-bps-root data-bps-version="<?php echo esc_attr( defined( 'BPS_VERSION' ) ? BPS_VERSION : '2.0.0' ); ?>" lang="<?php echo esc_attr( $locale ); ?>">
 	<script type="application/json" class="bps-config"><?php echo $json; // phpcs:ignore WordPress.Security.EscapeOutput -- JSON with JSON_HEX_TAG|JSON_HEX_AMP cannot break out of the script element. ?></script>
 	<div class="bps-skeleton" data-bps-skeleton>
 		<h2 class="bps-skeleton__title"><?php esc_html_e( 'Ontwerp je patch', 'borduur-patch-studio' ); ?></h2>

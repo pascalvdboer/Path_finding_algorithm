@@ -1,25 +1,44 @@
 'use strict';
 /**
- * E2E 5 — production sheet in wp-admin for the order of scenario 3 (bank transfer).
+ * E2E 5 — production sheet in wp-admin for the order of scenario 3 (bank transfer), or for a seeded order
+ * (tests/e2e/mu/p05-proof-seed.php) when scenario 3 did not leave a patch order.
  *  order screen: production card with preview, ref, technique, size in mm, thread codes, analysis;
- *  "download origineel" returns the uploaded file as an attachment (admin only); printable A4 sheet;
- *  digital proof: send from the order → mail with link → customer approves → status "approved" + order note.
- * Skips (exit 77) when scenario 3 did not run or the production module is not in the plugin yet.
+ *  "download origineel" returns the uploaded file as an attachment (admin only); printable A4 sheet with the
+ *  facts row; digital proof: send from the order → mail with link → customer ticks the check box and approves →
+ *  the proof of the ORDER LINE is "approved" + order note; the work order then shows the approved proof.
  */
 const fs = require('fs');
 const path = require('path');
 const { ENV, Scenario, launch, newPage, shot, axe, adminLogin, state, phpClassExists, wpEvalJson } = require('./lib/harness.cjs');
 const { orderInfo } = require('./lib/order-check.cjs');
+const { ensureSeed, seedOrder, proofOf, notesOf } = require('../proof/e2e-helpers.cjs');
 
 const t = new Scenario('05-admin-fiche');
 const st = state.read();
-if (!st.bacsOrderId) t.skip('no order from 03-cart-checkout-bacs (run that scenario first)');
+
+/** The order of scenario 3 when it has a patch line; otherwise a seeded order with the same shape. */
+function pickOrder() {
+  if (st.bacsOrderId) {
+    const o = orderInfo(st.bacsOrderId);
+    const line = o.found && o.items.find((i) => Number(i.meta && i.meta._bps_design_id) > 0);
+    if (line) return { o, ref: st.bacsRef, designId: Number(st.bacsDesignId), itemId: Number(line.id), email: 'klant.overschrijving@example.test', seeded: false };
+  }
+  if (!ensureSeed()) return null;
+  const s = seedOrder({ lines: 1, email: 'klant.overschrijving@example.test' });
+  return { o: orderInfo(s.order_id), ref: s.items[0].ref, designId: s.items[0].design_id, itemId: s.items[0].item_id, email: 'klant.overschrijving@example.test', seeded: true };
+}
 
 t.run(async (keep) => {
   const browser = await launch();
   keep(browser);
-  const o = orderInfo(st.bacsOrderId);
-  t.ok(o.found, 'order from scenario 3 exists', st.bacsOrderId);
+  const pick = pickOrder();
+  if (!pick) {
+    t.skip('no patch order from scenario 3 and the seed helper could not be loaded');
+    return;
+  }
+  const { o, ref } = pick;
+  if (pick.seeded) t.info('scenario 3 left no patch order: using a seeded order ' + o.id);
+  t.ok(o.found, 'order with a patch line exists', o.id);
   const { page, problems, context } = await newPage(browser);
   await adminLogin(page);
   await page.goto(o.edit_url, { waitUntil: 'domcontentloaded' });
@@ -27,7 +46,7 @@ t.run(async (keep) => {
 
   // Visible order item meta (woo module) — always required.
   const items = await page.locator('#woocommerce-order-items').innerText();
-  t.ok(items.includes(st.bacsRef), 'order items show the design ref', items.slice(0, 300));
+  t.ok(items.includes(ref), 'order items show the design ref', items.slice(0, 300));
   t.ok(/Techniek/.test(items) && /Geborduurd/.test(items), 'order items show "Techniek: Geborduurd" (readable labels)');
   t.ok(!/_bps_/.test(items), 'hidden _bps_ meta is not shown');
 
@@ -44,7 +63,7 @@ t.run(async (keep) => {
   t.ok(await prod.isVisible(), 'production metabox visible on the order screen');
   const card = prod.locator('.bps-card').first();
   const cardText = await card.innerText();
-  t.ok(cardText.includes(st.bacsRef), 'card shows the ref', cardText.slice(0, 200));
+  t.ok(cardText.includes(ref), 'card shows the ref', cardText.slice(0, 200));
   t.ok(/Geborduurd/.test(cardText), 'card shows the technique');
   t.ok(/\d+\s*×\s*\d+\s*mm/.test(cardText), 'card shows the size in mm (w × h)');
   t.ok(/\b\d{4}\b/.test(cardText) && /garen|Polyneon/i.test(cardText), 'card lists thread colours with Polyneon codes');
@@ -82,7 +101,8 @@ t.run(async (keep) => {
     const r = await pp.goto(printHref);
     t.ok(r && r.status() === 200, 'printable sheet → 200', r && r.status());
     const txt = await pp.locator('body').innerText();
-    t.ok(txt.includes(st.bacsRef), 'printable sheet shows the ref');
+    t.ok(txt.includes(ref), 'printable sheet shows the ref');
+    t.ok(/ONBETAALD|Betaald/.test(txt), 'printable sheet shows the payment status (facts row)', txt.slice(0, 400));
     await pp.screenshot({ path: path.join(ENV.artifacts, '05-print.png'), fullPage: true }).catch(() => {});
     await pp.close();
   }
@@ -104,7 +124,7 @@ t.run(async (keep) => {
     const dlg = page.locator('dialog[data-bps-proof-dialog]');
     await dlg.waitFor({ state: 'visible', timeout: 10000 });
     const to = dlg.locator('[data-bps-proof-to]');
-    t.ok((await to.inputValue()).includes('klant.overschrijving@example.test'), 'proof recipient pre-filled with the billing e-mail', await to.inputValue());
+    t.ok((await to.inputValue()).includes(pick.email), 'proof recipient pre-filled with the billing e-mail', await to.inputValue());
     await dlg.locator('[data-bps-proof-msg]').fill('Hier is je digitale proef. Laat ons weten of alles klopt.');
     await dlg.locator('[data-bps-proof-send]').click();
     await page.waitForFunction(() => !document.querySelector('dialog[data-bps-proof-dialog][open]'), null, { timeout: 20000 }).catch(() => {});
@@ -116,8 +136,9 @@ t.run(async (keep) => {
     const proofMail = fresh.find((m) => /bps_proof=/.test(m.message));
     t.ok(!!proofMail, 'proof mail sent with approve/change links', fresh.map((m) => m.subject));
     if (proofMail) {
-      t.ok(proofMail.to.some((x) => x.includes('klant.overschrijving@example.test')), 'proof mail to the customer', proofMail.to);
-      const links = [...proofMail.message.matchAll(/href=["']([^"']*bps_proof=[^"']*)["']/g)].map((m) => m[1].replace(/&amp;/g, '&'));
+      t.ok(proofMail.to.some((x) => x.includes(pick.email)), 'proof mail to the customer', proofMail.to);
+      const links = [...proofMail.message.matchAll(/href=["']([^"']*bps_proof=[^"']*)["']/g)].map((m) => m[1].replace(/&amp;|&#038;/g, '&'));
+      t.ok(links.every((l) => /[?&]item=\d+/.test(l)), 'proof links carry the order line (item=)', links);
       const approve = links.find((l) => /[?&]a=approve/.test(l));
       t.ok(!!approve && links.some((l) => /[?&]a=changes/.test(l)), 'mail has "Ik keur goed" and "Ik wil iets aanpassen" links', links);
       if (approve) {
@@ -126,15 +147,19 @@ t.run(async (keep) => {
         const r = await cp.goto(approve);
         t.ok(r && r.status() === 200, 'approve link opens a confirmation page', r && r.status());
         t.ok(/noindex/.test(await cp.content()), 'proof page is noindex');
+        t.ok((r.headers()['referrer-policy'] || '') === 'no-referrer', 'Referrer-Policy: no-referrer', r.headers()['referrer-policy']);
+        await cp.locator('input[name=bps_confirm]').check();
         await cp.locator('form button[type=submit]').first().click();
         await cp.waitForLoadState('domcontentloaded');
         await cp.screenshot({ path: path.join(ENV.artifacts, '05-proof-approved.png'), fullPage: true }).catch(() => {});
         await customer.close();
-        const proof = wpEvalJson(`$r = \\BorduurPatchStudio\\Woo\\Designs::get(${Number(st.bacsDesignId)}); echo wp_json_encode( $r ? $r['proof'] : null );`);
-        t.ok(proof && proof.status === 'approved', 'design proof status "approved"', proof);
-        const notes = wpEvalJson(`echo wp_json_encode( array_map( function ( $n ) { return $n->content; }, wc_get_order_notes( array( 'order_id' => ${Number(st.bacsOrderId)} ) ) ) );`);
+        const proof = proofOf(o.id, pick.itemId);
+        t.ok(proof && proof.status === 'approved', 'proof of the order line "approved"', proof);
+        const approved = proof && proof.history.find((h) => h.action === 'approved');
+        t.ok(approved && approved.confirmed === true && /^[0-9a-f]{64}$/.test(approved.ip_hash || ''), 'approval record: check box + IP hash', approved);
+        const notes = notesOf(o.id);
         t.ok(notes.some((n) => /goedgekeurd|keurde|keurt|approved/i.test(n)), 'order note about the approval', notes.slice(0, 5));
-        const o2 = orderInfo(st.bacsOrderId);
+        const o2 = orderInfo(o.id);
         t.ok(o2.status === o.status, 'order status not changed automatically (owner decides)', [o.status, o2.status]);
       }
     }

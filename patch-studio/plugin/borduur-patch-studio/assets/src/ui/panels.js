@@ -7,7 +7,6 @@ import { optionsFor } from '../shared/config.js';
 import { optionEffect, savingHint } from '../pricing/index.js';
 import { threadLabel, qualityLabel, colorDisclaimer, describeMerges, describeFabric } from '../colors/index.js';
 import { h, text, keyed, icon, uid } from './dom.js';
-import { SAMPLES, sampleFile } from './samples.js';
 import { createGallery } from './templates.js';
 import { reconcileOptions, normalizeQty } from './state.js';
 import { textWidthMm } from './stage.js';
@@ -48,7 +47,7 @@ export function emptyState(ctx) {
     h('span.bps-drop__hint', t('ui.empty.hint', { mb })),
   ]));
   // Hero: real patches rendered by our own renderer (no flat logos on white), each one a clickable template.
-  const heroTpl = ['emblem', 'vintage', 'puff', 'leather'];
+  const heroTpl = ['emblem', 'vintage', 'puff', 'leather', 'shield'];
   const heroGal = createGallery(ctx, { hero: true, onPick: (tpl) => ctx.startTemplate(tpl) });
   heroGal.el.querySelectorAll('.bps-gal__item').forEach((li) => { const id = li.querySelector('[data-tpl]').dataset.tpl; const i = heroTpl.indexOf(id); if (i < 0) li.remove(); else li.classList.add('bps-hero__patch', 'bps-hero__patch--' + (i + 1)); });
   const showcase = h('div.bps-hero__show', heroGal.el);
@@ -64,14 +63,11 @@ export function emptyState(ctx) {
       drop,
       h('div.bps-hero__alt',
         h('button.bps-btn.bps-btn--ghost', { type: 'button', 'data-bps-action': 'text-only', onclick: () => ctx.startText() }, icon('type'), t('ui.empty.textOnly'))),
-      h('div.bps-samples',
-        h('p.bps-samples__label', t('ui.empty.samples')),
-        h('ul.bps-samples__list', SAMPLES.map((s, i) => h('li', h('button.bps-sample', {
-          type: 'button',
-          'aria-label': t('ui.empty.sample', { name: t('ui.sample.' + (i + 1)) }),
-          onclick: () => ctx.handleFile(sampleFile(s), { sample: true }),
-        }, icon('image'), h('span', t('ui.sample.' + (i + 1)))))),
-        extra.map((x) => h('li', h('button.bps-sample', { type: 'button', 'data-demo-sample': x.file, title: x.hint || '', onclick: () => loadExtra(x) }, icon('upload'), h('span', x.label || x.file)))))),
+      // example files (config.page.samples, e.g. the demo page) behind one quiet link: the hero shows real patches
+      // and templates, not test buttons (critique-2 #10); without examples there is no link
+      extra.length ? h('details.bps-samples',
+        h('summary.bps-samples__toggle', icon('image'), t('ui.empty.trySample')),
+        h('ul.bps-samples__list', extra.map((x) => h('li', h('button.bps-sample', { type: 'button', 'data-demo-sample': x.file, title: x.hint || '', onclick: () => loadExtra(x) }, icon('upload'), h('span', x.label || x.file)))))) : null,
       h('ul.bps-promises', [t('ui.empty.promise1'), t('ui.empty.promise2'), t('ui.empty.promise3', { city: c.city || 'Kalmthout' })].map((s) => h('li', icon('ok', 'bps-ico--ok'), s))),
       h('p.bps-privacy', t('ui.empty.privacy'), ' ', c.privacyUrl ? h('a', { href: c.privacyUrl }, t('ui.empty.privacyLink')) : null)),
     showcase);
@@ -347,10 +343,32 @@ export function createPanels(ctx) {
         const on = s.options.includes(o.id);
         return h('div.bps-opt' + (on ? '.is-on' : ''),
           h('input', { type: g.type === 'radio' ? 'radio' : 'checkbox', id, name, value: o.id, checked: on, 'data-fk': id, 'aria-describedby': help ? id + '-h' : null, onchange: (e) => choose(gid, o.id, e.target.checked) }),
-          h('label', { for: id }, gid === 'edge' ? h('span.bps-edgeico.is-' + o.id, { 'aria-hidden': 'true' }) : null, h('span.bps-opt__label', L(o.label)), h('span.bps-opt__eff' + (eff.amountIncl < 0 ? '.is-minus' : ''), eff.text)),
+          h('label', { for: id }, gid === 'edge' ? edgeVis(o, s) : null, h('span.bps-opt__label', L(o.label)), h('span.bps-opt__eff' + (eff.amountIncl < 0 ? '.is-minus' : ''), eff.text)),
           help ? h('p.bps-opt__help', { id: id + '-h' }, help) : null);
       })),
       gid === 'backing' ? h('p.bps-help', icon('info'), t('ui.s4.backingTip')) : null);
+  }
+
+  /**
+   * Edge tile: a close-up of YOUR patch with this border (critique-2 #9), rendered in idle time; the CSS icon is the
+   * placeholder until then.
+   */
+  function edgeVis(o, s) {
+    const sp = h('span.bps-edgeico.is-' + o.id, { 'aria-hidden': 'true' });
+    const d = ctx.derived;
+    if (!d || !d.layout) return sp;
+    const go = () => {
+      try {
+        const L0 = d.layout, W = L0.patchWmm, H = L0.patchHmm, round = L0.shape === 'circle' || L0.shape === 'oval';
+        const opts = s.options.filter((x) => (config.options.find((y) => y.id === x) || {}).group !== 'edge').concat(o.id);
+        const st = { ...s, options: opts };
+        const at = round ? { x: W / 2 + W * 0.335, y: H / 2 + H * 0.335 } : { x: W - Math.min(W, H) * 0.08, y: H - Math.min(W, H) * 0.08 };
+        const cv = thumb(ctx, st, d, s.technique, { design: st, layout: { ...L0, edge: { ...L0.edge, id: o.id } } }, 112, { zoom: 5.5, zoomCenterMm: at });
+        if (cv && cv.nodeName === 'CANVAS') { sp.classList.add('is-render'); sp.replaceChildren(cv); }
+      } catch (e) { /* keep the icon */ }
+    };
+    (typeof requestIdleCallback === 'function' ? requestIdleCallback(go, { timeout: 800 }) : setTimeout(go, 40));
+    return sp;
   }
 
   /* ----- Rand ----- */
@@ -359,11 +377,19 @@ export function createPanels(ctx) {
     const edgeId = uid('bps-edge');
     const edgeBox = h('div.bps-colorpick', { id: edgeId });
     const edgeField = h('div.bps-field', h('span.bps-field__lbl', t('ui.s4.edgeColor')), edgeBox);
-    const el = panel(ctx, 'edge', t('ui.panel.edge'), [groups, edgeField], 'checkout');
+    const wName = uid('bps-ew');
+    const widthSeg = h('div.bps-seg', ['narrow', 'normal', 'wide'].map((w) => h('label.bps-seg__opt', { dataset: { w } },
+      h('input', { type: 'radio', name: wName, value: w, 'data-fk': 'edge-width-' + w, onchange: () => store.set({ edgeWidth: w }) }), h('span', t('ui.edge.width.' + w)))));
+    const widthBox = h('fieldset.bps-fieldset.bps-fieldset--inline', h('legend.bps-legend.bps-legend--small', t('ui.edge.width')), widthSeg, h('p.bps-help', t('ui.edge.widthHelp')));
+    const moreEdge = h('details.bps-more', h('summary', t('ui.edge.more')), widthBox);
+    const el = panel(ctx, 'edge', t('ui.panel.edge'), [groups, edgeField, moreEdge], 'checkout');
     P.edge = {
       el,
       update(s, d) {
-        keyed(groups, JSON.stringify([s.technique, s.options, ctx.ui.exclVat]), () => (group('edge', config.optionGroups.edge, s, { legend: false }) || h('p.bps-help', t('ui.edge.none'))));
+        keyed(groups, JSON.stringify([s.technique, s.options, ctx.ui.exclVat, s.shape, s.sizeCm, ctx.analysis ? ctx.analysis.job : 0, d.edgeHex, d.fabric.id]), () => (group('edge', config.optionGroups.edge, s, { legend: false }) || h('p.bps-help', t('ui.edge.none'))));
+        const ew = s.edgeWidth || 'normal';
+        moreEdge.hidden = !(d.layout.edge && ['satin', 'merrow', 'uncut'].includes(d.layout.edge.style));
+        widthSeg.querySelectorAll('label').forEach((lb) => { const on = lb.dataset.w === ew; lb.classList.toggle('is-on', on); lb.querySelector('input').checked = on; });
         const style = d.layout.edge && d.layout.edge.style;
         edgeField.hidden = !(style === 'satin' || style === 'merrow');
         const et = d.edgeThread;

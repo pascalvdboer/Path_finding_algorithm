@@ -8,6 +8,9 @@
 
 namespace BorduurPatchStudio\Nametape;
 
+use BorduurPatchStudio\Logger;
+use BorduurPatchStudio\Woo\Cart as WooCart;
+use BorduurPatchStudio\Woo\Config as WooConfig;
 use WP_Error;
 
 defined( 'ABSPATH' ) || exit;
@@ -27,6 +30,15 @@ final class Cart {
 	/** @var array<string,array> Quote per cart key in this request. */
 	private static $quotes = array();
 
+	/** @var array<string,bool> Lines whose price could not be computed in this request. */
+	private static $price_errors = array();
+
+	/** Rights sentence shown next to the checkbox (nt.s3.rights in assets/src/nametape/messages.js). */
+	const RIGHTS_TEXT = array(
+		'nl' => 'Ik bevestig dat ik deze namen en teksten mag laten borduren.',
+		'fr' => 'Je confirme avoir le droit de faire broder ces noms et textes.',
+	);
+
 	/**
 	 * Hooks.
 	 */
@@ -35,6 +47,8 @@ final class Cart {
 		add_action( 'woocommerce_cart_calculate_fees', array( __CLASS__, 'add_fees' ), 25 );
 		add_action( 'woocommerce_check_cart_items', array( __CLASS__, 'check_cart_items' ), 25 );
 		add_action( 'woocommerce_cart_loaded_from_session', array( __CLASS__, 'drop_orphans' ), 25 );
+		// Mini-cart / Store API requests only load the cart: price the lines right away (woo-compat-2).
+		add_action( 'woocommerce_cart_loaded_from_session', array( __CLASS__, 'set_prices' ), 30 );
 		add_filter( 'bps_cart_pool_qty', array( __CLASS__, 'pool_filter' ), 10, 2 );
 
 		add_filter( 'advanced_woo_discount_rules_calculate_discount_for_cart_item', array( __CLASS__, 'wdr_exclude' ), 10, 2 );
@@ -103,12 +117,39 @@ final class Cart {
 			'org_note'    => (string) $b['orgNote'],
 			'preview_url' => $preview,
 			'preview_file' => $file,
-			'rights'      => array(
-				'v'      => substr( sanitize_text_field( (string) ( $rights['v'] ?? '' ) ), 0, 20 ),
-				'at'     => gmdate( 'Y-m-d\TH:i:s\Z' ),
-				'locale' => 'fr-BE' === $b['locale'] ? 'fr_BE' : 'nl_BE',
-			),
+			'rights'      => self::rights_record( $rights, (string) $b['locale'] ),
+		) + ( isset( $b['bloodConsent'] ) && is_array( $b['bloodConsent'] ) ? array( 'bloodConsent' => $b['bloodConsent'] ) : array() );
+	}
+
+	/**
+	 * Rights record (gdpr-juridisch-8): server text version, SHA-1 of the sentence that was shown, time, locale.
+	 * A different client version is only kept as client_v.
+	 *
+	 * @param array  $rights Client {v, accepted}.
+	 * @param string $locale Batch locale (nl-BE | fr-BE).
+	 */
+	public static function rights_record( array $rights, string $locale ): array {
+		$server = substr( (string) WooConfig::path( 'legal.rightsTextVersion', '' ), 0, 20 );
+		$client = substr( sanitize_text_field( (string) ( $rights['v'] ?? '' ) ), 0, 20 );
+		$out    = array(
+			'v'         => $server,
+			'at'        => gmdate( 'Y-m-d\TH:i:s\Z' ),
+			'text_sha1' => sha1( self::rights_text( $locale ) ),
+			'locale'    => 0 === stripos( $locale, 'fr' ) ? 'fr_BE' : 'nl_BE',
 		);
+		if ( '' !== $client && $client !== $server ) {
+			$out['client_v'] = $client;
+		}
+		return $out;
+	}
+
+	/**
+	 * The rights sentence of the name-tape studio (same text as nt.s3.rights in messages.js).
+	 *
+	 * @param string $locale Locale.
+	 */
+	public static function rights_text( string $locale = '' ): string {
+		return 0 === stripos( $locale, 'fr' ) ? self::RIGHTS_TEXT['fr'] : self::RIGHTS_TEXT['nl'];
 	}
 
 	/**
@@ -130,12 +171,8 @@ final class Cart {
 	 * @param string $technique Technique id.
 	 */
 	private static function technique_in_pool( string $technique ): bool {
-		if ( class_exists( '\BorduurPatchStudio\Woo\Config' ) ) {
-			$t = \BorduurPatchStudio\Woo\Config::technique( $technique );
-			return is_array( $t ) && ! empty( $t['tiers'] ) && (bool) \BorduurPatchStudio\Woo\Config::path( 'tiers.pooled', true );
-		}
-		$main = Config::main();
-		return ! empty( $main['techniques'][ $technique ]['tiers'] );
+		$t = WooConfig::technique( $technique );
+		return is_array( $t ) && ! empty( $t['tiers'] ) && (bool) WooConfig::path( 'tiers.pooled', true );
 	}
 
 	/**
@@ -258,13 +295,25 @@ final class Cart {
 		);
 
 		self::$internal_add = true;
+		$before             = function_exists( 'wc_get_notices' ) ? count( wc_get_notices( 'error' ) ) : 0;
+		$add_error          = '';
 		try {
 			$key = $cart->add_to_cart( $product_id, 1, 0, array(), $data );
 		} catch ( \Exception $e ) {
-			$key = false;
+			$key       = false;
+			$add_error = $e->getMessage(); // Logged below.
 		}
 		self::$internal_add = false;
 		if ( ! $key ) {
+			$new = function_exists( 'wc_get_notices' ) ? array_slice( wc_get_notices( 'error' ), $before ) : array();
+			Logger::warning(
+				'nametape_cart_add_failed',
+				array(
+					'pieces'    => (int) $quote['pieces'],
+					'notices'   => array_map( static fn( $n ) => wp_strip_all_tags( (string) ( $n['notice'] ?? '' ) ), $new ),
+					'exception' => $add_error,
+				)
+			);
 			if ( function_exists( 'wc_clear_notices' ) ) {
 				wc_clear_notices();
 			}
@@ -301,7 +350,9 @@ final class Cart {
 	 * ------------------------------------------------------------------- */
 
 	/**
-	 * Absolute line price (idempotent), priority 25 (after woo's 20).
+	 * Absolute line price (idempotent), priority 25 (after woo's 20) and on cart load. The engine price is excl. VAT;
+	 * WooCommerce gets it through Woo\Config::woo_unit_price() (prices entered incl. VAT, woo-compat-1). A failed
+	 * price never becomes € 0: the line is flagged, logged and check_cart_items blocks the checkout.
 	 *
 	 * @param \WC_Cart $cart Cart.
 	 */
@@ -315,19 +366,50 @@ final class Cart {
 			if ( empty( $item[ self::KEY ] ) || ! isset( $item['data'] ) || ! $item['data'] instanceof \WC_Product ) {
 				continue;
 			}
-			$nt = $item[ self::KEY ];
+			$nt   = $item[ self::KEY ];
+			$line = null;
+			$why  = '';
 			try {
-				$q    = Pricing::quote( self::batch_from_data( $nt ), self::context( $items, (string) $key, (string) ( $nt['locale'] ?? 'nl-BE' ) ), $cfg );
-				$line = ! empty( $q['ok'] ) ? (float) $q['lineExcl'] : 0.0;
+				$q = Pricing::quote( self::batch_from_data( $nt ), self::context( $items, (string) $key, (string) ( $nt['locale'] ?? 'nl-BE' ) ), $cfg );
 				self::$quotes[ (string) $key ] = $q;
+				if ( ! empty( $q['ok'] ) ) {
+					$line = (float) $q['lineExcl'];
+				} else {
+					$why = 'quote_not_ok: ' . implode( ',', array_map( static fn( $e ) => is_array( $e ) ? (string) ( $e['code'] ?? '' ) : (string) $e, (array) ( $q['errors'] ?? array() ) ) );
+				}
 			} catch ( \Throwable $e ) {
-				$line = 0.0;
+				$why = $e->getMessage(); // Logged with context below (nametape_price_failed).
 			}
-			if ( ! is_finite( $line ) || $line < 0 ) {
-				$line = 0.0;
+			if ( null === $line || ! is_finite( $line ) || $line <= 0 ) {
+				if ( ! isset( self::$price_errors[ (string) $key ] ) ) {
+					Logger::error(
+						'nametape_price_failed',
+						array(
+							'batch'  => (string) ( $nt['batch_id'] ?? '' ),
+							'format' => (string) ( $nt['format'] ?? '' ),
+							'pieces' => (int) ( $nt['pieces'] ?? 0 ),
+							'error'  => '' !== $why ? $why : 'no_price',
+						)
+					);
+				}
+				self::$price_errors[ (string) $key ] = true;
+				if ( isset( $cart->cart_contents[ $key ] ) ) {
+					$cart->cart_contents[ $key ]['bps_price_error'] = true;
+				}
+				// Keep the last good price (session) so the line never shows € 0; checkout stays blocked.
+				$last = (float) ( $item['bps_line_excl'] ?? 0 );
+				if ( $last > 0 ) {
+					WooCart::apply_price( $item['data'], WooConfig::woo_unit_price( $last / max( 1, (int) $item['quantity'] ), $item['data'] ) );
+				}
+				continue;
+			}
+			unset( self::$price_errors[ (string) $key ] );
+			if ( isset( $cart->cart_contents[ $key ] ) ) {
+				unset( $cart->cart_contents[ $key ]['bps_price_error'] );
+				$cart->cart_contents[ $key ]['bps_line_excl'] = $line;
 			}
 			$qty = max( 1, (int) $item['quantity'] );
-			$item['data']->set_price( $line / $qty );
+			WooCart::apply_price( $item['data'], WooConfig::woo_unit_price( $line / $qty, $item['data'] ) );
 		}
 	}
 
@@ -417,6 +499,21 @@ final class Cart {
 		$items = WC()->cart->get_cart();
 		foreach ( $items as $key => $item ) {
 			if ( empty( $item[ self::KEY ] ) ) {
+				continue;
+			}
+			if ( isset( self::$price_errors[ (string) $key ] ) || ! empty( $item['bps_price_error'] ) ) {
+				$tx = self::texts( $item[ self::KEY ] );
+				wc_add_notice(
+					esc_html(
+						sprintf(
+							'fr' === Config::lang( null )
+								? 'Nous n’avons pas pu calculer le prix de votre liste de bandes nominatives (%s). Réessayez ou contactez-nous.'
+								: 'We konden de prijs van je naamstrooklijst (%s) niet berekenen. Probeer opnieuw of neem contact op.',
+							$tx['summary']
+						)
+					),
+					'error'
+				);
 				continue;
 			}
 			$r = Validator::validate( self::batch_from_data( $item[ self::KEY ] ), Config::get(), Config::metrics(), true );
@@ -715,6 +812,8 @@ final class Cart {
 		$item->add_meta_data( '_bps_nt_schema', 1, true );
 		$item->add_meta_data( '_bps_nt_preview', (string) ( $nt['preview_file'] ?? '' ), true );
 		$item->add_meta_data( '_bps_rights_consent', wp_json_encode( $nt['rights'] ?? array() ), true );
+		// Visible, so the order e-mails also carry the custom-made notice (gdpr-juridisch-4).
+		$item->add_meta_data( 'bps_nt_custom', 'fr' === Config::lang( (string) ( $nt['locale'] ?? '' ) ) ? 'Fabriqué spécialement pour vous, pas de droit de rétractation.' : 'Speciaal voor jou gemaakt, geen herroepingsrecht.', true );
 	}
 
 	/**
@@ -731,6 +830,7 @@ final class Cart {
 			'bps_nt_backing' => __( 'Achterkant', 'borduur-patch-studio' ),
 			'bps_nt_count'   => __( 'Aantal namen', 'borduur-patch-studio' ),
 			'bps_nt_blood'   => __( 'Bloedgroep', 'borduur-patch-studio' ),
+			'bps_nt_custom'  => __( 'Maatwerk', 'borduur-patch-studio' ),
 		);
 		$k = is_object( $meta ) && isset( $meta->key ) ? (string) $meta->key : (string) $display;
 		return $map[ $k ] ?? $display;

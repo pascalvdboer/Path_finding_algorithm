@@ -1,0 +1,81 @@
+{
+  "start1440.cardsAboveFold": 9,
+  "compareTop1440": 460,
+  "ideas.foto": [
+    "Probeer een goudgele rand (Polyneon 1724)",
+    "Bekijk hem op een pet"
+  ],
+  "compareHoverKeepsState": true,
+  "cpChip": [
+    40,
+    40
+  ],
+  "cpModalBackdrop": false,
+  "cpHoverMs": 108,
+  "cpHoverCommitted": "{}",
+  "edgeOptionsEmbroidered": [
+    "cut_from_fabric",
+    "on_film",
+    "self_cut",
+    "merrow",
+    "laser"
+  ],
+  "edgeTilesRendered": 5,
+  "edgeAfterMerrowWide": {
+    "id": "merrow",
+    "style": "merrow",
+    "widthMm": 4.2,
+    "safeZoneMm": 4.2
+  },
+  "mockup.polo_chest.selectionHidden": true,
+  "mockup.cap_front.selectionHidden": true,
+  "mockup.jacket_back.selectionHidden": true,
+  "mockup.backpack_front.selectionHidden": true,
+  "text1440.foto": {
+    "art": 0.77,
+    "path": "arc_bottom",
+    "h": 5
+  },
+  "text1440.rond": {
+    "art": 0.8,
+    "path": "arc_bottom",
+    "h": 5
+  },
+  "sceneLightPatch": "oak",
+  "sceneDarkPatch": "linen",
+  "ideas.emblem": [
+    "Meer reliëf: extra dik borduurwerk geeft een 3D-effect",
+    "Bekijk hem op een pet"
+  ],
+  "quotePriceLabels": [
+    "Geborduurd: € 5,98 per stuk bij 10 stuks",
+    "Bedrukt: € 5,17 per stuk bij 10 stuks",
+    "Gesublimeerd: € 4,84 per stuk bij 10 stuks",
+    "Leder (gelaserd): Prijs na je proef",
+    "Geweven: Prijs na je proef",
+    "PVC / rubber: € 5,14 per stuk bij 50 stuks",
+    "Chenille: Prijs na je proef"
+  ],
+  "phone740.typing": {
+    "patch": [
+      85,
+      118,
+      305,
+      338
+    ],
+    "vvh": 740,
+    "scrollTop": 0,
+    "overlays": []
+  },
+  "phone844.typing": {
+    "patch": [
+      67,
+      122,
+      323,
+      378
+    ],
+    "vvh": 844,
+    "scrollTop": 0,
+    "overlays": []
+  }
+}

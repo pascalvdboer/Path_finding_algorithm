@@ -57,7 +57,12 @@ class WC_Product {
 	public function get_status() { return 'publish'; }
 	public function get_name() { return $this->name; }
 	public function get_price( $ctx = 'view' ) { return $this->price; }
+	public $regular = null; public $sale = null;
 	public function set_price( $p ) { $this->price = $p; }
+	public function set_regular_price( $p ) { $this->regular = $p; }
+	public function set_sale_price( $p ) { $this->sale = $p; }
+	public function get_regular_price( $ctx = 'view' ) { return $this->regular; }
+	public function get_sale_price( $ctx = 'view' ) { return $this->sale; }
 	public function is_purchasable() { return true; }
 	public function is_in_stock() { return $this->stock; }
 	public function is_type( $t ) { return $t === $this->type; }
@@ -96,10 +101,17 @@ spl_autoload_register(
 		if ( 0 === strpos( $c, 'BorduurPatchStudio\\Crosssell\\' ) ) {
 			$n = substr( $c, strlen( 'BorduurPatchStudio\\Crosssell\\' ) );
 			require_once $plugin . 'includes/crosssell/class-' . str_replace( '_', '-', strtolower( $n ) ) . '.php';
+		} elseif ( 0 === strpos( $c, 'BorduurPatchStudio\\Woo\\' ) ) {
+			$n = substr( $c, strlen( 'BorduurPatchStudio\\Woo\\' ) );
+			$f = $plugin . 'includes/woo/class-' . str_replace( '_', '-', strtolower( $n ) ) . '.php';
+			if ( is_readable( $f ) ) {
+				require_once $f;
+			}
 		}
 	}
 );
 require_once $plugin . 'includes/class-pricing.php';
+require_once __DIR__ . '/wp-core-stubs.php';
 
 use BorduurPatchStudio\Crosssell\Module;
 use BorduurPatchStudio\Crosssell\Cart;
@@ -167,6 +179,7 @@ $cart->contents['c1'] = array(
 );
 Cart::set_prices( $cart );
 $check( abs( $cart->contents['c1']['data']->get_price() - $capc['unitExcl'] ) < 0.00005, 'mandprijs ' . $cart->contents['c1']['data']->get_price() . ' = kaartprijs ' . $capc['unitExcl'] );
+$check( $cart->contents['c1']['data']->get_regular_price() === $cart->contents['c1']['data']->get_price() && '' === $cart->contents['c1']['data']->get_sale_price(), 'reguliere prijs = prijs, geen actieprijs (Store API toont geen korting)' );
 
 // 4. Fees: patchregel aanwezig → geen extra borduurkaart; enkel dragers → één keer, nooit dubbel.
 Cart::add_fees( $cart );
@@ -186,6 +199,26 @@ $check( $pp > 0 && $pp <= 4.2, 'PVC-prijs per stuk met PVC-staffel: ' . $pp );
 // 5. Directe toevoeging van eigen producten geweigerd; gewone producten niet.
 $check( false === Cart::block_direct( true, 90001 ) && 'error' === ( $GLOBALS['notices'][0][0] ?? '' ), 'lederen sleutelhanger zonder ontwerp geweigerd' );
 $check( true === Cart::block_direct( true, 36262 ), 'gewone pet blijft los koopbaar' );
+
+// 5b. Prijs kan niet berekend worden → regel weg met specifieke melding (met ontwerpref), gelogd, nooit € 0.
+$GLOBALS['notices'] = array();
+if ( ! function_exists( 'WC' ) ) { // Conditional on purpose: an unconditional declaration is hoisted and breaks check 1.
+	function WC() { return $GLOBALS['wc_stub']; }
+}
+$GLOBALS['wc_stub']       = new stdClass();
+$GLOBALS['wc_stub']->cart = new WC_Cart();
+$GLOBALS['wc_stub']->cart->contents['x1'] = array(
+	'key'          => 'x1',
+	'quantity'     => 25,
+	'product_id'   => $capc['defaultProductId'],
+	'variation_id' => 999999,
+	'data'         => wc_get_product( $vid ),
+	'bps_cs'       => array( 'v' => 1, 'item' => 'cap', 'type' => 'patch_on_blank', 'design_id' => 7, 'ref' => 'PS-7', 'technique' => 'embroidered', 'patch_size_cm' => $capc['patchSizeCm'], 'placement' => 'front', 'options' => array(), 'design_options' => $s['payload']['options'], 'batch' => 'bx', 'locale' => 'nl-BE' ),
+);
+\BorduurPatchStudio\Logger::$lines = array();
+$before = $GLOBALS['wc_stub']->cart->contents['x1']['data']->get_price();
+Cart::set_prices( $GLOBALS['wc_stub']->cart );
+$check( $before === $GLOBALS['wc_stub']->cart->contents['x1']['data']->get_price(), 'zonder blanco-prijs blijft de prijs onaangeroerd (nooit 0)' );
 
 // 6. Weergave in de mand.
 $rows = Cart::rows( $cart->contents['c1']['bps_cs'], 'nl' );

@@ -8,6 +8,7 @@
 
 namespace BorduurPatchStudio\Crosssell;
 
+use BorduurPatchStudio\Logger;
 use BorduurPatchStudio\Pricing as MainPricing;
 use BorduurPatchStudio\Woo\Designs;
 
@@ -27,7 +28,7 @@ final class Service {
 	 * @param int $id Ontwerp-ID.
 	 */
 	public static function design( int $id ): ?array {
-		if ( $id <= 0 || ! class_exists( Designs::class ) ) {
+		if ( $id <= 0 ) {
 			return null;
 		}
 		$rec = Designs::get( $id );
@@ -41,7 +42,7 @@ final class Service {
 	 * @param string $token Token.
 	 */
 	public static function token_ok( int $id, string $token ): bool {
-		return class_exists( Designs::class ) && Designs::verify_token( $id, $token );
+		return Designs::verify_token( $id, $token );
 	}
 
 	/**
@@ -100,9 +101,6 @@ final class Service {
 	 */
 	public static function patch_unit(): callable {
 		return static function ( $technique, $size_cm, $options, $qty, $pool ) {
-			if ( ! class_exists( MainPricing::class ) ) {
-				return 0.0;
-			}
 			try {
 				return (float) MainPricing::cart_unit_excl(
 					array(
@@ -114,6 +112,16 @@ final class Service {
 					max( 0, (int) $pool )
 				);
 			} catch ( \Throwable $e ) {
+				// 0 makes Crosssell\Pricing::item() report 'patch_price': the line is never sold at a wrong price.
+				Logger::error(
+					'crosssell_patch_price_failed',
+					array(
+						'technique' => (string) $technique,
+						'size_cm'   => (float) $size_cm,
+						'qty'       => (int) $qty,
+						'error'     => $e->getMessage(),
+					)
+				);
 				return 0.0;
 			}
 		};

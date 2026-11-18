@@ -9,10 +9,12 @@ import { shade, rgba, lum, rgbOf, makeCanvas, ctx2d, Lru, hash01, softShadow } f
 
 /* view: [x, y, w, h] in mm; anchor: patch centre; curve: cylinder radius for caps (mm) */
 const G = {
-  polo_chest: { ref: 520, view: [-345, -75, 690, 560], anchor: [122, 160], tex: 'pique', curve: 0, hex: '#1b2a4a', ks: 0.05, gl: 6 },
-  cap_front: { ref: 210, view: [-165, -168, 330, 245], anchor: [0, -64], tex: 'twill', curve: 120, hex: '#222222', ks: 0.06, gl: 8 },
-  jacket_back: { ref: 600, view: [-470, -95, 940, 900], anchor: [0, 250], tex: 'ripstop', curve: 0, hex: '#2d2d2d', ks: 0.22, gl: 18 },
-  backpack_front: { ref: 300, view: [-215, -300, 430, 560], anchor: [0, -112], tex: 'cordura', curve: 0, hex: '#2b2f36', ks: 0.1, gl: 10 },
+/* ctx: a recognisable detail that the patch framing keeps in view (placket + collar, brim, collar, pocket zip);
+   bend: soft body curvature the patch follows (mm radius, 0 = flat) (critique-2 #7) */
+  polo_chest: { ref: 520, view: [-345, -75, 690, 560], anchor: [122, 160], ctx: [-4, 60], tex: 'pique', curve: 0, bend: 520, hex: '#1b2a4a', ks: 0.05, gl: 6 },
+  cap_front: { ref: 210, view: [-165, -168, 330, 245], anchor: [0, -64], ctx: [0, 14], tex: 'twill', curve: 120, hex: '#222222', ks: 0.06, gl: 8 },
+  jacket_back: { ref: 600, view: [-470, -95, 940, 900], anchor: [0, 250], ctx: [0, -40], tex: 'ripstop', curve: 0, bend: 700, hex: '#2d2d2d', ks: 0.22, gl: 18 },
+  backpack_front: { ref: 300, view: [-215, -300, 430, 560], anchor: [0, -112], ctx: [62, -8], tex: 'cordura', curve: 0, bend: 330, hex: '#2b2f36', ks: 0.1, gl: 10 },
 };
 
 export const GARMENTS = Object.keys(G);
@@ -338,13 +340,28 @@ export function drawGarment(c, W, H, id, config, o = {}) {
   // frame 'patch' (default in the studio): zoom in until the patch is ±35 % of the view, the garment may run out of
   // the picture; frame 'garment' shows the whole piece (critique-1 #10)
   const fit1 = Math.min(W / (vw * k), H / (vh * k));
-  const auto = o.frame === 'patch' && o.patchMm > 0 ? Math.max(1, Math.max(0.4 * Math.min(W, H), 0.28 * Math.max(W, H)) / (o.patchMm * fit1)) : 1;
-  const zoom = (o.zoom || 1) * auto;
-  const pxPerMm = fit1 * zoom;
   const off = Array.isArray(mk.patchCenterMm) ? mk.patchCenterMm : [0, 0];
   const ax = def.anchor[0] * k + (Number(off[0]) || 0), ay = def.anchor[1] * k + (Number(off[1]) || 0);
   const vcx = (vx + vw / 2) * k, vcy = (vy + vh / 2) * k;
-  const fx = zoom > 1 ? ax : vcx, fy = zoom > 1 ? ay : vcy;
+  // frame 'patch': the patch ±30 % of the view AND a recognisable detail of the garment in the picture (collar,
+  // brim, zip), so it reads as a polo / cap / jacket / backpack and not as a piece of cloth (critique-2 #7)
+  let auto = 1, fcx = ax, fcy = ay;
+  if (o.frame === 'patch' && o.patchMm > 0) {
+    const p = o.patchMm / 2, m = 22 * k;
+    const cx0 = def.ctx ? def.ctx[0] * k : ax, cy0 = def.ctx ? def.ctx[1] * k : ay;
+    const x0 = Math.min(ax - p, cx0 - m), x1 = Math.max(ax + p, cx0 + m), y0 = Math.min(ay - p, cy0 - m), y1 = Math.max(ay + p, cy0 + m);
+    const both = Math.min(W / ((x1 - x0) * 1.15), H / ((y1 - y0) * 1.15));
+    const lo = 0.16 * Math.min(W, H) / o.patchMm, hi = 0.33 * Math.min(W, H) / o.patchMm;
+    const ppmA = Math.max(lo, Math.min(hi, both));
+    auto = Math.max(1, ppmA / fit1);
+    // centre between patch and detail; when the detail does not fit, lean towards the patch
+    const t = ppmA <= both * 1.001 ? 1 : 0.35;
+    fcx = ax + ((x0 + x1) / 2 - ax) * t;
+    fcy = ay + ((y0 + y1) / 2 - ay) * t;
+  }
+  const zoom = (o.zoom || 1) * auto;
+  const pxPerMm = fit1 * zoom;
+  const fx = zoom > 1 ? fcx : vcx, fy = zoom > 1 ? fcy : vcy;
   const tx = W / 2 - fx * pxPerMm, ty = H / 2 - fy * pxPerMm;
   const light = o.light || { L: [-0.45, -0.53, 0.72], H: [-0.24, -0.28, 0.93], key: 'd' };
   const key = [gid, hex, W, H, pxPerMm.toFixed(4), tx.toFixed(1), ty.toFixed(1), light.key, o.transparent ? 1 : 0].join('#');
@@ -352,7 +369,7 @@ export function drawGarment(c, W, H, id, config, o = {}) {
   if (!sc) { sc = buildScene(W, H, gid, def, hex, pxPerMm * k, tx, ty, pxPerMm, light, o.transparent); sceneCache.set(key, sc); }
   c.drawImage(sc.canvas, 0, 0);
   return {
-    pxPerMm, cx: tx + ax * pxPerMm, cy: ty + ay * pxPerMm, curveMm: def.curve * k, garmentHex: hex, shadeCanvas: sc.shade, after: sc.after,
+    pxPerMm, cx: tx + ax * pxPerMm, cy: ty + ay * pxPerMm, curveMm: (def.curve || def.bend || 0) * k, garmentHex: hex, shadeCanvas: sc.shade, after: sc.after,
   };
 }
 
@@ -509,7 +526,7 @@ export function placePatch(c, patch, place, wPx, hPx) {
   pcx.drawImage(patch, 0, 0, pw, ph);
   if (place.shadeCanvas) {
     pcx.globalCompositeOperation = 'soft-light';
-    pcx.globalAlpha = 0.6;
+    pcx.globalAlpha = 0.85;
     pcx.drawImage(place.shadeCanvas, x0 / 2, y0 / 2, wPx / 2, hPx / 2, 0, 0, pw, ph);
     pcx.globalAlpha = 1;
     pcx.globalCompositeOperation = 'destination-in';

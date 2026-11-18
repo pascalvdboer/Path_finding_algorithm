@@ -1147,9 +1147,9 @@ t( 'gdpr-7: eigenaarsrijen verlopen (365 d bekend, 30 d anoniem); saldo blijft, 
 	$store->lots[]   = array( 'owner_key' => $lot, 'status' => 'active', 'expires_at' => $ago( -200 ), 'rounds_used' => 2, 'rounds_total' => 10 );
 	$store->lots[]   = array( 'owner_key' => $exp, 'status' => 'active', 'expires_at' => $ago( 5 ), 'rounds_used' => 2, 'rounds_total' => 10 );
 	$store->ledger[] = array( 'owner_key' => $led, 'delta' => -1 );
-	$store->jobs['J0PEN000000000000000000000'] = array( 'id' => 'J0PEN000000000000000000000', 'owner_key' => $open, 'status' => 'running', 'created_at' => $ago( 400 ), 'keep_until' => $ago( -10 ), 'input' => '{}', 'result' => null, 'client_req' => null, 'kind' => 'generate', 'chosen_index' => null );
+	$store->jobs['J0PEN000000000000000000000'] = array( 'id' => 'J0PEN000000000000000000000', 'owner_key' => $open, 'status' => 'running', 'created_at' => $ago( 400 ), 'started_at' => $ago( -1 ), 'attempts' => 0, 'lot_id' => null, 'rounds' => 0, 'keep_until' => $ago( -10 ), 'input' => '{}', 'result' => null, 'client_req' => null, 'kind' => 'generate', 'chosen_index' => null );
 	$res = Cleanup::run();
-	ok( ! isset( $store->owners[ $gone ] ), 'e-mail, 400 d, niets open: rij weg ' . json_encode( $res ) . json_encode( $GLOBALS['bps_logs'] ?? array() ) );
+	ok( ! isset( $store->owners[ $gone ] ), 'e-mail, 400 d, niets open: rij weg ' . json_encode( $res ) );
 	eq( $store->owners[ $lot ]['email'], 'saldo@example.test', 'lot met saldo: ongemoeid' );
 	ok( isset( $store->owners[ $led ] ) && null === $store->owners[ $led ]['email'] && null === $store->owners[ $led ]['email_verified_at'], 'enkel ledger: sleutel blijft, e-mail NULL' );
 	ok( ! isset( $store->owners[ $an31 ] ), 'anoniem 31 d zonder jobs: weg' );

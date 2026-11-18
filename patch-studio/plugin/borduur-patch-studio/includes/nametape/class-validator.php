@@ -109,6 +109,43 @@ final class Validator {
 	}
 
 	/**
+	 * Clean and check one free text line with the name-tape character rules (shared with the name variants of
+	 * Woo\Variant_Names, concurrentie-features-9): same cleaning, same allowed characters, a length limit.
+	 *
+	 * @param mixed $raw       Raw text.
+	 * @param array $cfg       Name-tape config (text.allowedPattern).
+	 * @param int   $max_chars Max characters (0 = MAX_NAME).
+	 * @return array{text:string,codes:string[],badChars:string[]}
+	 */
+	public static function check_line( $raw, array $cfg, int $max_chars = 0 ): array {
+		$max   = $max_chars > 0 ? $max_chars : self::MAX_NAME;
+		$text  = Fit::clean_text( wp_strip_tags_compat( $raw ) );
+		$codes = array();
+		$bad   = array();
+		if ( '' === $text ) {
+			$codes[] = 'empty';
+		}
+		$chars = Fit::chars( $text );
+		if ( count( $chars ) > $max ) {
+			$codes[] = 'too_many_chars';
+		}
+		$re = Fit::allowed_regex( $cfg );
+		foreach ( $chars as $ch ) {
+			if ( ' ' !== $ch && ! preg_match( $re, $ch ) && ! in_array( $ch, $bad, true ) ) {
+				$bad[] = $ch;
+			}
+		}
+		if ( $bad ) {
+			$codes[] = 'bad_chars';
+		}
+		return array(
+			'text'     => $text,
+			'codes'    => $codes,
+			'badChars' => $bad,
+		);
+	}
+
+	/**
 	 * Validate and normalise.
 	 *
 	 * @param mixed $raw     Raw batch (decoded JSON).

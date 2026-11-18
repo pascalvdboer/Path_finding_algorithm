@@ -43,11 +43,15 @@ const LANGS = ['nl', 'fr'];
  * main.js/ui (verboden paden voor dit pakket: handoff premium-ui-needs.md).
  * Modulebundels: budgetten uit docs/handoff/extra-products-needs.md en ai-services-needs.md. AI 25 → 28 kB: de
  * AI-panelen groeien nog (18-11: 25,1 kB); tests/ai/frontend-bundle.test.js houdt de eigen, strengere grens.
+ * critique-2 (18-11): 135 → 137 kB tweetalig, 120 → 123 kB per taal. Niet-modale Polyneon-kiezer met live hover,
+ * tekstplaatsing die bestaande letters ontwijkt (randdetectie + verkleinen), podium met ondergronden, detail-renders
+ * in de vergelijker, randtegels met eigen render + randdikte, kledingkadering en vormfilters (±+4 kB). De ingebouwde
+ * SVG-testvoorbeelden zijn eruit (−1 kB). Zie docs/critique-2.md.
  */
 const BUDGET = {
-  'patch-studio.js': 135 * 1024,
-  'nl/patch-studio.js': 120 * 1024,
-  'fr/patch-studio.js': 120 * 1024,
+  'patch-studio.js': 137 * 1024,
+  'nl/patch-studio.js': 123 * 1024,
+  'fr/patch-studio.js': 123 * 1024,
   'patch-studio-worker.js': 25 * 1024,
   'patch-studio-admin.js': 15 * 1024,
   'patch-studio-ai.js': 28 * 1024,

@@ -32,8 +32,9 @@ t.run(async (keep) => {
   t.ok(await page.locator('.bps-bar').isVisible(), 'sticky bar visible once there is a design');
   const barBox = await page.locator('.bps-bar').boundingBox();
   const tabBox = await page.locator('.bps-tabs').boundingBox();
-  t.ok(barBox && tabBox && tabBox.y + tabBox.height >= 844 - 2 && Math.abs(barBox.y + barBox.height - tabBox.y) <= 2 && barBox.height <= 90,
-    'slim price bar (≤ 90 px) right above the tab bar at the bottom', { barBox, tabBox });
+  // v2 studio: price + "Bestellen" sit in the slim top bar (above the patch), the tool tab bar at the bottom.
+  t.ok(barBox && tabBox && tabBox.y + tabBox.height >= 844 - 2 && barBox.y <= 4 && barBox.height <= 60,
+    'slim price bar (≤ 60 px) in the top bar, tab bar at the bottom', { barBox, tabBox });
   t.ok(/€/.test(await page.locator('.bps-bar__amount').innerText()), 'bar shows the amount incl. VAT');
   await page.waitForFunction(() => /KFC KALMTHOUT/.test(document.querySelector('.bps-preview__canvas')?.getAttribute('aria-label') || ''), null, { timeout: 4000 }).catch(() => {});
   const label = await page.locator('.bps-preview__canvas').getAttribute('aria-label');

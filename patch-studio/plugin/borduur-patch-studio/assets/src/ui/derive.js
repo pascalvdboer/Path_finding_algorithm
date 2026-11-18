@@ -223,7 +223,7 @@ export function derive(state, analysisRaw, config, tweaks) {
   // the opposite tone keeps the letters readable.
   const autoText = pickEdgeColor(groundHex, [], prepared, config);
   const textHex = {}, textOutline = {}, textAutoCode = {};
-  const layout0 = fitOwnRim(layoutPatch(state, analysis, config), analysis, tech);
+  const layout0 = fitOwnRim(withEdgeWidth(layoutPatch(state, analysis, config), state.edgeWidth), analysis, tech);
   for (const l of state.texts || []) {
     const th = l.threadCode !== 'auto' ? threadByCode(l.threadCode, config.threads || []) : null;
     const under = analysis && l.text && l.text.trim() ? underText(l, layout0, analysis, groundHex, config) : null;
@@ -305,6 +305,16 @@ export function fitOwnRim(layout, analysis, tech) {
   const cx = W / 2, cy = H / 2;
   const artRectMm = { x: cx + (r.x - cx) * k, y: cy + (r.y - cy) * k, w: r.w * k, h: r.h * k };
   return { ...layout, artRectMm, mmPerArtPx: layout.mmPerArtPx ? layout.mmPerArtPx * k : layout.mmPerArtPx };
+}
+
+/** Border width choice (Rand → Meer opties): narrow / normal / wide, only for thread borders (critique-2 #9). */
+export const EDGE_WIDTHS = { narrow: 0.75, normal: 1, wide: 1.4 };
+export function edgeWidthApplies(edge) { return !!edge && (edge.style === 'satin' || edge.style === 'merrow' || edge.style === 'uncut') && edge.widthMm > 0; }
+function withEdgeWidth(layout, w) {
+  const k = EDGE_WIDTHS[w] || 1;
+  if (k === 1 || !layout || !edgeWidthApplies(layout.edge)) return layout;
+  const e = layout.edge;
+  return { ...layout, edge: { ...e, widthMm: Math.round(e.widthMm * k * 10) / 10, safeZoneMm: Math.round((e.safeZoneMm + e.widthMm * (k - 1)) * 10) / 10 } };
 }
 
 /* ------------------------------ text: what lies under it, where it fits ------------------------------ */
@@ -674,7 +684,9 @@ export function buildPayload(state, d, config, extra = {}) {
     },
     priceClient: { totalIncl: d.quote.totalIncl, unitExcl: d.quote.unitExcl },
     source: { fileName: state.source.fileName, fileType: state.source.fileType },
-    notes: state.notes || '',
+    edgeWidth: state.edgeWidth && state.edgeWidth !== 'normal' && edgeWidthApplies(L.edge) ? state.edgeWidth : 'normal',
+    // until the production sheet shows the border width itself, a non-standard width travels in the notes too
+    notes: [state.edgeWidth && state.edgeWidth !== 'normal' && edgeWidthApplies(L.edge) ? `[${state.edgeWidth === 'wide' ? 'Brede' : 'Smalle'} rand: ${L.edge.widthMm} mm]` : '', state.notes || ''].filter(Boolean).join(' '),
     ...extra,
   };
 }

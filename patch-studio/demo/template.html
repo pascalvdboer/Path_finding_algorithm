@@ -144,7 +144,13 @@
         'ui.dev.text': 'Dans la vraie boutique, votre écusson irait maintenant dans votre panier pour le paiement. Vous recevriez ensuite d’abord votre épreuve numérique. Voici ce qui serait transmis à notre atelier :',
       },
     };
-    var config = BPS.buildPublicConfig(json('demo-defaults'), json('demo-palette'), {
+    // Demo-instelling van het atelier (critique-2 #9): ook bij borduren een merrow- en een lasergesneden rand.
+    // In de winkel kiest de eigenaar per techniek welke randen hij aanbiedt (instellingen → opties).
+    var defs = json('demo-defaults');
+    (defs.options || []).forEach(function (o) {
+      if ((o.id === 'merrow' || o.id === 'laser') && o.techniques && o.techniques.indexOf('embroidered') < 0) o.techniques = o.techniques.concat('embroidered');
+    });
+    var config = BPS.buildPublicConfig(defs, json('demo-palette'), {
       locale: locale,
       rest: null,
       assets: { workerUrl: workerUrl, fontsUrl: '', version: 'demo', polyneon: json('demo-polyneon') },

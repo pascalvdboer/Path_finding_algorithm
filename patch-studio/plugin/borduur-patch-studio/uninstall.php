@@ -31,7 +31,7 @@ if ( ! defined( 'BPS_FILE' ) ) {
 	define( 'BPS_FILE', __DIR__ . '/borduur-patch-studio.php' );
 }
 if ( ! defined( 'BPS_VERSION' ) ) {
-	define( 'BPS_VERSION', '1.0.0' );
+	define( 'BPS_VERSION', '2.0.0' );
 }
 if ( ! defined( 'BPS_DB_VERSION' ) ) {
 	define( 'BPS_DB_VERSION', 1 );

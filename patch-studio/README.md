@@ -18,6 +18,52 @@ komt pas naar je server als de klant bestelt, een offerte vraagt of zijn ontwerp
 
 ---
 
+## Nieuw in versie 2: de ontwerpstudio
+
+Versie 1 voelde als een invulformulier met vijf stappen. Versie 2.0.0 is een ontwerpstudio, "zoals Canva, maar voor
+patches": de patch is de held, groot in het midden, en alles wat je aanpast zie je meteen.
+
+![Close-up](docs/screenshots/v2-final/desktop-closeup.png)
+
+- **Groot canvas met echte borduurlook.** Satijnsteek met steekrichting, garenglans die meebeweegt met het licht
+  (beweeg de muis), reliëf en schaduw, de twill eronder, merrow- en hot-cut-rand. Geweven, bedrukt, gesublimeerd,
+  PVC, chenille en leder hebben elk hun eigen materiaal. Zoomen met scroll of knijpen, slepen, hoekgrepen,
+  ongedaan maken/opnieuw (Ctrl+Z / Ctrl+Y).
+- **Op een kledingstuk.** Schakelaar boven het canvas: *Close-up*, *Op polo*, *Op pet*, *Op jas*, *Op rugzak*
+  (getekend in de browser, zonder externe afbeeldingen).
+- **Sjablonen en voorbeelden vóór de upload.** Galerij per toepassing (club, bedrijf, werkkleding, motorclub,
+  jeugdbeweging, evenement, naamstrook, cadeau) en per vorm. Eén klik en je past tekst, kleuren, vorm en techniek aan.
+- **Gereedschap links, assistent rechts.** Ontwerp, Tekst (lettertype, hoogte, boog boven/onder, omlijning),
+  Vorm, Rand, Kleuren, Achterkant, Maat. Rechts het advies van het atelier in Kalmthout met de
+  **techniekvergelijker**: live renders van *jouw* ontwerp in elke techniek, met verdict, prijs per stuk en uitleg.
+  Ideeën ("probeer een goudgele rand", "ook als 3D-reliëf", "bekijk hem op een pet") verschijnen alleen als ze passen.
+- **Polyneon-garenkleuren bij borduren.** Kleuren uit je bestand worden omgezet naar de dichtste Madeira Polyneon-kleur
+  (nummer + naam); klik een kleur aan om ze te wisselen, zoek op nummer of naam of toon de volledige kaart.
+  De nummers gaan mee naar winkelmand, bestelling en productiefiche.
+- **Gsm: de patch blijft altijd in beeld.** Voorbeeld bovenaan, prijs + *Bestellen* in de bovenbalk, tabbalk onderaan
+  (Ontwerp, Tekst, Vorm, Kleuren, Techniek, Prijs) met een paneel dat zelf scrolt. Ook met het toetsenbord open
+  verkleint het voorbeeld in plaats van weg te schuiven. Getest op 390 × 844 en 360 × 740.
+- **Onderaan een slanke actiebalk** met maat, aantal (staffelhint), totaal incl. btw, *Offerte of proef aanvragen* en
+  *Bestellen*. Past ook in een smalle themakolom (de balk schikt zich naar zijn eigen breedte).
+
+Wat hetzelfde bleef: analyse, advies, prijsberekening (server en browser rekenen identiek), WooCommerce-kant,
+productiefiche, digitale proef, vertalingen. Bijwerken van 1.x: gewoon de nieuwe zip uploaden en vervangen; je
+instellingen blijven.
+
+| Close-up | Op polo | Gsm |
+|---|---|---|
+| ![](docs/screenshots/v2-final/desktop-closeup.png) | ![](docs/screenshots/v2-final/desktop-polo.png) | ![](docs/screenshots/v2-final/mobiel.png) |
+
+Screenshots opnieuw maken: `npm run demo && node tests/demo/screenshots-v2-final.mjs`.
+
+**Testen (18-11-2026, `bash tests/run-all.sh`).** Build en groottebudget, PHP-prijzen, `php -l` en 13 van de 14
+e2e-scenario's in WordPress + WooCommerce zijn groen, ook de gsm-acceptatietest (patch volledig in beeld, pagina niet
+gescrold, *Bestellen* altijd zichtbaar). Unit: 426 van 432 geslaagd, 3 bekende beperkingen (TODO). Nog open op het
+moment van deze build: de nieuwe proef-/klantaccountfunctie (in ontwikkeling) laat 2 PHP-testgroepen (owned_data,
+AVG-export) en de proefgoedkeuring in e2e 05 falen. Zet die eerst groen vóór je live gaat.
+
+---
+
 ## Installatie in 5 stappen
 
 1. **Back-up en staging.** Maak een back-up van de site. Test bij voorkeur eerst op een stagingkopie (zie "Eerst op

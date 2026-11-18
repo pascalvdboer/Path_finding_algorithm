@@ -93,6 +93,7 @@ export function initialState(config) {
     options: defaultOptions(config, technique),
     fabric: 'auto',
     edgeColor: 'auto',
+    edgeWidth: 'normal',
     threadOverrides: {},
     maxThreadColors: num(config.advice && config.advice.defaultMaxThreadColors, 8),
     art: { scale: 1, offsetMm: { x: 0, y: 0 }, rotation: 0 },

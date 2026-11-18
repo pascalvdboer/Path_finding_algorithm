@@ -163,8 +163,8 @@ final class Lead_Time {
 		if ( isset( $memo[ $year ] ) ) {
 			return $memo[ $year ];
 		}
-		$easter = self::easter( $year );
-		$list   = array(
+		$easter        = self::easter( $year );
+		$list          = array(
 			sprintf( '%04d-01-01', $year ),                         // Nieuwjaar.
 			$easter->modify( '+1 day' )->format( 'Y-m-d' ),         // Paasmaandag.
 			sprintf( '%04d-05-01', $year ),                         // Dag van de Arbeid.

@@ -2,7 +2,7 @@
  * Patch Studio UI — undo/redo for design choices (Canva-like). Snapshots of the design keys only: server ids,
  * source file, price pool and notes are never rewound. Changes in quick succession (dragging, typing) form one step.
  */
-const KEYS = ['technique', 'techniquePicked', 'shape', 'shapePicked', 'aspect', 'sizeCm', 'sizePicked', 'qty', 'options', 'fabric', 'edgeColor',
+const KEYS = ['technique', 'techniquePicked', 'shape', 'shapePicked', 'aspect', 'sizeCm', 'sizePicked', 'qty', 'options', 'fabric', 'edgeColor', 'edgeWidth',
   'threadOverrides', 'maxThreadColors', 'art', 'texts', 'mockup'];
 
 export function createHistory(store, { limit = 60, onChange } = {}) {

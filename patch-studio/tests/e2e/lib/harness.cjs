@@ -273,10 +273,18 @@ const studio = {
   },
   /** Click the primary "next" button of the most recently opened panel (design → advice → size → edge → overview). */
   async next(page) {
-    const order = ['design', 'advice', 'size', 'edge', 'checkout'];
+    // v2 studio: the assistant (advice) and overview live in the side column; the tool panels end with a quiet
+    // "next" link (.bps-nextlink). Follow the link of the open tool panel; fall back to the v1 wizard buttons.
     const vis = await studio.panels(page);
-    const cur = order.filter((x) => vis.includes(x)).pop() || 'design';
-    await page.locator(`.bps-panel[data-panel="${cur}"] .bps-step__nav .bps-btn--primary`).first().click();
+    const tools = ['design', 'text', 'shape', 'colors', 'back', 'size', 'edge'];
+    const cur = tools.find((x) => vis.includes(x));
+    const link = cur ? page.locator(`.bps-panel[data-panel="${cur}"] .bps-nextlink .bps-btn`).first() : null;
+    if (link && await link.count()) await link.click();
+    else {
+      const order = ['design', 'advice', 'size', 'edge', 'checkout'];
+      const last = order.filter((x) => vis.includes(x)).pop() || 'design';
+      await page.locator(`.bps-panel[data-panel="${last}"] .bps-step__nav .bps-btn--primary`).first().click();
+    }
     await page.waitForTimeout(350);
   },
   async chooseTechnique(page, id) {

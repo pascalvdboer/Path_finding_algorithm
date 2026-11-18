@@ -1,20 +1,24 @@
 <?php
 /**
- * Production sheet ("productiefiche") and digital proof for Patch Studio order lines (SPEC §6.5–6.6).
+ * Production sheet ("productiefiche" / werkbon) for Patch Studio order lines (SPEC §6.5): the metabox on the order
+ * screen (classic + HPOS), the printable A4 sheet, the AJAX endpoints for the proof dialog and the orders list
+ * column. The proof itself (storage per order line, tokens, customer page, mails, reminders) lives in
+ * BorduurPatchStudio\Proof (php-kwaliteit-3).
  *
- * - Order screen (classic + HPOS): one card per patch line in a metabox, plus a short pointer under each line item.
- * - Printable A4 sheet: admin-post.php?action=bps_print_fiche&order=ID[&item=ID]&_wpnonce=…
- * - "Digitale proef versturen": AJAX → WC_Email BPS_Email_Proof (customer language) with approve / change links.
- * - Customer response: ?bps_proof={designId}&o={orderId}&t={token}&a=approve|changes on template_redirect
- *   (GET only shows a confirmation page; the state changes on POST, so mail scanners cannot approve by prefetching).
- * - Orders list: column "Patchproef".
+ * Contract C6: fiche( $order, $item ) → filter `bps_fiche_data( $fiche, $order, $item )`; action
+ * `bps_fiche_after_specs( $fiche, $context )`; render_print( array $pairs ): string. The work steps on the sheet
+ * read `$fiche['production']['status']`.
  *
  * @package BorduurPatchStudio
  */
 
 namespace BorduurPatchStudio\Admin;
 
-use BorduurPatchStudio\Settings;
+use BorduurPatchStudio\Proof\Lang;
+use BorduurPatchStudio\Proof\Order_Proof;
+use BorduurPatchStudio\Proof\Proof_Service;
+use BorduurPatchStudio\Proof\Spec;
+use BorduurPatchStudio\Proof\Work_Order;
 use BorduurPatchStudio\Woo\Designs;
 
 defined( 'ABSPATH' ) || exit;
@@ -27,86 +31,15 @@ final class Order_Production {
 	/** Nonce action for the AJAX endpoints on the order screen. */
 	const NONCE = 'bps_production';
 
-	/** Order item meta mirroring the proof status (orders list without loading designs). */
-	const ITEM_PROOF_META = '_bps_proof_status';
+	/** Order item meta mirroring the proof status (orders list without loading the record). */
+	const ITEM_PROOF_META = Proof_Service::STATUS_META;
 
-	/** Proof statuses (stored in the design's _bps_proof). */
-	const STATUSES = array( 'none', 'sent', 'approved', 'changes_requested' );
+	/** Proof statuses. */
+	const STATUSES = Proof_Service::STATUSES;
 
 	/** Max length of free text (message to customer, customer note). */
-	const MAX_TEXT = 2000;
+	const MAX_TEXT = Proof_Service::MAX_TEXT;
 
-	/** @var string Language used by label helpers and the customer-text fallback ('nl'|'fr'). */
-	private static $lang = 'nl';
-
-	/** @var array|null Per-request config cache. */
-	private static $config = null;
-
-	/**
-	 * Built-in French for customer-facing texts (proof e-mail + response page), used only when the
-	 * gettext catalogue has no translation. Keys are the Dutch source strings passed to __().
-	 */
-	const FR = array(
-		'Je digitale proef voor patch {ref} staat klaar'                                                                => 'Votre épreuve numérique pour l\'écusson {ref} est prête',
-		'Je digitale proef'                                                                                              => 'Votre épreuve numérique',
-		'Hallo %s,'                                                                                                      => 'Bonjour %s,',
-		'Hallo,'                                                                                                         => 'Bonjour,',
-		'Hier is de digitale proef van je patch %1$s (bestelling #%2$s). Kijk je alles even na?'                        => 'Voici l\'épreuve numérique de votre écusson %1$s (commande n° %2$s). Pouvez-vous tout vérifier ?',
-		'Klopt alles? Dan starten we de productie zodra je goedkeurt.'                                                   => 'Tout est correct ? Nous lançons la production dès votre accord.',
-		'Ik keur goed'                                                                                                   => 'J\'approuve',
-		'Ik wil iets aanpassen'                                                                                          => 'Je souhaite modifier quelque chose',
-		'Digitale proef van je patch'                                                                                    => 'Épreuve numérique de votre écusson',
-		'Bericht van ons atelier'                                                                                        => 'Message de notre atelier',
-		'Pas na jouw akkoord starten we de productie. Garen- en drukkleuren kunnen licht afwijken van je scherm.'       => 'Nous ne démarrons la production qu\'après votre accord. Les couleurs du fil et de l\'impression peuvent légèrement différer de votre écran.',
-		'Vragen? Antwoord gewoon op deze e-mail of bel %s.'                                                             => 'Des questions ? Répondez simplement à cet e-mail ou appelez le %s.',
-		'Vragen? Antwoord gewoon op deze e-mail.'                                                                       => 'Des questions ? Répondez simplement à cet e-mail.',
-		'Proefronde %d'                                                                                                  => 'Épreuve n° %d',
-		'Techniek'                                                                                                       => 'Technique',
-		'Maat'                                                                                                           => 'Taille',
-		'Vorm'                                                                                                           => 'Forme',
-		'Aantal'                                                                                                         => 'Quantité',
-		'Rand'                                                                                                           => 'Bordure',
-		'Randkleur'                                                                                                      => 'Couleur de la bordure',
-		'Achterkant'                                                                                                     => 'Dos',
-		'Stofkleur'                                                                                                      => 'Couleur du tissu',
-		'Garenkleuren'                                                                                                   => 'Couleurs de fil',
-		'Tekst'                                                                                                          => 'Texte',
-		'%s stuks'                                                                                                       => '%s pièces',
-		'Proef goedkeuren'                                                                                               => 'Approuver l\'épreuve',
-		'Aanpassing vragen'                                                                                              => 'Demander une modification',
-		'Bekijk je proef en bevestig hieronder. Pas na jouw akkoord starten we de productie.'                           => 'Vérifiez votre épreuve et confirmez ci-dessous. Nous ne démarrons la production qu\'après votre accord.',
-		'Ja, ik keur deze proef goed'                                                                                    => 'Oui, j\'approuve cette épreuve',
-		'Opmerking (optioneel)'                                                                                          => 'Remarque (facultatif)',
-		'Wat wil je aanpassen?'                                                                                          => 'Que souhaitez-vous modifier ?',
-		'Beschrijf zo concreet mogelijk wat er anders moet, bijvoorbeeld een kleur, de maat of een tekst.'              => 'Décrivez le plus concrètement possible ce qui doit changer, par exemple une couleur, la taille ou un texte.',
-		'Verstuur mijn opmerking'                                                                                        => 'Envoyer ma remarque',
-		'Toch goedkeuren'                                                                                                => 'Finalement, j\'approuve',
-		'Toch iets aanpassen'                                                                                            => 'Finalement, je souhaite modifier',
-		'Bedankt, je proef is goedgekeurd'                                                                               => 'Merci, votre épreuve est approuvée',
-		'We starten de productie van je patch. Je hoort van ons zodra je bestelling onderweg is.'                       => 'Nous lançons la production de votre écusson. Nous vous prévenons dès que votre commande est en route.',
-		'Bedankt, we hebben je opmerking ontvangen'                                                                      => 'Merci, nous avons bien reçu votre remarque',
-		'We passen je ontwerp aan en sturen je een nieuwe digitale proef.'                                               => 'Nous adaptons votre design et vous envoyons une nouvelle épreuve numérique.',
-		'Je hebt deze proef al goedgekeurd op %s.'                                                                       => 'Vous avez déjà approuvé cette épreuve le %s.',
-		'Je vroeg op %s een aanpassing. We sturen je een nieuwe proef.'                                                  => 'Vous avez demandé une modification le %s. Nous vous enverrons une nouvelle épreuve.',
-		'Wil je toch nog iets wijzigen? Neem dan contact met ons op.'                                                    => 'Vous souhaitez encore modifier quelque chose ? Contactez-nous.',
-		'Er is intussen een nieuwere proef verstuurd'                                                                    => 'Une épreuve plus récente a été envoyée entre-temps',
-		'Gebruik de knoppen in de laatste e-mail met je digitale proef.'                                                 => 'Utilisez les boutons du dernier e-mail contenant votre épreuve numérique.',
-		'Deze link werkt niet (meer)'                                                                                    => 'Ce lien ne fonctionne pas (ou plus)',
-		'Controleer of je de volledige link uit de e-mail gebruikt, of neem contact met ons op.'                        => 'Vérifiez que vous utilisez le lien complet de l\'e-mail, ou contactez-nous.',
-		'Laat ons even weten wat je wil aanpassen.'                                                                      => 'Indiquez-nous ce que vous souhaitez modifier.',
-		'Je reactie op de digitale proef'                                                                                => 'Votre réponse à l\'épreuve numérique',
-		'Bestelling #%s'                                                                                                 => 'Commande n° %s',
-		'Patch %s'                                                                                                       => 'Écusson %s',
-		'Je opmerking'                                                                                                   => 'Votre remarque',
-		'Contact'                                                                                                        => 'Contact',
-		'Terug naar de website'                                                                                          => 'Retour au site',
-		'Hallo %1$s, hier is de digitale proef van je patch. Kijk je alles even na? Klopt alles, dan starten we meteen met de productie.' => 'Bonjour %1$s, voici l\'épreuve numérique de votre écusson. Pouvez-vous tout vérifier ? Si tout est correct, nous lançons immédiatement la production.',
-		'Hier is de digitale proef van je patch. Kijk je alles even na? Klopt alles, dan starten we meteen met de productie.' => 'Voici l\'épreuve numérique de votre écusson. Pouvez-vous tout vérifier ? Si tout est correct, nous lançons immédiatement la production.',
-		'Recht'                                                                                                          => 'Droit',
-		'Boog boven'                                                                                                     => 'Arc en haut',
-		'Boog onder'                                                                                                     => 'Arc en bas',
-		'klittenband %s'                                                                                                 => 'velcro %s',
-	);
 
 	/* =====================================================================
 	 * Registration
@@ -122,8 +55,6 @@ final class Order_Production {
 		add_action( 'admin_post_bps_print_fiche', array( __CLASS__, 'handle_print' ) );
 		add_action( 'wp_ajax_bps_send_proof', array( __CLASS__, 'ajax_send_proof' ) );
 		add_action( 'wp_ajax_bps_set_proof_status', array( __CLASS__, 'ajax_set_status' ) );
-		add_action( 'template_redirect', array( __CLASS__, 'handle_proof_response' ), 1 );
-		add_filter( 'woocommerce_email_classes', array( __CLASS__, 'email_classes' ), 20 );
 		add_filter( 'woocommerce_hidden_order_itemmeta', array( __CLASS__, 'hidden_itemmeta' ) );
 
 		// Orders list column (HPOS + legacy).
@@ -131,294 +62,121 @@ final class Order_Production {
 		add_action( 'manage_woocommerce_page_wc-orders_custom_column', array( __CLASS__, 'list_column_hpos' ), 10, 2 );
 		add_filter( 'manage_edit-shop_order_columns', array( __CLASS__, 'list_columns' ), 20 );
 		add_action( 'manage_shop_order_posts_custom_column', array( __CLASS__, 'list_column_legacy' ), 10, 2 );
+
+		add_filter( 'bps_owned_data', array( __CLASS__, 'filter_owned_data' ) );
+		Proof_Service::register();
+	}
+
+	/**
+	 * Data the proof workflow owns (contract C2; also read during uninstall).
+	 */
+	public static function owned_data(): array {
+		return Proof_Service::owned_data();
+	}
+
+	/**
+	 * Filter bps_owned_data (runtime).
+	 *
+	 * @param array $data Owned data.
+	 */
+	public static function filter_owned_data( $data ) {
+		$data = is_array( $data ) ? $data : array();
+		foreach ( self::owned_data() as $key => $list ) {
+			$data[ $key ] = array_values( array_unique( array_merge( (array) ( $data[ $key ] ?? array() ), $list ) ) );
+		}
+		return $data;
 	}
 
 	/* =====================================================================
-	 * Small helpers (config, labels, language)
+	 * Small helpers (kept for templates and other packages)
 	 * =================================================================== */
-
-	/**
-	 * Full config (Settings::get(), SPEC §4.2).
-	 */
-	private static function config(): array {
-		if ( null === self::$config ) {
-			self::$config = class_exists( Settings::class ) ? (array) Settings::get() : array();
-		}
-		return self::$config;
-	}
-
-	/**
-	 * Dot-path config lookup.
-	 *
-	 * @param string $dot     Path.
-	 * @param mixed  $default Default.
-	 * @return mixed
-	 */
-	private static function cfg( string $dot, $default = null ) {
-		$node = self::config();
-		foreach ( explode( '.', $dot ) as $part ) {
-			if ( ! is_array( $node ) || ! array_key_exists( $part, $node ) ) {
-				return $default;
-			}
-			$node = $node[ $part ];
-		}
-		return $node;
-	}
 
 	/**
 	 * 'nl'|'fr' for a locale-ish string.
 	 *
-	 * @param string|null $locale Locale ('fr-BE', 'fr_FR', 'nl_BE', …).
+	 * @param string|null $locale Locale.
 	 */
 	public static function lang_of( ?string $locale ): string {
-		return ( null !== $locale && 0 === stripos( $locale, 'fr' ) ) ? 'fr' : 'nl';
+		return Spec::lang_of( $locale );
+	}
+
+	/**
+	 * Set the label language; returns the previous one.
+	 *
+	 * @param string $lang 'nl'|'fr'.
+	 */
+	public static function set_lang( string $lang ): string {
+		return Spec::set_lang( $lang );
+	}
+
+	/**
+	 * Current label language.
+	 */
+	public static function lang(): string {
+		return Spec::lang();
+	}
+
+	/**
+	 * Number with decimal comma.
+	 *
+	 * @param float $n        Number.
+	 * @param int   $decimals Max decimals.
+	 */
+	public static function num( float $n, int $decimals = 1 ): string {
+		return Spec::num( $n, $decimals );
 	}
 
 	/**
 	 * Language of the current admin user.
 	 */
 	private static function admin_lang(): string {
-		return self::lang_of( function_exists( 'get_user_locale' ) ? get_user_locale() : get_locale() );
+		return Spec::lang_of( function_exists( 'get_user_locale' ) ? get_user_locale() : get_locale() );
 	}
 
 	/**
-	 * Set the language for label helpers / customer text fallback; returns the previous one.
+	 * Human date (site timezone) for an ISO/GMT timestamp.
 	 *
-	 * @param string $lang 'nl'|'fr'.
+	 * @param string $iso Timestamp.
 	 */
-	public static function set_lang( string $lang ): string {
-		$prev       = self::$lang;
-		self::$lang = 'fr' === $lang ? 'fr' : 'nl';
-		return $prev;
-	}
-
-	/**
-	 * Current helper language.
-	 */
-	public static function lang(): string {
-		return self::$lang;
-	}
-
-	/**
-	 * Customer-text fallback: a Dutch source string that gettext did not translate gets our built-in French.
-	 *
-	 * @param string      $translated Result of __( 'Dutch source', 'borduur-patch-studio' ).
-	 * @param string|null $lang       Language (default: current helper language).
-	 */
-	public static function l( string $translated, ?string $lang = null ): string {
-		$lang = $lang ?? self::$lang;
-		if ( 'fr' === $lang && isset( self::FR[ $translated ] ) ) {
-			return self::FR[ $translated ];
-		}
-		return $translated;
-	}
-
-	/**
-	 * Text from a {nl,fr} label in the helper language.
-	 *
-	 * @param mixed $obj Label or string.
-	 */
-	private static function label( $obj ): string {
-		if ( is_string( $obj ) ) {
-			return $obj;
-		}
-		if ( ! is_array( $obj ) ) {
+	public static function date_text( string $iso ): string {
+		$ts = '' !== $iso ? strtotime( $iso ) : false;
+		if ( ! $ts ) {
 			return '';
 		}
-		$alt = 'fr' === self::$lang ? 'nl' : 'fr';
-		return (string) ( ! empty( $obj[ self::$lang ] ) ? $obj[ self::$lang ] : ( $obj[ $alt ] ?? '' ) );
+		/* translators: 1: date, 2: time */
+		return sprintf( __( '%1$s om %2$s', 'borduur-patch-studio' ), wp_date( 'd-m-Y', $ts ), wp_date( 'H:i', $ts ) );
 	}
 
 	/**
-	 * Number with decimal comma ("8", "7,5", "0,8").
+	 * Admin label for a proof status.
 	 *
-	 * @param float $n        Number.
-	 * @param int   $decimals Max decimals.
+	 * @param string $status Status.
 	 */
-	public static function num( float $n, int $decimals = 1 ): string {
-		$s = number_format( $n, $decimals, ',', '.' );
-		if ( false !== strpos( $s, ',' ) ) {
-			$s = rtrim( rtrim( $s, '0' ), ',' );
+	public static function status_label( string $status ): string {
+		return Proof_Service::status_label( $status );
+	}
+
+	/**
+	 * Normalized proof of an order line (or, without a line, of a design record — legacy callers).
+	 *
+	 * @param array                       $rec  DesignRecord.
+	 * @param \WC_Order_Item_Product|null $item Line.
+	 */
+	public static function proof_of( array $rec, $item = null ): array {
+		if ( $item instanceof \WC_Order_Item_Product ) {
+			return Proof_Service::get( $item );
 		}
-		return $s;
+		return Proof_Service::normalize( isset( $rec['proof'] ) && is_array( $rec['proof'] ) ? $rec['proof'] : array() );
 	}
 
 	/**
-	 * Lower-case (multibyte-safe when mbstring is available).
+	 * Customer-facing summary rows (proof mail and page).
 	 *
-	 * @param string $s Text.
+	 * @param \WC_Order_Item_Product $item Line.
+	 * @param string                 $lang Language.
 	 */
-	private static function lower( string $s ): string {
-		return function_exists( 'mb_strtolower' ) ? mb_strtolower( $s ) : strtolower( $s );
-	}
-
-	/**
-	 * Technique definition.
-	 *
-	 * @param string $id Technique id.
-	 */
-	private static function technique( string $id ): array {
-		$t = self::cfg( 'techniques.' . $id );
-		return is_array( $t ) ? $t : array();
-	}
-
-	/**
-	 * Technique label.
-	 *
-	 * @param string $id Technique id.
-	 */
-	private static function technique_label( string $id ): string {
-		$t = self::technique( $id );
-		return '' !== $id && $t ? self::label( $t['label'] ?? $id ) : $id;
-	}
-
-	/**
-	 * Shape label.
-	 *
-	 * @param string $id Shape id.
-	 */
-	private static function shape_label( string $id ): string {
-		$s = self::cfg( 'shapes.' . $id );
-		return is_array( $s ) ? self::label( $s['label'] ?? $id ) : $id;
-	}
-
-	/**
-	 * Option definition by id.
-	 *
-	 * @param string $id Option id.
-	 */
-	private static function option( string $id ): ?array {
-		foreach ( (array) self::cfg( 'options', array() ) as $opt ) {
-			if ( is_array( $opt ) && isset( $opt['id'] ) && $opt['id'] === $id ) {
-				return $opt;
-			}
-		}
-		return null;
-	}
-
-	/**
-	 * Thread from the palette by code.
-	 *
-	 * @param string $code Thread code.
-	 */
-	private static function thread( string $code ): ?array {
-		static $map = null;
-		if ( null === $map ) {
-			$map = array();
-			foreach ( (array) self::cfg( 'threads', array() ) as $t ) {
-				if ( is_array( $t ) && isset( $t['code'] ) ) {
-					$map[ (string) $t['code'] ] = $t;
-				}
-			}
-		}
-		return $map[ $code ] ?? null;
-	}
-
-	/**
-	 * Font definition by id.
-	 *
-	 * @param string $id Font id.
-	 */
-	private static function font( string $id ): ?array {
-		foreach ( (array) self::cfg( 'fonts', array() ) as $f ) {
-			if ( is_array( $f ) && isset( $f['id'] ) && $f['id'] === $id ) {
-				return $f;
-			}
-		}
-		return null;
-	}
-
-	/**
-	 * Thread brand shown before codes ("Polyneon").
-	 */
-	private static function brand(): string {
-		$b = (string) self::cfg( 'threadBrand', 'Polyneon' );
-		$b = '' !== $b ? $b : 'Polyneon';
-		return trim( preg_replace( '/^Madeira\s+/i', '', $b ) );
-	}
-
-	/**
-	 * Safe hex colour or ''.
-	 *
-	 * @param mixed $hex Value.
-	 */
-	private static function hex( $hex ): string {
-		$hex = is_string( $hex ) ? trim( $hex ) : '';
-		return preg_match( '/^#[0-9a-fA-F]{6}$/', $hex ) ? strtolower( $hex ) : '';
-	}
-
-	/**
-	 * Fabric / leather label by payload fabric.
-	 *
-	 * @param array $fabric {id, hex, label}.
-	 */
-	private static function fabric_label( array $fabric ): string {
-		$id = (string) ( $fabric['id'] ?? '' );
-		foreach ( array_merge( (array) self::cfg( 'fabrics', array() ), (array) self::cfg( 'leathers', array() ) ) as $f ) {
-			if ( is_array( $f ) && isset( $f['id'] ) && $f['id'] === $id ) {
-				return self::label( $f['label'] ?? $id );
-			}
-		}
-		return (string) ( $fabric['label'] ?? $id );
-	}
-
-	/**
-	 * Where the customer placed a text layer (empty for the default spot / older payloads).
-	 *
-	 * @param array $tx Text layer.
-	 */
-	private static function text_place( array $tx ): string {
-		$path = (string) ( $tx['path'] ?? 'straight' );
-		if ( 'straight' === $path ) {
-			$x = (float) ( $tx['offsetMm']['x'] ?? 0 );
-			$y = (float) ( $tx['offsetMm']['y'] ?? 0 );
-			if ( abs( $x ) < 0.05 && abs( $y ) < 0.05 ) {
-				return isset( $tx['offsetMm'] ) ? __( 'gecentreerd', 'borduur-patch-studio' ) : '';
-			}
-			/* translators: 1: x offset mm, 2: y offset mm from the patch centre */
-			return sprintf( __( 'midden %1$s / %2$s mm (x / y) vanaf het centrum', 'borduur-patch-studio' ), self::num( $x ), self::num( $y ) );
-		}
-		if ( ! isset( $tx['angleDeg'] ) && ! isset( $tx['insetMm'] ) ) {
-			return '';
-		}
-		/* translators: 1: angle in degrees along the edge, 2: extra distance to the edge in mm */
-		return sprintf( __( 'gedraaid %1$s° · %2$s mm extra van de rand', 'borduur-patch-studio' ), (string) (int) ( $tx['angleDeg'] ?? 0 ), self::num( (float) ( $tx['insetMm'] ?? 0 ) ) );
-	}
-
-	/**
-	 * Text path label.
-	 *
-	 * @param string $path straight|arc_top|arc_bottom.
-	 */
-	private static function path_label( string $path ): string {
-		switch ( $path ) {
-			case 'arc_top':
-				return self::l( __( 'Boog boven', 'borduur-patch-studio' ) );
-			case 'arc_bottom':
-				return self::l( __( 'Boog onder', 'borduur-patch-studio' ) );
-			default:
-				return self::l( __( 'Recht', 'borduur-patch-studio' ) );
-		}
-	}
-
-	/**
-	 * Thread display "Naam · Polyneon 1747".
-	 *
-	 * @param string $code Code.
-	 * @param string $name Fallback name.
-	 * @return array{name:string, code:string, hex:string}
-	 */
-	private static function thread_info( string $code, string $name = '', string $hex = '' ): array {
-		$t = '' !== $code ? self::thread( $code ) : null;
-		if ( $t ) {
-			$name = self::label( $t['name'] ?? $name );
-			$hex  = '' !== self::hex( $hex ) ? $hex : (string) ( $t['hex'] ?? '' );
-		}
-		return array(
-			'name' => '' !== $name ? $name : $code,
-			'code' => $code,
-			'hex'  => self::hex( $hex ),
-		);
+	public static function customer_rows( $item, string $lang ): array {
+		return Spec::customer_rows( $item, $lang );
 	}
 
 	/* =====================================================================
@@ -445,7 +203,8 @@ final class Order_Production {
 	}
 
 	/**
-	 * Design record for an order line (or a synthesized record from the order snapshot when the post was cleaned up).
+	 * Design record for an order line (synthesized from the order snapshot when the post was cleaned up). The
+	 * proof always comes from the order line (atelier-flow-1), never from the design post.
 	 *
 	 * @param \WC_Order_Item_Product $item Item.
 	 * @return array{record:array, exists:bool}
@@ -455,6 +214,7 @@ final class Order_Production {
 		$record = ( $id > 0 && class_exists( Designs::class ) ) ? Designs::get( $id ) : null;
 		$snap   = json_decode( (string) $item->get_meta( '_bps_payload' ), true );
 		$snap   = is_array( $snap ) ? $snap : array();
+		$exists = (bool) $record;
 		if ( $record ) {
 			// The order snapshot is what the customer ordered; prefer it over the (equal or later) design payload.
 			if ( $snap ) {
@@ -463,40 +223,43 @@ final class Order_Production {
 			if ( '' === (string) $record['preview_url'] ) {
 				$record['preview_url'] = (string) $item->get_meta( '_bps_preview_url' );
 			}
-			return array(
-				'record' => $record,
-				'exists' => true,
+		} else {
+			$record = array(
+				'id'          => $id,
+				'ref'         => (string) $item->get_meta( 'bps_ref' ),
+				'status'      => 'ordered',
+				'created_gmt' => '',
+				'payload'     => $snap,
+				'original'    => null,
+				'preview_url' => (string) $item->get_meta( '_bps_preview_url' ),
+				'email'       => null,
 			);
 		}
+		$record['order_id']      = (int) $item->get_order_id();
+		$record['order_item_id'] = (int) $item->get_id();
+		$record['proof']         = Proof_Service::get( $item );
 		return array(
-			'record' => array(
-				'id'            => $id,
-				'ref'           => (string) $item->get_meta( 'bps_ref' ),
-				'status'        => 'ordered',
-				'created_gmt'   => '',
-				'payload'       => $snap,
-				'original'      => null,
-				'preview_url'   => (string) $item->get_meta( '_bps_preview_url' ),
-				'order_id'      => $item->get_order_id(),
-				'order_item_id' => $item->get_id(),
-				'email'         => null,
-				'proof'         => array(
-					'status'  => (string) ( $item->get_meta( self::ITEM_PROOF_META ) ?: 'none' ),
-					'history' => array(),
-				),
-			),
-			'exists' => false,
+			'record' => $record,
+			'exists' => $exists,
 		);
 	}
 
 	/**
 	 * Everything the card, the print sheet and the proof mail need for one order line.
+	 * Accepts ( $item, ?$lang ) and, per contract C6, ( $order, $item ).
 	 *
-	 * @param \WC_Order_Item_Product $item  Item.
-	 * @param string|null            $lang  Label language (default: admin user language).
+	 * @param \WC_Order|\WC_Order_Item_Product $a Order (C6) or line.
+	 * @param \WC_Order_Item_Product|string    $b Line (C6) or label language.
 	 */
-	public static function fiche( $item, ?string $lang = null ): array {
-		$prev = self::set_lang( $lang ?? self::admin_lang() );
+	public static function fiche( $a, $b = null ): array {
+		if ( $a instanceof \WC_Order ) {
+			$item = $b;
+			$lang = null;
+		} else {
+			$item = $a;
+			$lang = is_string( $b ) ? $b : null;
+		}
+		$prev = Spec::set_lang( $lang ?? self::admin_lang() );
 		$d    = self::design_for_item( $item );
 		$rec  = $d['record'];
 		$p    = (array) $rec['payload'];
@@ -513,115 +276,72 @@ final class Order_Production {
 			$h_mm = $size_cm * 10;
 		}
 		$qty    = (int) $item->get_quantity();
-		$t      = self::technique( $tech );
+		$t      = Spec::technique( $tech );
 		$thread = ! empty( $t['threadBased'] );
 
 		// Options per group.
 		$groups = array();
 		foreach ( $options as $oid ) {
-			$opt = self::option( $oid );
-			if ( ! $opt ) {
-				continue;
-			}
-			if ( ! empty( $opt['requiresAny'] ) && ! array_intersect( (array) $opt['requiresAny'], $options ) ) {
+			$opt = Spec::option( $oid );
+			if ( ! $opt || ( ! empty( $opt['requiresAny'] ) && ! array_intersect( (array) $opt['requiresAny'], $options ) ) ) {
 				continue;
 			}
 			$groups[ (string) ( $opt['group'] ?? 'other' ) ][] = $opt;
 		}
-		$labels = static function ( string $g ) use ( $groups ): string {
+		$labels     = static function ( string $g ) use ( $groups ): string {
 			$out = array();
 			foreach ( $groups[ $g ] ?? array() as $o ) {
-				$out[] = self::label( $o['label'] ?? $o['id'] );
+				$out[] = Spec::label( $o['label'] ?? $o['id'] );
 			}
 			return implode( ', ', $out );
 		};
-
-		$edge_style = '';
-		if ( ! empty( $groups['edge'][0]['render']['style'] ) ) {
-			$edge_style = (string) $groups['edge'][0]['render']['style'];
-		}
+		$edge_style = (string) ( $groups['edge'][0]['render']['style'] ?? '' );
 
 		/* ---------- Specs ---------- */
-		$specs   = array();
-		$specs[] = array(
-			'label' => __( 'Techniek', 'borduur-patch-studio' ),
-			'value' => self::technique_label( $tech ),
-		);
-		$specs[] = array(
-			'label' => __( 'Maat', 'borduur-patch-studio' ),
+		$specs = array(
+			self::row( __( 'Techniek', 'borduur-patch-studio' ), Spec::technique_label( $tech ) ),
 			/* translators: 1: width mm, 2: height mm, 3: longest side in cm */
-			'value' => sprintf( __( '%1$s × %2$s mm (langste zijde %3$s cm)', 'borduur-patch-studio' ), self::num( round( $w_mm ), 0 ), self::num( round( $h_mm ), 0 ), self::num( $size_cm ) ),
-			'mono'  => true,
-		);
-		$specs[] = array(
-			'label' => __( 'Vorm', 'borduur-patch-studio' ),
-			'value' => self::shape_label( $shape ),
-		);
-		$specs[] = array(
-			'label' => __( 'Aantal', 'borduur-patch-studio' ),
-			/* translators: %s: quantity */
-			'value' => sprintf( __( '%s stuks', 'borduur-patch-studio' ), number_format( $qty, 0, ',', '.' ) ),
+			self::row( __( 'Maat', 'borduur-patch-studio' ), sprintf( __( '%1$s × %2$s mm (langste zijde %3$s cm)', 'borduur-patch-studio' ), Spec::num( round( $w_mm ), 0 ), Spec::num( round( $h_mm ), 0 ), Spec::num( $size_cm ) ), array( 'mono' => true ) ),
+			self::row( __( 'Vorm', 'borduur-patch-studio' ), Spec::shape_label( $shape ) ),
+			self::row( __( 'Aantal', 'borduur-patch-studio' ), Spec::pieces( $qty ) ),
 		);
 		if ( '' !== $labels( 'edge' ) ) {
-			$specs[] = array(
-				'label' => __( 'Rand', 'borduur-patch-studio' ),
-				'value' => $labels( 'edge' ),
-			);
+			$specs[] = self::row( __( 'Rand', 'borduur-patch-studio' ), $labels( 'edge' ) );
 		}
 		$edge = isset( $p['edgeColor'] ) && is_array( $p['edgeColor'] ) ? $p['edgeColor'] : null;
 		if ( $edge && ! empty( $edge['code'] ) && in_array( $edge_style, array( '', 'satin', 'merrow' ), true ) ) {
-			$ti      = self::thread_info( (string) $edge['code'], (string) ( $edge['name'] ?? '' ), (string) ( $edge['hex'] ?? '' ) );
-			$specs[] = array(
-				'label' => __( 'Randkleur', 'borduur-patch-studio' ),
-				'value' => $ti['name'] . ' · ' . self::brand() . ' ' . $ti['code'],
-				'hex'   => $ti['hex'],
-				'code'  => $ti['code'],
+			$ti      = Spec::thread_info( (string) $edge['code'], (string) ( $edge['name'] ?? '' ), (string) ( $edge['hex'] ?? '' ) );
+			$specs[] = self::row(
+				__( 'Randkleur', 'borduur-patch-studio' ),
+				$ti['name'] . ' · ' . Spec::brand() . ' ' . $ti['code'],
+				array(
+					'hex'  => $ti['hex'],
+					'code' => $ti['code'],
+				)
 			);
 		}
 		if ( '' !== $labels( 'backing' ) ) {
-			$specs[] = array(
-				'label' => __( 'Achterkant', 'borduur-patch-studio' ),
-				'value' => $labels( 'backing' ),
-			);
+			$specs[] = self::row( __( 'Achterkant', 'borduur-patch-studio' ), $labels( 'backing' ) );
 		}
 		$velcro = array_filter( array( $labels( 'velcro_color' ), $labels( 'backing_extra' ) ) );
 		if ( $velcro ) {
-			$specs[] = array(
-				'label' => __( 'Klittenband', 'borduur-patch-studio' ),
-				'value' => implode( ' · ', $velcro ),
-			);
+			$specs[] = self::row( __( 'Klittenband', 'borduur-patch-studio' ), implode( ' · ', $velcro ) );
 		}
 		if ( '' !== $labels( 'thickness' ) ) {
-			$specs[] = array(
-				'label' => __( 'Dikte', 'borduur-patch-studio' ),
-				'value' => $labels( 'thickness' ),
-			);
+			$specs[] = self::row( __( 'Dikte', 'borduur-patch-studio' ), $labels( 'thickness' ) );
 		}
 		if ( '' !== $labels( 'carrier' ) ) {
-			$specs[] = array(
-				'label' => __( 'Drager', 'borduur-patch-studio' ),
-				'value' => $labels( 'carrier' ),
-			);
+			$specs[] = self::row( __( 'Drager', 'borduur-patch-studio' ), $labels( 'carrier' ) );
 		}
 		$fabric = isset( $p['fabric'] ) && is_array( $p['fabric'] ) ? $p['fabric'] : array();
 		$bg     = (string) ( $p['analysis']['background'] ?? '' );
 		if ( $fabric ) {
-			$fl = self::fabric_label( $fabric );
-			if ( 'solid' === $bg || 'keep' === $bg ) {
-				$fl .= ' — ' . __( 'achtergrond uit het ontwerp overgenomen', 'borduur-patch-studio' );
-			}
-			$specs[] = array(
-				'label' => __( 'Stof / achtergrond', 'borduur-patch-studio' ),
-				'value' => $fl,
-				'hex'   => self::hex( $fabric['hex'] ?? '' ),
-			);
+			$fl      = Spec::fabric_label( $fabric ) . ( in_array( $bg, array( 'solid', 'keep' ), true ) ? ' — ' . __( 'achtergrond uit het ontwerp overgenomen', 'borduur-patch-studio' ) : '' );
+			$specs[] = self::row( __( 'Stof / achtergrond', 'borduur-patch-studio' ), $fl, array( 'hex' => Spec::hex( $fabric['hex'] ?? '' ) ) );
 		}
 		$other = array_filter( array( $labels( 'extras' ), $labels( 'other' ) ) );
 		if ( $other ) {
-			$specs[] = array(
-				'label' => __( 'Extra\'s', 'borduur-patch-studio' ),
-				'value' => implode( ', ', $other ),
-			);
+			$specs[] = self::row( __( 'Extra\'s', 'borduur-patch-studio' ), implode( ', ', $other ) );
 		}
 
 		/* ---------- Threads ---------- */
@@ -630,40 +350,43 @@ final class Order_Production {
 			if ( ! is_array( $th ) ) {
 				continue;
 			}
-			$ti        = self::thread_info( (string) ( $th['code'] ?? '' ), (string) ( $th['name'] ?? '' ), (string) ( $th['hex'] ?? '' ) );
+			$ti        = Spec::thread_info( (string) ( $th['code'] ?? '' ), (string) ( $th['name'] ?? '' ), (string) ( $th['hex'] ?? '' ) );
 			$share     = isset( $th['share'] ) ? (float) $th['share'] : null;
-			$pct       = null !== $share && $share > 0 ? self::num( $share * 100, $share < 0.01 ? 1 : 0 ) . ' %' : '';
-			$threads[] = array(
-				'label' => $ti['name'],
-				'value' => trim( self::brand() . ' ' . $ti['code'] . ( '' !== $pct ? ' · ' . $pct : '' ) ),
-				'hex'   => $ti['hex'],
-				'code'  => $ti['code'],
-				'share' => $pct,
-				'mono'  => true,
+			$pct       = null !== $share && $share > 0 ? Spec::num( $share * 100, $share < 0.01 ? 1 : 0 ) . ' %' : '';
+			$threads[] = self::row(
+				$ti['name'],
+				trim( Spec::brand() . ' ' . $ti['code'] . ( '' !== $pct ? ' · ' . $pct : '' ) ),
+				array(
+					'hex'   => $ti['hex'],
+					'code'  => $ti['code'],
+					'share' => $pct,
+					'mono'  => true,
+				)
 			);
 		}
 
-		/* ---------- Text layers ---------- */
+		/* ---------- Text layers (font with machine font, concurrentie-features-5) ---------- */
 		$texts = array();
 		foreach ( (array) ( $p['texts'] ?? array() ) as $tx ) {
 			if ( ! is_array( $tx ) || '' === trim( (string) ( $tx['text'] ?? '' ) ) ) {
 				continue;
 			}
-			$font    = self::font( (string) ( $tx['font'] ?? '' ) );
-			$ti      = self::thread_info( (string) ( $tx['threadCode'] ?? '' ) );
+			$ti      = Spec::thread_info( (string) ( $tx['threadCode'] ?? '' ) );
 			$parts   = array(
-				$font ? self::label( $font['label'] ?? $font['id'] ) : (string) ( $tx['font'] ?? '' ),
+				Spec::font_atelier( (string) ( $tx['font'] ?? '' ) ),
 				/* translators: %s: letter height in mm */
-				sprintf( __( '%s mm hoog', 'borduur-patch-studio' ), self::num( (float) ( $tx['heightMm'] ?? 0 ) ) ),
-				self::path_label( (string) ( $tx['path'] ?? 'straight' ) ),
-				self::text_place( $tx ),
+				sprintf( __( '%s mm hoog', 'borduur-patch-studio' ), Spec::num( (float) ( $tx['heightMm'] ?? 0 ) ) ),
+				Spec::path_label( (string) ( $tx['path'] ?? 'straight' ) ),
+				Spec::text_place( $tx ),
 			);
-			$parts[] = ( '' !== $ti['code'] && 'auto' !== $ti['code'] ) ? $ti['name'] . ' (' . self::brand() . ' ' . $ti['code'] . ')' : __( 'garenkleur automatisch', 'borduur-patch-studio' );
-			$texts[] = array(
-				'label' => '“' . (string) $tx['text'] . '”',
-				'value' => implode( ' · ', array_filter( $parts ) ),
-				'hex'   => $ti['hex'],
-				'code'  => 'auto' !== $ti['code'] ? $ti['code'] : '',
+			$parts[] = ( '' !== $ti['code'] && 'auto' !== $ti['code'] ) ? $ti['name'] . ' (' . Spec::brand() . ' ' . $ti['code'] . ')' : __( 'garenkleur automatisch', 'borduur-patch-studio' );
+			$texts[] = self::row(
+				'“' . (string) $tx['text'] . '”',
+				implode( ' · ', array_filter( $parts ) ),
+				array(
+					'hex'  => $ti['hex'],
+					'code' => 'auto' !== $ti['code'] ? $ti['code'] : '',
+				)
 			);
 		}
 
@@ -671,133 +394,19 @@ final class Order_Production {
 		$a    = isset( $p['analysis'] ) && is_array( $p['analysis'] ) ? $p['analysis'] : null;
 		$prod = array();
 		if ( $a && ! empty( $a['stitches'] ) && is_array( $a['stitches'] ) && $thread ) {
-			$prod[] = array(
-				'label' => __( 'Geschat steekaantal', 'borduur-patch-studio' ),
-				/* translators: 1: min stitches, 2: max stitches */
-				'value' => sprintf( __( '± %1$s – %2$s steken (schatting, per stuk)', 'borduur-patch-studio' ), number_format( (int) ( $a['stitches']['min'] ?? 0 ), 0, ',', '.' ), number_format( (int) ( $a['stitches']['max'] ?? 0 ), 0, ',', '.' ) ),
-				'mono'  => true,
-			);
+			/* translators: 1: min stitches, 2: max stitches */
+			$prod[] = self::row( __( 'Geschat steekaantal', 'borduur-patch-studio' ), sprintf( __( '± %1$s – %2$s steken (schatting, per stuk)', 'borduur-patch-studio' ), Spec::int( (int) ( $a['stitches']['min'] ?? 0 ) ), Spec::int( (int) ( $a['stitches']['max'] ?? 0 ) ) ), array( 'mono' => true ) );
 		}
 		if ( $threads ) {
-			$prod[] = array(
-				'label' => $thread ? __( 'Aantal garenkleuren', 'borduur-patch-studio' ) : __( 'Aantal kleuren', 'borduur-patch-studio' ),
-				'value' => (string) count( $threads ) . ( $texts ? ' ' . __( '(inclusief tekst)', 'borduur-patch-studio' ) : '' ),
-			);
+			$prod[] = self::row( $thread ? __( 'Aantal garenkleuren', 'borduur-patch-studio' ) : __( 'Aantal kleuren', 'borduur-patch-studio' ), (string) count( $threads ) . ( $texts ? ' ' . __( '(inclusief tekst)', 'borduur-patch-studio' ) : '' ) );
 		}
 		$art = isset( $p['art'] ) && is_array( $p['art'] ) ? $p['art'] : null;
-		if ( $art && ( 'text' !== ( $p['source']['kind'] ?? '' ) ) && ! empty( $p['source']['fileName'] ) ) {
-			$prod[] = array(
-				'label' => __( 'Plaatsing ontwerp', 'borduur-patch-studio' ),
-				/* translators: 1: scale %, 2: x offset mm, 3: y offset mm, 4: rotation degrees */
-				'value' => sprintf( __( 'schaal %1$s %% · verschoven %2$s / %3$s mm (x / y) · rotatie %4$s°', 'borduur-patch-studio' ), self::num( (float) ( $art['scale'] ?? 1 ) * 100, 0 ), self::num( (float) ( $art['offsetMm']['x'] ?? 0 ) ), self::num( (float) ( $art['offsetMm']['y'] ?? 0 ) ), (string) (int) ( $art['rotation'] ?? 0 ) ),
-			);
+		if ( $art && 'text' !== ( $p['source']['kind'] ?? '' ) && ! empty( $p['source']['fileName'] ) ) {
+			/* translators: 1: scale %, 2: x offset mm, 3: y offset mm, 4: rotation degrees */
+			$prod[] = self::row( __( 'Plaatsing ontwerp', 'borduur-patch-studio' ), sprintf( __( 'schaal %1$s %% · verschoven %2$s / %3$s mm (x / y) · rotatie %4$s°', 'borduur-patch-studio' ), Spec::num( (float) ( $art['scale'] ?? 1 ) * 100, 0 ), Spec::num( (float) ( $art['offsetMm']['x'] ?? 0 ) ), Spec::num( (float) ( $art['offsetMm']['y'] ?? 0 ) ), (string) (int) ( $art['rotation'] ?? 0 ) ) );
 		}
 
-		/* ---------- Analysis ---------- */
-		$an = array();
-		if ( $a ) {
-			$kinds = array(
-				'flat'         => __( 'Vlak logo', 'borduur-patch-studio' ),
-				'gradient'     => __( 'Logo met kleurverloop', 'borduur-patch-studio' ),
-				'illustration' => __( 'Illustratie met tinten', 'borduur-patch-studio' ),
-				'photo'        => __( 'Foto', 'borduur-patch-studio' ),
-			);
-			$kind  = (string) ( $a['kind'] ?? '' );
-			$an[]  = array(
-				'label' => __( 'Soort ontwerp', 'borduur-patch-studio' ),
-				'value' => ( $kinds[ $kind ] ?? $kind ) . ( ! empty( $a['hasSoftShading'] ) ? ' · ' . __( 'met zachte schaduwen', 'borduur-patch-studio' ) : '' ),
-			);
-			$bgs   = array(
-				'transparent' => __( 'transparant', 'borduur-patch-studio' ),
-				'white'       => __( 'wit (weggelaten, stofkleur gekozen)', 'borduur-patch-studio' ),
-				'solid'       => __( 'effen kleur (meegenomen als patchachtergrond)', 'borduur-patch-studio' ),
-				'none'        => __( 'geen aparte achtergrond (ontwerp loopt tot de rand)', 'borduur-patch-studio' ),
-			);
-			if ( '' !== $bg ) {
-				$an[] = array(
-					'label' => __( 'Achtergrond bestand', 'borduur-patch-studio' ),
-					'value' => $bgs[ $bg ] ?? $bg,
-				);
-			}
-			if ( ! empty( $a['shape'] ) ) {
-				$an[] = array(
-					'label' => __( 'Vorm herkend', 'borduur-patch-studio' ),
-					'value' => self::shape_label( (string) $a['shape'] ),
-				);
-			}
-			if ( ! empty( $a['colors'] ) ) {
-				$an[] = array(
-					'label' => __( 'Kleuren in het bestand', 'borduur-patch-studio' ),
-					'value' => (string) (int) $a['colors'],
-				);
-			}
-			if ( isset( $a['fineLineMm'] ) && null !== $a['fineLineMm'] ) {
-				$an[] = array(
-					'label' => __( 'Fijnste lijn', 'borduur-patch-studio' ),
-					/* translators: %s: mm */
-					'value' => sprintf( __( '± %s mm', 'borduur-patch-studio' ), self::num( (float) $a['fineLineMm'] ) ),
-					'mono'  => true,
-				);
-			}
-			if ( isset( $a['minTextMm'] ) && null !== $a['minTextMm'] ) {
-				$an[] = array(
-					'label' => __( 'Kleinste tekst in het bestand', 'borduur-patch-studio' ),
-					/* translators: %s: mm */
-					'value' => sprintf( __( '± %s mm', 'borduur-patch-studio' ), self::num( (float) $a['minTextMm'] ) ),
-					'mono'  => true,
-				);
-			}
-		}
-
-		/* ---------- Checks (attention points for the atelier) ---------- */
-		$checks = self::checks( $tech, $t, $p, $a, $threads, $edge_style );
-
-		/* ---------- Customer ---------- */
-		$cust = array();
-		$src  = isset( $p['source'] ) && is_array( $p['source'] ) ? $p['source'] : array();
-		if ( ! empty( $src['fileName'] ) ) {
-			$cust[] = array(
-				'label' => __( 'Bestand van de klant', 'borduur-patch-studio' ),
-				'value' => (string) $src['fileName'] . ( ! empty( $src['fileType'] ) ? ' (' . (string) $src['fileType'] . ')' : '' ),
-			);
-		} else {
-			$cust[] = array(
-				'label' => __( 'Bestand van de klant', 'borduur-patch-studio' ),
-				'value' => __( 'Geen: patch met enkel tekst', 'borduur-patch-studio' ),
-			);
-		}
-		if ( ! empty( $p['advice']['recommended'] ) ) {
-			$rec_t  = (string) $p['advice']['recommended'];
-			$words  = array(
-				'ok'   => __( 'aanrader', 'borduur-patch-studio' ),
-				'warn' => __( 'kan, met aanpassing', 'borduur-patch-studio' ),
-				'bad'  => __( 'raden we af', 'borduur-patch-studio' ),
-			);
-			$status = (string) ( $p['advice']['chosenStatus'] ?? '' );
-			$value  = sprintf(
-				/* translators: 1: recommended technique, 2: chosen technique, 3: status word */
-				__( 'Ons advies: %1$s · gekozen: %2$s (%3$s)', 'borduur-patch-studio' ),
-				self::technique_label( $rec_t ),
-				self::technique_label( $tech ),
-				$words[ $status ] ?? $status
-			);
-			if ( ! empty( $p['advice']['headline'] ) ) {
-				$value .= ' — ' . (string) $p['advice']['headline'];
-			}
-			$cust[] = array(
-				'label' => __( 'Advies in de tool', 'borduur-patch-studio' ),
-				'value' => $value,
-				'level' => 'ok' === $status || '' === $status ? '' : ( 'bad' === $status ? 'bad' : 'warn' ),
-			);
-		}
-		$rights = (string) $item->get_meta( 'bps_rights' );
-		if ( '' !== $rights ) {
-			$cust[] = array(
-				'label' => __( 'Rechtenverklaring', 'borduur-patch-studio' ),
-				'value' => $rights,
-			);
-		}
-
+		$checks   = Spec::checks( $tech, $t, $p, $a, $threads, $edge_style );
 		$sections = array(
 			'specs'      => array(
 				'title' => __( 'Specificaties', 'borduur-patch-studio' ),
@@ -822,11 +431,11 @@ final class Order_Production {
 			),
 			'analysis'   => array(
 				'title' => __( 'Analyse van het bestand', 'borduur-patch-studio' ),
-				'rows'  => $an,
+				'rows'  => self::analysis_rows( $a, $bg ),
 			),
 			'customer'   => array(
 				'title' => __( 'Klant en advies', 'borduur-patch-studio' ),
-				'rows'  => $cust,
+				'rows'  => self::customer_section( $p, $tech, $item ),
 			),
 		);
 
@@ -838,9 +447,8 @@ final class Order_Production {
 		 * @param array                  $design   DesignRecord (synthesized from the order snapshot if the design was removed).
 		 * @param \WC_Order_Item_Product $item     Order line.
 		 */
-		$sections = (array) apply_filters( 'bps_fiche_sections', $sections, $rec, $item );
 		$sections = array_filter(
-			$sections,
+			(array) apply_filters( 'bps_fiche_sections', $sections, $rec, $item ),
 			static function ( $s ) {
 				return is_array( $s ) && ! empty( $s['rows'] );
 			}
@@ -856,296 +464,165 @@ final class Order_Production {
 			);
 		}
 
-		$proof = self::proof_of( $rec, $item );
-
-		$fiche = array(
-			'item_id'       => (int) $item->get_id(),
-			'order_id'      => (int) $item->get_order_id(),
-			'design_id'     => (int) $rec['id'],
-			'design_exists' => (bool) $d['exists'],
-			'ref'           => '' !== (string) $rec['ref'] ? (string) $rec['ref'] : (string) $item->get_meta( 'bps_ref' ),
-			'name'          => (string) $item->get_name(),
-			'preview_url'   => (string) $rec['preview_url'],
-			'technique'     => $tech,
-			'technique_lbl' => self::technique_label( $tech ),
-			'thread_based'  => $thread,
-			'shape'         => $shape,
-			'shape_lbl'     => self::shape_label( $shape ),
-			'width_mm'      => $w_mm,
-			'height_mm'     => $h_mm,
-			'size_cm'       => $size_cm,
-			'qty'           => $qty,
-			'locale'        => (string) ( $p['locale'] ?? '' ),
-			'notes'         => trim( (string) ( $p['notes'] ?? '' ) ),
-			'sections'      => $sections,
-			'checks_level'  => self::worst_level( $checks ),
-			'original'      => $original,
-			'file_removed'  => (string) $item->get_meta( 'bps_file_removed' ),
-			'proof'         => $proof,
-			'payload'       => $p,
+		$proof  = Proof_Service::get( $item );
+		$ref    = '' !== (string) $rec['ref'] ? (string) $rec['ref'] : (string) $item->get_meta( 'bps_ref' );
+		$order  = $item->get_order();
+		$copies = array();
+		foreach ( $threads as $row ) {
+			if ( '' !== (string) $row['code'] ) {
+				$copies[] = Spec::copy_line( (string) $row['code'], (string) $row['label'] );
+			}
+		}
+		$fiche = array_merge(
+			array(
+				'item_id'       => (int) $item->get_id(),
+				'order_id'      => (int) $item->get_order_id(),
+				'design_id'     => (int) $rec['id'],
+				'design_exists' => (bool) $d['exists'],
+				'ref'           => $ref,
+				'name'          => (string) $item->get_name(),
+				'preview_url'   => (string) $rec['preview_url'],
+				'technique'     => $tech,
+				'technique_lbl' => Spec::technique_label( $tech ),
+				'thread_based'  => $thread,
+				'shape'         => $shape,
+				'shape_lbl'     => Spec::shape_label( $shape ),
+				'width_mm'      => $w_mm,
+				'height_mm'     => $h_mm,
+				'size_cm'       => $size_cm,
+				'qty'           => $qty,
+				'locale'        => (string) ( $p['locale'] ?? '' ),
+				'notes'         => trim( (string) ( $p['notes'] ?? '' ) ),
+				'sections'      => $sections,
+				'checks_level'  => Spec::worst_level( $checks ),
+				'original'      => $original,
+				'file_removed'  => (string) $item->get_meta( 'bps_file_removed' ),
+				'proof'         => $proof,
+				'payload'       => $p,
+				'copy_codes'    => $copies,
+				'facts'         => Work_Order::facts( $order, $ref ),
+				'production'    => array( 'status' => '' ),
+			),
+			Work_Order::visual( $rec, $proof, $t )
 		);
-		self::set_lang( $prev );
-		return $fiche;
+		Spec::set_lang( $prev );
+
+		/**
+		 * Data of one production sheet (card, print, other packages such as the atelier overview).
+		 *
+		 * @param array                  $fiche Fiche.
+		 * @param \WC_Order|false        $order Order.
+		 * @param \WC_Order_Item_Product $item  Line.
+		 */
+		$fiche = apply_filters( 'bps_fiche_data', $fiche, $order, $item );
+		return is_array( $fiche ) ? $fiche : array();
 	}
 
 	/**
-	 * Attention points for the atelier, from the technique's rules (config) and the stored analysis.
+	 * Sheet row.
 	 *
-	 * @param string     $tech       Technique id.
-	 * @param array      $t          Technique config.
-	 * @param array      $p          Payload.
-	 * @param array|null $a          Payload analysis.
-	 * @param array      $threads    Thread rows.
-	 * @param string     $edge_style Edge render style.
-	 * @return array<int,array>
+	 * @param string $label Label.
+	 * @param string $value Value.
+	 * @param array  $extra hex, code, mono, level, share.
 	 */
-	private static function checks( string $tech, array $t, array $p, ?array $a, array $threads, string $edge_style ): array {
-		$rules  = isset( $t['rules'] ) && is_array( $t['rules'] ) ? $t['rules'] : array();
-		$tl     = self::technique_label( $tech );
-		$thread = ! empty( $t['threadBased'] );
-		$out    = array();
-		$add    = static function ( string $level, string $label, string $value ) use ( &$out ) {
-			$out[] = array(
+	private static function row( string $label, string $value, array $extra = array() ): array {
+		return array_merge(
+			array(
 				'label' => $label,
 				'value' => $value,
-				'level' => $level,
-			);
-		};
-
-		$hard_text = isset( $rules['textCapsMm']['hard'] ) ? (float) $rules['textCapsMm']['hard'] : 0.0;
-		$comf_text = isset( $rules['textCapsMm']['comfort'] ) ? (float) $rules['textCapsMm']['comfort'] : 0.0;
-		if ( $a && isset( $a['minTextMm'] ) && null !== $a['minTextMm'] && $hard_text > 0 ) {
-			$m = (float) $a['minTextMm'];
-			if ( $m < $hard_text ) {
-				/* translators: 1: measured mm, 2: minimum mm, 3: technique */
-				$add( 'bad', __( 'Kleine tekst', 'borduur-patch-studio' ), sprintf( __( 'Kleinste tekst in het bestand ± %1$s mm, onder het minimum van %2$s mm voor %3$s. Vereenvoudigen of weglaten bij het digitaliseren, of overleggen met de klant.', 'borduur-patch-studio' ), self::num( $m ), self::num( $hard_text ), self::lower( $tl ) ) );
-			} elseif ( $comf_text > 0 && $m < $comf_text ) {
-				/* translators: 1: measured mm, 2: comfortable mm */
-				$add( 'warn', __( 'Kleine tekst', 'borduur-patch-studio' ), sprintf( __( 'Kleinste tekst ± %1$s mm: haalbaar, maar onder de comfortgrens van %2$s mm. Extra zorg bij het digitaliseren.', 'borduur-patch-studio' ), self::num( $m ), self::num( $comf_text ) ) );
-			}
-		}
-
-		foreach ( (array) ( $p['texts'] ?? array() ) as $tx ) {
-			if ( ! is_array( $tx ) || $hard_text <= 0 ) {
-				continue;
-			}
-			$font   = self::font( (string) ( $tx['font'] ?? '' ) );
-			$factor = ( $font && ( ! empty( $font['thin'] ) || ! empty( $font['serif'] ) || ! empty( $font['script'] ) ) ) ? (float) ( $rules['serifScriptFactor'] ?? 1 ) : 1.0;
-			$need   = $hard_text * max( 1.0, $factor );
-			$h      = (float) ( $tx['heightMm'] ?? 0 );
-			if ( $h > 0 && $h < $need ) {
-				/* translators: 1: text, 2: height mm, 3: needed mm */
-				$add( 'bad', __( 'Tekstlaag te klein', 'borduur-patch-studio' ), sprintf( __( '“%1$s” is %2$s mm hoog; met dit lettertype vragen we minstens %3$s mm.', 'borduur-patch-studio' ), (string) $tx['text'], self::num( $h ), self::num( $need ) ) );
-			}
-		}
-
-		$hard_line = isset( $rules['lineMm']['hard'] ) ? (float) $rules['lineMm']['hard'] : 0.0;
-		if ( $a && isset( $a['fineLineMm'] ) && null !== $a['fineLineMm'] && $hard_line > 0 && (float) $a['fineLineMm'] < $hard_line ) {
-			$value = $thread
-				/* translators: 1: measured mm, 2: minimum mm */
-				? sprintf( __( 'Fijnste lijn ± %1$s mm (minimum %2$s mm): als loopsteek uitvoeren, verdikken of weglaten.', 'borduur-patch-studio' ), self::num( (float) $a['fineLineMm'] ), self::num( $hard_line ) )
-				/* translators: 1: measured mm, 2: minimum mm */
-				: sprintf( __( 'Fijnste lijn ± %1$s mm (minimum %2$s mm): controleer of die lijn zichtbaar blijft.', 'borduur-patch-studio' ), self::num( (float) $a['fineLineMm'] ), self::num( $hard_line ) );
-			$add( 'warn', __( 'Dunne lijnen', 'borduur-patch-studio' ), $value );
-		}
-
-		$max  = isset( $rules['colors']['max'] ) && is_numeric( $rules['colors']['max'] ) ? (int) $rules['colors']['max'] : 0;
-		$comf = isset( $rules['colors']['comfortMax'] ) && is_numeric( $rules['colors']['comfortMax'] ) ? (int) $rules['colors']['comfortMax'] : 0;
-		$n    = count( $threads );
-		if ( $max > 0 && $n > $max ) {
-			/* translators: 1: number of colours, 2: max */
-			$add( 'bad', __( 'Te veel kleuren', 'borduur-patch-studio' ), sprintf( __( '%1$d kleuren; maximum is %2$d. Vereenvoudigen vóór de proef.', 'borduur-patch-studio' ), $n, $max ) );
-		} elseif ( $comf > 0 && $n > $comf ) {
-			/* translators: 1: number of colours, 2: comfortable max */
-			$add( 'warn', __( 'Veel kleuren', 'borduur-patch-studio' ), sprintf( __( '%1$d garenkleuren (comfortabel tot %2$d): reken op meer kleurwissels.', 'borduur-patch-studio' ), $n, $comf ) );
-		}
-
-		if ( $a && $thread ) {
-			$kind = (string) ( $a['kind'] ?? '' );
-			if ( 'photo' === $kind ) {
-				$add( 'bad', __( 'Foto', 'borduur-patch-studio' ), __( 'Het bestand is een foto: borduren kan enkel als sterk vereenvoudigde versie. Bespreek dit in de proef.', 'borduur-patch-studio' ) );
-			} elseif ( 'illustration' === $kind || ! empty( $a['hasSoftShading'] ) ) {
-				/* translators: %d: number of thread colours */
-				$add( 'warn', __( 'Vereenvoudigen', 'borduur-patch-studio' ), $n > 0 ? sprintf( __( 'Illustratie met tinten: schaduwen en verlopen omzetten naar vlakken in %d garenkleuren (zoals de klant in het voorbeeld zag).', 'borduur-patch-studio' ), $n ) : __( 'Illustratie met tinten: schaduwen en verlopen omzetten naar vlakken.', 'borduur-patch-studio' ) );
-			} elseif ( 'gradient' === $kind ) {
-				$add( 'warn', __( 'Kleurverloop', 'borduur-patch-studio' ), __( 'Kleurverloop in het ontwerp: uitvoeren in 2 tot 4 kleurbanden.', 'borduur-patch-studio' ) );
-			}
-		}
-
-		$warn_text = array(
-			'low_res'             => __( 'Lage resolutie voor deze maat: vraag eventueel een groter of origineel bestand.', 'borduur-patch-studio' ),
-			'transparent_shadow'  => __( 'Transparante schaduw in het bestand: die zachte schaduw wordt niet overgenomen.', 'borduur-patch-studio' ),
-			'mockup'              => __( 'De upload is een afbeelding van een patch (mock-up), geen origineel ontwerpbestand. Vraag het origineel als dat er is.', 'borduur-patch-studio' ),
-			'patch_photo_cut'     => __( 'Foto van een bestaande patch, automatisch uitgeknipt: rand en details zelf nakijken.', 'borduur-patch-studio' ),
-			'nearly_empty'        => __( 'Het bestand is bijna leeg: controleer of het juiste bestand werd geüpload.', 'borduur-patch-studio' ),
-			'white_on_transparent' => __( 'Witte elementen op een transparante achtergrond: controleer wat wit moet blijven.', 'borduur-patch-studio' ),
-			'shape_uncertain'     => __( 'Vorm niet met zekerheid herkend: controleer de gekozen vorm.', 'borduur-patch-studio' ),
-			'svg_gradient'        => __( 'SVG met kleurverlopen.', 'borduur-patch-studio' ),
-			'svg_embedded_raster' => __( 'SVG met een ingesloten pixelafbeelding (geen echte vector).', 'borduur-patch-studio' ),
-		);
-		if ( $a ) {
-			foreach ( array_unique( array_map( 'strval', (array) ( $a['warnings'] ?? array() ) ) ) as $code ) {
-				if ( '' === $code ) {
-					continue;
-				}
-				$add( 'warn', __( 'Bestand', 'borduur-patch-studio' ), $warn_text[ $code ] ?? $code );
-			}
-		} elseif ( ! empty( $p['source']['fileName'] ) ) {
-			$add( 'warn', __( 'Bestand', 'borduur-patch-studio' ), __( 'Dit bestandstype werd niet automatisch geanalyseerd (bv. PDF, AI, EPS of PSD): kleuren, lijnen en tekst zelf nakijken.', 'borduur-patch-studio' ) );
-		}
-
-		$status = (string) ( $p['advice']['chosenStatus'] ?? '' );
-		$rec    = (string) ( $p['advice']['recommended'] ?? '' );
-		if ( in_array( $status, array( 'warn', 'bad' ), true ) ) {
-			$add(
-				'bad' === $status ? 'bad' : 'warn',
-				__( 'Keuze klant', 'borduur-patch-studio' ),
-				'' !== $rec && $rec !== $tech
-					/* translators: 1: chosen technique, 2: recommended technique */
-					? sprintf( __( 'De klant koos %1$s, terwijl de tool %2$s aanraadde. Bekijk het ontwerp extra goed vóór je de proef maakt.', 'borduur-patch-studio' ), self::lower( $tl ), self::lower( self::technique_label( $rec ) ) )
-					: __( 'De tool gaf voor deze keuze een waarschuwing. Bekijk het ontwerp extra goed vóór je de proef maakt.', 'borduur-patch-studio' )
-			);
-		}
-
-		if ( 'uncut' === $edge_style ) {
-			$add( 'warn', __( 'Niet uitsnijden', 'borduur-patch-studio' ), __( 'De klant knipt zelf: leveren op een stuk stof, niet uitsnijden.', 'borduur-patch-studio' ) );
-		}
-		if ( 'merrow' === $edge_style && ! in_array( (string) ( $p['shape'] ?? '' ), array( 'circle', 'oval', 'rect', 'rounded' ), true ) ) {
-			$add( 'warn', __( 'Merrow-rand', 'borduur-patch-studio' ), __( 'Merrow (omgezoomde rand) gaat niet rond scherpe binnenhoeken: vorm nakijken.', 'borduur-patch-studio' ) );
-		}
-
-		return $out;
-	}
-
-	/**
-	 * Worst level of a list of rows ('', 'warn', 'bad').
-	 *
-	 * @param array $rows Rows.
-	 */
-	private static function worst_level( array $rows ): string {
-		$w = '';
-		foreach ( $rows as $r ) {
-			$l = (string) ( $r['level'] ?? '' );
-			if ( 'bad' === $l ) {
-				return 'bad';
-			}
-			if ( 'warn' === $l ) {
-				$w = 'warn';
-			}
-		}
-		return $w;
-	}
-
-	/* =====================================================================
-	 * Proof state
-	 * =================================================================== */
-
-	/**
-	 * Normalized proof data for a design record.
-	 *
-	 * @param array                       $rec  DesignRecord.
-	 * @param \WC_Order_Item_Product|null $item Item.
-	 */
-	public static function proof_of( array $rec, $item = null ): array {
-		$p      = isset( $rec['proof'] ) && is_array( $rec['proof'] ) ? $rec['proof'] : array();
-		$status = (string) ( $p['status'] ?? 'none' );
-		if ( ! in_array( $status, self::STATUSES, true ) ) {
-			$status = 'none';
-		}
-		return array(
-			'status'       => $status,
-			'round'        => (int) ( $p['round'] ?? 0 ),
-			'sent_at'      => (string) ( $p['sent_at'] ?? '' ),
-			'responded_at' => (string) ( $p['responded_at'] ?? '' ),
-			'note'         => (string) ( $p['note'] ?? '' ),
-			'image_url'    => (string) ( $p['image_url'] ?? '' ),
-			'recipient'    => (string) ( $p['recipient'] ?? '' ),
-			'order_id'     => (int) ( $p['order_id'] ?? 0 ),
-			'item_id'      => (int) ( $p['item_id'] ?? 0 ),
-			'history'      => isset( $p['history'] ) && is_array( $p['history'] ) ? array_values( $p['history'] ) : array(),
-		);
-	}
-
-	/**
-	 * Proof token (SPEC §6.6): HMAC over "proof|{designId}|{orderId}|{round}".
-	 *
-	 * @param int $design_id Design id.
-	 * @param int $order_id  Order id.
-	 * @param int $round     Proof round (1-based).
-	 */
-	public static function proof_token( int $design_id, int $order_id, int $round ): string {
-		return hash_hmac( 'sha256', 'proof|' . $design_id . '|' . $order_id . '|' . $round, wp_salt( 'auth' ) );
-	}
-
-	/**
-	 * Customer link for a proof answer.
-	 *
-	 * @param int    $design_id Design id.
-	 * @param int    $order_id  Order id.
-	 * @param int    $round     Round.
-	 * @param string $action    approve|changes.
-	 */
-	public static function proof_url( int $design_id, int $order_id, int $round, string $action ): string {
-		return add_query_arg(
-			array(
-				'bps_proof' => $design_id,
-				'o'         => $order_id,
-				't'         => self::proof_token( $design_id, $order_id, $round ),
-				'a'         => 'changes' === $action ? 'changes' : 'approve',
 			),
-			home_url( '/' )
+			$extra
 		);
 	}
 
 	/**
-	 * Human date (site timezone) for an ISO/GMT timestamp.
+	 * Analysis rows.
 	 *
-	 * @param string $iso Timestamp.
+	 * @param array|null $a  Analysis.
+	 * @param string     $bg Background kind.
 	 */
-	public static function date_text( string $iso ): string {
-		$ts = '' !== $iso ? strtotime( $iso ) : false;
-		if ( ! $ts ) {
-			return '';
+	private static function analysis_rows( ?array $a, string $bg ): array {
+		if ( ! $a ) {
+			return array();
 		}
-		/* translators: 1: date, 2: time */
-		return sprintf( __( '%1$s om %2$s', 'borduur-patch-studio' ), wp_date( 'd-m-Y', $ts ), wp_date( 'H:i', $ts ) );
+		$kinds = array(
+			'flat'         => __( 'Vlak logo', 'borduur-patch-studio' ),
+			'gradient'     => __( 'Logo met kleurverloop', 'borduur-patch-studio' ),
+			'illustration' => __( 'Illustratie met tinten', 'borduur-patch-studio' ),
+			'photo'        => __( 'Foto', 'borduur-patch-studio' ),
+		);
+		$bgs   = array(
+			'transparent' => __( 'transparant', 'borduur-patch-studio' ),
+			'white'       => __( 'wit (weggelaten, stofkleur gekozen)', 'borduur-patch-studio' ),
+			'solid'       => __( 'effen kleur (meegenomen als patchachtergrond)', 'borduur-patch-studio' ),
+			'none'        => __( 'geen aparte achtergrond (ontwerp loopt tot de rand)', 'borduur-patch-studio' ),
+		);
+		$kind  = (string) ( $a['kind'] ?? '' );
+		$an    = array( self::row( __( 'Soort ontwerp', 'borduur-patch-studio' ), ( $kinds[ $kind ] ?? $kind ) . ( ! empty( $a['hasSoftShading'] ) ? ' · ' . __( 'met zachte schaduwen', 'borduur-patch-studio' ) : '' ) ) );
+		if ( '' !== $bg ) {
+			$an[] = self::row( __( 'Achtergrond bestand', 'borduur-patch-studio' ), $bgs[ $bg ] ?? $bg );
+		}
+		if ( ! empty( $a['shape'] ) ) {
+			$an[] = self::row( __( 'Vorm herkend', 'borduur-patch-studio' ), Spec::shape_label( (string) $a['shape'] ) );
+		}
+		if ( ! empty( $a['colors'] ) ) {
+			$an[] = self::row( __( 'Kleuren in het bestand', 'borduur-patch-studio' ), (string) (int) $a['colors'] );
+		}
+		if ( isset( $a['fineLineMm'] ) && null !== $a['fineLineMm'] ) {
+			/* translators: %s: mm */
+			$an[] = self::row( __( 'Fijnste lijn', 'borduur-patch-studio' ), sprintf( __( '± %s mm', 'borduur-patch-studio' ), Spec::num( (float) $a['fineLineMm'] ) ), array( 'mono' => true ) );
+		}
+		if ( isset( $a['minTextMm'] ) && null !== $a['minTextMm'] ) {
+			/* translators: %s: mm */
+			$an[] = self::row( __( 'Kleinste tekst in het bestand', 'borduur-patch-studio' ), sprintf( __( '± %s mm', 'borduur-patch-studio' ), Spec::num( (float) $a['minTextMm'] ) ), array( 'mono' => true ) );
+		}
+		return $an;
 	}
 
 	/**
-	 * Admin label for a proof status.
+	 * "Klant en advies" rows.
 	 *
-	 * @param string $status Status.
+	 * @param array                  $p    Payload.
+	 * @param string                 $tech Technique id.
+	 * @param \WC_Order_Item_Product $item Line.
 	 */
-	public static function status_label( string $status ): string {
-		switch ( $status ) {
-			case 'sent':
-				return __( 'Proef verstuurd, wacht op antwoord', 'borduur-patch-studio' );
-			case 'approved':
-				return __( 'Proef goedgekeurd', 'borduur-patch-studio' );
-			case 'changes_requested':
-				return __( 'Klant vraagt een aanpassing', 'borduur-patch-studio' );
-			default:
-				return __( 'Nog geen proef verstuurd', 'borduur-patch-studio' );
+	private static function customer_section( array $p, string $tech, $item ): array {
+		$src  = isset( $p['source'] ) && is_array( $p['source'] ) ? $p['source'] : array();
+		$cust = array(
+			self::row(
+				__( 'Bestand van de klant', 'borduur-patch-studio' ),
+				! empty( $src['fileName'] ) ? (string) $src['fileName'] . ( ! empty( $src['fileType'] ) ? ' (' . (string) $src['fileType'] . ')' : '' ) : __( 'Geen: patch met enkel tekst', 'borduur-patch-studio' )
+			),
+		);
+		if ( ! empty( $p['advice']['recommended'] ) ) {
+			$words  = array(
+				'ok'   => __( 'aanrader', 'borduur-patch-studio' ),
+				'warn' => __( 'kan, met aanpassing', 'borduur-patch-studio' ),
+				'bad'  => __( 'raden we af', 'borduur-patch-studio' ),
+			);
+			$status = (string) ( $p['advice']['chosenStatus'] ?? '' );
+			/* translators: 1: recommended technique, 2: chosen technique, 3: status word */
+			$value = sprintf( __( 'Ons advies: %1$s · gekozen: %2$s (%3$s)', 'borduur-patch-studio' ), Spec::technique_label( (string) $p['advice']['recommended'] ), Spec::technique_label( $tech ), $words[ $status ] ?? $status );
+			if ( ! empty( $p['advice']['headline'] ) ) {
+				$value .= ' — ' . (string) $p['advice']['headline'];
+			}
+			$cust[] = self::row( __( 'Advies in de tool', 'borduur-patch-studio' ), $value, array( 'level' => in_array( $status, array( 'ok', '' ), true ) ? '' : ( 'bad' === $status ? 'bad' : 'warn' ) ) );
 		}
+		$rights = (string) $item->get_meta( 'bps_rights' );
+		if ( '' !== $rights ) {
+			$cust[] = self::row( __( 'Rechtenverklaring', 'borduur-patch-studio' ), $rights );
+		}
+		return $cust;
 	}
 
+
 	/**
-	 * Mirror the proof status on the order line (orders list column, HPOS-safe CRUD).
+	 * Work steps for the sheet with their done state (see Proof\Work_Order::work_steps()).
 	 *
-	 * @param int    $order_id Order id.
-	 * @param int    $item_id  Item id.
-	 * @param string $status   Status.
+	 * @param array $fiche Fiche.
 	 */
-	private static function mirror_status( int $order_id, int $item_id, string $status ): void {
-		$order = $order_id > 0 ? wc_get_order( $order_id ) : null;
-		if ( ! $order instanceof \WC_Order ) {
-			return;
-		}
-		$item = $order->get_item( $item_id );
-		if ( $item instanceof \WC_Order_Item_Product ) {
-			$item->update_meta_data( self::ITEM_PROOF_META, $status );
-			$item->save();
-		}
+	public static function work_steps( array $fiche ): array {
+		return Work_Order::work_steps( $fiche );
 	}
 
 	/* =====================================================================
@@ -1188,19 +665,13 @@ final class Order_Production {
 	 * @param mixed  $obj       Post or order.
 	 */
 	public static function add_meta_boxes( $post_type = '', $obj = null ): void {
+		unset( $post_type );
 		$order = self::order_from( $obj );
 		if ( ! $order || ! self::design_items( $order ) ) {
 			return;
 		}
 		foreach ( self::order_screens() as $screen ) {
-			add_meta_box(
-				'bps-production',
-				__( 'Patch Studio · productiefiche', 'borduur-patch-studio' ),
-				array( __CLASS__, 'render_metabox' ),
-				$screen,
-				'normal',
-				'high'
-			);
+			add_meta_box( 'bps-production', __( 'Patch Studio · productiefiche', 'borduur-patch-studio' ), array( __CLASS__, 'render_metabox' ), $screen, 'normal', 'high' );
 		}
 	}
 
@@ -1216,18 +687,46 @@ final class Order_Production {
 		}
 		$fiches = array();
 		foreach ( self::design_items( $order ) as $item ) {
-			$fiches[] = self::fiche( $item );
+			$fiches[] = self::fiche( $order, $item );
 		}
-		$can = current_user_can( 'edit_shop_orders' );
+		$can     = current_user_can( 'edit_shop_orders' );
+		$stopped = Proof_Service::blocked_status( $order );
+		$code    = isset( $_GET['bps_order_proof'] ) ? sanitize_key( wp_unslash( $_GET['bps_order_proof'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display only, fixed messages.
 		self::template(
 			'admin/order-metabox.php',
 			array(
-				'order'      => $order,
-				'fiches'     => $fiches,
-				'print_url'  => self::print_url( (int) $order->get_id() ),
-				'can_proof'  => $can,
-				'admin_data' => self::admin_data( $order, $fiches ),
+				'order'       => $order,
+				'fiches'      => $fiches,
+				'print_url'   => self::print_url( (int) $order->get_id() ),
+				'can_proof'   => $can,
+				'admin_data'  => self::admin_data( $order, $fiches ),
+				'order_proof' => $can && '' === $stopped && count( Order_Proof::eligible( $order ) ) > 1 ? Order_Proof::admin_url( (int) $order->get_id() ) : '',
+				'notice'      => self::notice( $code ),
+				'stopped'     => $stopped,
 			)
+		);
+	}
+
+	/**
+	 * Fixed admin notice for a result code of the whole-order proof.
+	 *
+	 * @param string $code Code.
+	 * @return array{type:string,text:string}|null
+	 */
+	private static function notice( string $code ): ?array {
+		if ( '' === $code ) {
+			return null;
+		}
+		$texts = array(
+			'sent'              => __( 'De proef voor de hele bestelling is verstuurd.', 'borduur-patch-studio' ),
+			'bps_order_stopped' => __( 'Deze bestelling is geannuleerd, terugbetaald of mislukt. Je kunt geen proef meer versturen.', 'borduur-patch-studio' ),
+			'bps_no_lines'      => __( 'Er is geen patch in deze bestelling waarvoor nog een proef nodig is.', 'borduur-patch-studio' ),
+			'bps_no_email'      => __( 'Deze bestelling heeft geen geldig e-mailadres. Vul een ontvanger in.', 'borduur-patch-studio' ),
+			'bps_mail_disabled' => __( 'De e-mail "Patch Studio: proef voor de hele bestelling" staat uit onder WooCommerce › Instellingen › E-mails.', 'borduur-patch-studio' ),
+		);
+		return array(
+			'type' => 'sent' === $code ? 'success' : 'error',
+			'text' => $texts[ $code ] ?? __( 'De proef kon niet verstuurd worden.', 'borduur-patch-studio' ),
 		);
 	}
 
@@ -1239,9 +738,10 @@ final class Order_Production {
 	 */
 	private static function admin_data( $order, array $fiches ): array {
 		$items = array();
+		$first = trim( (string) $order->get_billing_first_name() );
 		foreach ( $fiches as $f ) {
-			$lang                          = self::lang_of( $f['locale'] );
-			$first                         = trim( (string) $order->get_billing_first_name() );
+			$lang = Spec::lang_of( $f['locale'] );
+			Lang::switch_to( $lang );
 			$items[ (string) $f['item_id'] ] = array(
 				'ref'        => $f['ref'],
 				'designId'   => $f['design_id'],
@@ -1250,10 +750,11 @@ final class Order_Production {
 				'lang'       => $lang,
 				'defaultMsg' => '' !== $first
 					/* translators: %1$s: customer first name */
-					? sprintf( self::l( __( 'Hallo %1$s, hier is de digitale proef van je patch. Kijk je alles even na? Klopt alles, dan starten we meteen met de productie.', 'borduur-patch-studio' ), $lang ), $first )
-					: self::l( __( 'Hier is de digitale proef van je patch. Kijk je alles even na? Klopt alles, dan starten we meteen met de productie.', 'borduur-patch-studio' ), $lang ),
+					? sprintf( __( 'Hallo %1$s, hier is de digitale proef van je patch. Kijk je alles even na? Klopt alles, dan starten we meteen met de productie.', 'borduur-patch-studio' ), $first )
+					: __( 'Hier is de digitale proef van je patch. Kijk je alles even na? Klopt alles, dan starten we meteen met de productie.', 'borduur-patch-studio' ),
 				'round'      => (int) $f['proof']['round'],
 			);
+			Lang::restore();
 		}
 		return array(
 			'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
@@ -1290,7 +791,7 @@ final class Order_Production {
 			array_unique(
 				array_merge(
 					is_array( $keys ) ? $keys : array(),
-					array( '_bps_design_id', '_bps_preview_url', '_bps_schema', '_bps_technique_id', '_bps_size_cm', '_bps_shape_id', '_bps_options', '_bps_unit_excl', '_bps_payload', '_bps_rights_consent', self::ITEM_PROOF_META )
+					array( '_bps_design_id', '_bps_preview_url', '_bps_schema', '_bps_technique_id', '_bps_size_cm', '_bps_shape_id', '_bps_options', '_bps_unit_excl', '_bps_payload', '_bps_rights_consent', self::ITEM_PROOF_META, Proof_Service::META )
 				)
 			)
 		);
@@ -1304,10 +805,11 @@ final class Order_Production {
 	 * @param mixed $product Product.
 	 */
 	public static function after_order_itemmeta( $item_id, $item = null, $product = null ): void {
+		unset( $product );
 		if ( ! is_admin() || ! $item instanceof \WC_Order_Item_Product || (int) $item->get_meta( '_bps_design_id' ) <= 0 && '' === (string) $item->get_meta( '_bps_payload' ) ) {
 			return;
 		}
-		$status = (string) ( $item->get_meta( self::ITEM_PROOF_META ) ?: 'none' );
+		$status = Proof_Service::get( $item )['status'];
 		printf(
 			'<p class="bps-itemlink"><a href="#bps-fiche-%1$d">%2$s</a> · <span class="bps-proof-pill bps-proof-pill--%3$s">%4$s</span></p>',
 			(int) $item_id,
@@ -1323,6 +825,7 @@ final class Order_Production {
 	 * @param string $hook Hook suffix.
 	 */
 	public static function enqueue( $hook = '' ): void {
+		unset( $hook );
 		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
 		if ( ! $screen || ! in_array( $screen->id, self::order_screens(), true ) ) {
 			return;
@@ -1424,7 +927,7 @@ final class Order_Production {
 	 * admin-post handler: printable A4 sheet (one patch per page).
 	 */
 	public static function handle_print(): void {
-		$order_id = isset( $_GET['order'] ) ? absint( wp_unslash( $_GET['order'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$order_id = isset( $_GET['order'] ) ? absint( wp_unslash( $_GET['order'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- checked below.
 		if ( ! current_user_can( 'edit_shop_orders' ) ) {
 			wp_die( esc_html__( 'Je hebt geen toegang tot deze productiefiche.', 'borduur-patch-studio' ), '', array( 'response' => 403 ) );
 		}
@@ -1433,37 +936,59 @@ final class Order_Production {
 		if ( ! $order instanceof \WC_Order ) {
 			wp_die( esc_html__( 'Bestelling niet gevonden.', 'borduur-patch-studio' ), '', array( 'response' => 404 ) );
 		}
-		$only   = isset( $_GET['item'] ) ? absint( wp_unslash( $_GET['item'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$fiches = array();
-		foreach ( self::design_items( $order ) as $item_id => $item ) {
-			if ( $only > 0 && $only !== (int) $item_id ) {
-				continue;
+		$only  = isset( $_GET['item'] ) ? absint( wp_unslash( $_GET['item'] ) ) : 0;
+		$pairs = array();
+		foreach ( array_keys( self::design_items( $order ) ) as $item_id ) {
+			if ( 0 === $only || $only === (int) $item_id ) {
+				$pairs[] = array( $order_id, (int) $item_id );
 			}
-			$fiches[] = self::fiche( $item );
 		}
-		if ( ! $fiches ) {
+		if ( ! $pairs ) {
 			wp_die( esc_html__( 'Deze bestelling bevat geen Patch Studio-patches.', 'borduur-patch-studio' ), '', array( 'response' => 404 ) );
 		}
-		self::ensure_assets_registered();
 		nocache_headers();
 		header( 'Content-Type: text/html; charset=utf-8' );
 		header( 'X-Robots-Tag: noindex, nofollow' );
-		$order_url = method_exists( $order, 'get_edit_order_url' ) ? $order->get_edit_order_url() : admin_url( 'post.php?post=' . $order_id . '&action=edit' );
-		$scripts   = wp_scripts();
-		$js        = isset( $scripts->registered['bps-admin'] ) ? $scripts->registered['bps-admin'] : null;
-		$js_url    = $js ? add_query_arg( 'ver', $js->ver, $js->src ) : '';
-		self::template(
+		echo self::render_print( $pairs, ! empty( $_GET['autoprint'] ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in the template.
+		exit;
+	}
+
+	/**
+	 * Printable sheets for any [order_id, item_id] pairs, also across orders (bulk print of the atelier overview).
+	 * The caller checks capabilities.
+	 *
+	 * @param array $pairs     [[order_id, item_id], …].
+	 * @param bool  $autoprint Open the print dialog.
+	 */
+	public static function render_print( array $pairs, bool $autoprint = false ): string {
+		$pages = array();
+		foreach ( $pairs as $pair ) {
+			$order = function_exists( 'wc_get_order' ) ? wc_get_order( (int) ( $pair[0] ?? 0 ) ) : null;
+			$items = $order instanceof \WC_Order ? self::design_items( $order ) : array();
+			$item  = $items[ (int) ( $pair[1] ?? 0 ) ] ?? null;
+			if ( $item ) {
+				$pages[] = array(
+					'order'     => $order,
+					'fiche'     => self::fiche( $order, $item ),
+					'order_url' => method_exists( $order, 'get_edit_order_url' ) ? $order->get_edit_order_url() : admin_url( 'post.php?post=' . (int) $order->get_id() . '&action=edit' ),
+				);
+			}
+		}
+		if ( ! $pages ) {
+			return '';
+		}
+		self::ensure_assets_registered();
+		$scripts = wp_scripts();
+		$js      = isset( $scripts->registered['bps-admin'] ) ? $scripts->registered['bps-admin'] : null;
+		return self::template_html(
 			'admin/fiche-print.php',
 			array(
-				'order'     => $order,
-				'fiches'    => $fiches,
-				'order_url' => $order_url,
-				'js_url'    => $js_url,
+				'pages'     => $pages,
+				'js_url'    => $js ? add_query_arg( 'ver', $js->ver, $js->src ) : '',
 				'site_name' => wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES ),
-				'autoprint' => ! empty( $_GET['autoprint'] ), // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				'autoprint' => $autoprint,
 			)
 		);
-		exit;
 	}
 
 	/* =====================================================================
@@ -1498,16 +1023,15 @@ final class Order_Production {
 	public static function ajax_send_proof(): void {
 		list( $order, $item ) = self::ajax_context();
 		// phpcs:disable WordPress.Security.NonceVerification.Missing -- verified in ajax_context().
-		$message   = isset( $_POST['message'] ) ? self::clean_text( wp_unslash( $_POST['message'] ) ) : '';
+		$message   = isset( $_POST['message'] ) ? Proof_Service::clean_text( wp_unslash( $_POST['message'] ) ) : '';
 		$image_id  = isset( $_POST['image_id'] ) ? absint( wp_unslash( $_POST['image_id'] ) ) : 0;
 		$recipient = isset( $_POST['recipient'] ) ? sanitize_email( wp_unslash( $_POST['recipient'] ) ) : '';
 		// phpcs:enable
-
 		$result = self::send_proof( $order, $item, $message, $image_id, $recipient );
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
 		}
-		$fiche = self::fiche( $item );
+		$fiche = self::fiche( $order, $item );
 		wp_send_json_success(
 			array(
 				/* translators: 1: proof round, 2: e-mail address */
@@ -1531,88 +1055,7 @@ final class Order_Production {
 	 * @return array{round:int, recipient:string}|\WP_Error
 	 */
 	public static function send_proof( $order, $item, string $message = '', int $image_id = 0, string $recipient = '' ) {
-		$d = self::design_for_item( $item );
-		if ( ! $d['exists'] || ! class_exists( Designs::class ) ) {
-			return new \WP_Error( 'bps_no_design', __( 'Het ontwerp van deze patch bestaat niet meer (opgeruimd). Stuur de proef manueel.', 'borduur-patch-studio' ) );
-		}
-		$rec       = $d['record'];
-		$recipient = '' !== $recipient ? $recipient : (string) $order->get_billing_email();
-		if ( ! is_email( $recipient ) ) {
-			return new \WP_Error( 'bps_no_email', __( 'Deze bestelling heeft geen geldig e-mailadres. Vul een ontvanger in.', 'borduur-patch-studio' ) );
-		}
-		$image_url = (string) $rec['preview_url'];
-		if ( $image_id > 0 ) {
-			if ( ! wp_attachment_is_image( $image_id ) ) {
-				return new \WP_Error( 'bps_bad_image', __( 'Het gekozen bestand is geen afbeelding.', 'borduur-patch-studio' ) );
-			}
-			$image_url = (string) wp_get_attachment_url( $image_id );
-		}
-		if ( '' === $image_url ) {
-			return new \WP_Error( 'bps_no_image', __( 'Er is geen proefafbeelding. Kies een afbeelding uit de mediabibliotheek.', 'borduur-patch-studio' ) );
-		}
-
-		$proof = self::proof_of( $rec );
-		$round = $proof['round'] + 1;
-		$email = self::email( 'BPS_Email_Proof' );
-		if ( ! $email ) {
-			return new \WP_Error( 'bps_no_mailer', __( 'De e-mail "Patch Studio: digitale proef" is niet beschikbaar.', 'borduur-patch-studio' ) );
-		}
-		if ( ! $email->is_enabled() ) {
-			return new \WP_Error( 'bps_mail_disabled', __( 'De e-mail "Patch Studio: digitale proef" staat uit onder WooCommerce › Instellingen › E-mails.', 'borduur-patch-studio' ) );
-		}
-		$sent = $email->trigger( $rec, $order, $item, $round, $image_url, $message, $recipient );
-		if ( ! $sent ) {
-			return new \WP_Error( 'bps_mail_failed', __( 'De e-mail kon niet verstuurd worden. Controleer de e-mailinstellingen van de website.', 'borduur-patch-studio' ) );
-		}
-
-		$now  = gmdate( 'c' );
-		$user = wp_get_current_user();
-		$by   = $user && $user->exists() ? $user->display_name : 'system';
-		Designs::update_proof(
-			(int) $rec['id'],
-			array(
-				'status'       => 'sent',
-				'round'        => $round,
-				'sent_at'      => $now,
-				'responded_at' => '',
-				'note'         => '',
-				'image_url'    => $image_url,
-				'message'      => $message,
-				'recipient'    => $recipient,
-				'order_id'     => (int) $order->get_id(),
-				'item_id'      => (int) $item->get_id(),
-				'history_add'  => array(
-					'at'     => $now,
-					'action' => 'sent',
-					'by'     => $by,
-					'note'   => $message,
-					'round'  => $round,
-				),
-			)
-		);
-		self::mirror_status( (int) $order->get_id(), (int) $item->get_id(), 'sent' );
-		$order = wc_get_order( $order->get_id() );
-		if ( $order instanceof \WC_Order ) {
-			$order->add_order_note(
-				/* translators: 1: round, 2: design ref, 3: e-mail */
-				sprintf( __( 'Digitale proef (ronde %1$d) voor patch %2$s verstuurd naar %3$s.', 'borduur-patch-studio' ), $round, $rec['ref'], $recipient ),
-				0,
-				true
-			);
-		}
-
-		/**
-		 * A digital proof was sent.
-		 *
-		 * @param int $design_id Design id.
-		 * @param int $order_id  Order id.
-		 */
-		do_action( 'bps_proof_sent', (int) $rec['id'], (int) $order->get_id() );
-
-		return array(
-			'round'     => $round,
-			'recipient' => $recipient,
-		);
+		return Proof_Service::send( $order, $item, $message, $image_id, $recipient );
 	}
 
 	/**
@@ -1622,48 +1065,16 @@ final class Order_Production {
 		list( $order, $item ) = self::ajax_context();
 		// phpcs:disable WordPress.Security.NonceVerification.Missing -- verified in ajax_context().
 		$status = isset( $_POST['status'] ) ? sanitize_key( wp_unslash( $_POST['status'] ) ) : '';
-		$note   = isset( $_POST['note'] ) ? self::clean_text( wp_unslash( $_POST['note'] ) ) : '';
+		$note   = isset( $_POST['note'] ) ? Proof_Service::clean_text( wp_unslash( $_POST['note'] ) ) : '';
 		// phpcs:enable
 		if ( ! in_array( $status, array( 'approved', 'changes_requested', 'none' ), true ) ) {
 			wp_send_json_error( array( 'message' => __( 'Onbekende status.', 'borduur-patch-studio' ) ), 400 );
 		}
-		$d = self::design_for_item( $item );
-		if ( ! $d['exists'] ) {
-			wp_send_json_error( array( 'message' => __( 'Het ontwerp van deze patch bestaat niet meer.', 'borduur-patch-studio' ) ), 400 );
+		if ( '' !== Proof_Service::blocked_status( $order ) ) {
+			wp_send_json_error( array( 'message' => __( 'Deze bestelling is geannuleerd, terugbetaald of mislukt. De proefstatus kan niet meer veranderen.', 'borduur-patch-studio' ) ), 400 );
 		}
-		$rec  = $d['record'];
-		$now  = gmdate( 'c' );
-		$user = wp_get_current_user();
-		$by   = $user && $user->exists() ? $user->display_name : 'admin';
-		Designs::update_proof(
-			(int) $rec['id'],
-			array(
-				'status'       => $status,
-				'responded_at' => 'none' === $status ? '' : $now,
-				'note'         => $note,
-				'order_id'     => (int) $order->get_id(),
-				'item_id'      => (int) $item->get_id(),
-				'history_add'  => array(
-					'at'     => $now,
-					'action' => 'manual_' . $status,
-					'by'     => $by,
-					'note'   => $note,
-					'round'  => self::proof_of( $rec )['round'],
-				),
-			)
-		);
-		self::mirror_status( (int) $order->get_id(), (int) $item->get_id(), $status );
-		$order->add_order_note(
-			/* translators: 1: design ref, 2: status, 3: user, 4: note */
-			trim( sprintf( __( 'Proefstatus van patch %1$s manueel gezet op "%2$s" door %3$s. %4$s', 'borduur-patch-studio' ), $rec['ref'], self::status_label( $status ), $by, $note ) ),
-			0,
-			true
-		);
-		if ( in_array( $status, array( 'approved', 'changes_requested' ), true ) ) {
-			/** This action is documented in handle_proof_response(). */
-			do_action( 'bps_proof_response', (int) $rec['id'], 'approved' === $status ? 'approved' : 'changes', $note );
-		}
-		$fiche = self::fiche( $item );
+		Proof_Service::set_manual( $order, $item, $status, $note );
+		$fiche = self::fiche( $order, $item );
 		wp_send_json_success(
 			array(
 				'message' => __( 'Status bijgewerkt.', 'borduur-patch-studio' ),
@@ -1672,318 +1083,6 @@ final class Order_Production {
 				'label'   => self::status_label( $status ),
 			)
 		);
-	}
-
-	/**
-	 * Sanitize free text (keeps line breaks), max MAX_TEXT characters.
-	 *
-	 * @param mixed $text Raw text.
-	 */
-	private static function clean_text( $text ): string {
-		$text = sanitize_textarea_field( is_string( $text ) ? $text : '' );
-		return function_exists( 'mb_substr' ) ? mb_substr( $text, 0, self::MAX_TEXT ) : substr( $text, 0, self::MAX_TEXT );
-	}
-
-	/* =====================================================================
-	 * Proof: customer response page
-	 * =================================================================== */
-
-	/**
-	 * Handle ?bps_proof=… (GET: confirmation page; POST: record the answer).
-	 */
-	public static function handle_proof_response(): void {
-		// phpcs:disable WordPress.Security.NonceVerification -- the HMAC token in the link is the authorisation (customer is not logged in).
-		$is_post = isset( $_SERVER['REQUEST_METHOD'] ) && 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_POST['bps_proof'] );
-		$src     = $is_post ? $_POST : $_GET;
-		if ( ! isset( $src['bps_proof'] ) ) {
-			return;
-		}
-		$design_id = absint( wp_unslash( $src['bps_proof'] ) );
-		$order_id  = isset( $src['o'] ) ? absint( wp_unslash( $src['o'] ) ) : 0;
-		$token     = isset( $src['t'] ) ? strtolower( preg_replace( '/[^a-fA-F0-9]/', '', (string) wp_unslash( $src['t'] ) ) ) : '';
-		$action    = ( isset( $src['a'] ) && 'changes' === $src['a'] ) ? 'changes' : 'approve';
-		$note_raw  = isset( $_POST['note'] ) ? wp_unslash( $_POST['note'] ) : '';
-		// phpcs:enable
-
-		if ( ! defined( 'DONOTCACHEPAGE' ) ) {
-			define( 'DONOTCACHEPAGE', true );
-		}
-		nocache_headers();
-		header( 'X-Robots-Tag: noindex, nofollow' );
-
-		$rec   = ( $design_id > 0 && class_exists( Designs::class ) ) ? Designs::get( $design_id ) : null;
-		$proof = $rec ? self::proof_of( $rec ) : null;
-		$state = 'invalid';
-		if ( $rec && $proof['round'] > 0 && 64 === strlen( $token ) ) {
-			$p_order = $proof['order_id'] > 0 ? $proof['order_id'] : (int) $rec['order_id'];
-			if ( $p_order === $order_id && hash_equals( self::proof_token( $design_id, $order_id, $proof['round'] ), $token ) ) {
-				$state = 'current';
-			} else {
-				for ( $r = $proof['round'] - 1; $r >= 1; $r-- ) {
-					if ( hash_equals( self::proof_token( $design_id, $order_id, $r ), $token ) ) {
-						$state = 'superseded';
-						break;
-					}
-				}
-			}
-		}
-
-		$lang = self::lang_of( $rec ? (string) ( $rec['payload']['locale'] ?? '' ) : '' );
-		$wp_l = 'fr' === $lang ? 'fr_BE' : 'nl_BE';
-		$sw   = function_exists( 'switch_to_locale' ) && $wp_l !== get_locale() ? switch_to_locale( $wp_l ) : false;
-		$prev = self::set_lang( $lang );
-
-		$error = '';
-		$view  = 'invalid';
-		if ( 'superseded' === $state ) {
-			$view = 'superseded';
-		} elseif ( 'current' === $state ) {
-			if ( 'sent' !== $proof['status'] ) {
-				$view = 'answered';
-			} elseif ( $is_post ) {
-				$note = self::clean_text( $note_raw );
-				if ( 'changes' === $action && '' === trim( $note ) ) {
-					$error = self::l( __( 'Laat ons even weten wat je wil aanpassen.', 'borduur-patch-studio' ) );
-					$view  = 'confirm';
-				} else {
-					self::record_response( $rec, $order_id, $action, $note );
-					$rec   = Designs::get( $design_id );
-					$proof = self::proof_of( $rec );
-					$view  = 'done';
-				}
-			} else {
-				$view = 'confirm';
-			}
-		}
-
-		if ( 'invalid' === $view ) {
-			status_header( 403 );
-			// Without a valid token we reveal nothing: no design ref, order number, proof image or details.
-			$rec   = null;
-			$proof = null;
-		}
-		$order = ( 'invalid' !== $view && $order_id > 0 ) ? wc_get_order( $order_id ) : null;
-		$item  = ( $order instanceof \WC_Order && $proof && $proof['item_id'] > 0 ) ? $order->get_item( $proof['item_id'] ) : null;
-
-		self::template(
-			'admin/proof-response.php',
-			array(
-				'view'      => $view,
-				'action'    => $action,
-				'error'     => $error,
-				'lang'      => $lang,
-				'design'    => $rec,
-				'proof'     => $proof,
-				'order'     => $order instanceof \WC_Order ? $order : null,
-				'rows'      => ( $rec && $item instanceof \WC_Order_Item_Product && in_array( $view, array( 'confirm', 'done', 'answered' ), true ) ) ? self::customer_rows( $item, $lang ) : array(),
-				'form'      => array(
-					'url'    => home_url( '/' ),
-					'fields' => array(
-						'bps_proof' => $design_id,
-						'o'         => $order_id,
-						't'         => $token,
-						'a'         => $action,
-					),
-				),
-				'other_url' => ( 'current' === $state ) ? self::proof_url( $design_id, $order_id, (int) $proof['round'], 'changes' === $action ? 'approve' : 'changes' ) : '',
-				'contact'   => (array) self::cfg( 'contact', array() ),
-				'note'      => is_string( $note_raw ) ? self::clean_text( $note_raw ) : '',
-				'use_theme' => (bool) apply_filters( 'bps_proof_page_use_theme', ! ( function_exists( 'wp_is_block_theme' ) && wp_is_block_theme() ) ),
-			)
-		);
-
-		self::set_lang( $prev );
-		if ( $sw ) {
-			restore_previous_locale();
-		}
-		exit;
-	}
-
-	/**
-	 * Store a customer answer: design proof meta, order note, shop mail, action hook.
-	 *
-	 * @param array  $rec      DesignRecord.
-	 * @param int    $order_id Order id.
-	 * @param string $action   approve|changes.
-	 * @param string $note     Customer note.
-	 */
-	public static function record_response( array $rec, int $order_id, string $action, string $note ): void {
-		$proof  = self::proof_of( $rec );
-		$status = 'changes' === $action ? 'changes_requested' : 'approved';
-		$now    = gmdate( 'c' );
-		Designs::update_proof(
-			(int) $rec['id'],
-			array(
-				'status'       => $status,
-				'responded_at' => $now,
-				'note'         => $note,
-				'history_add'  => array(
-					'at'     => $now,
-					'action' => 'changes' === $action ? 'changes' : 'approved',
-					'by'     => 'customer',
-					'note'   => $note,
-					'round'  => $proof['round'],
-				),
-			)
-		);
-		self::mirror_status( $order_id, $proof['item_id'], $status );
-
-		$order = wc_get_order( $order_id );
-		if ( $order instanceof \WC_Order ) {
-			$text = 'changes' === $action
-				/* translators: 1: design ref, 2: round */
-				? sprintf( __( 'De klant vraagt een aanpassing aan de digitale proef van patch %1$s (ronde %2$d).', 'borduur-patch-studio' ), $rec['ref'], $proof['round'] )
-				/* translators: 1: design ref, 2: round */
-				: sprintf( __( 'De klant keurde de digitale proef van patch %1$s goed (ronde %2$d).', 'borduur-patch-studio' ), $rec['ref'], $proof['round'] );
-			if ( '' !== $note ) {
-				/* translators: %s: customer note */
-				$text .= ' ' . sprintf( __( 'Opmerking: %s', 'borduur-patch-studio' ), $note );
-			}
-			$order->add_order_note( $text, 0, false );
-			$mail = self::email( 'BPS_Email_Proof_Response' );
-			if ( $mail ) {
-				$mail->trigger( Designs::get( (int) $rec['id'] ) ?: $rec, $order, $action, $note, $proof['round'] );
-			}
-		}
-
-		/**
-		 * The customer (or the shop, manually) answered a digital proof.
-		 *
-		 * @param int    $design_id Design id.
-		 * @param string $action    'approved' | 'changes'.
-		 * @param string $note      Note of the customer.
-		 */
-		do_action( 'bps_proof_response', (int) $rec['id'], 'changes' === $action ? 'changes' : 'approved', $note );
-	}
-
-	/**
-	 * Customer-facing summary rows for the proof mail and page.
-	 *
-	 * @param \WC_Order_Item_Product $item Item.
-	 * @param string                 $lang Language.
-	 * @return array<int,array{label:string,value:string,hex?:string}>
-	 */
-	public static function customer_rows( $item, string $lang ): array {
-		$prev    = self::set_lang( $lang );
-		$f       = self::fiche( $item, $lang );
-		$p       = $f['payload'];
-		$rows    = array();
-		$rows[]  = array(
-			'label' => self::l( __( 'Techniek', 'borduur-patch-studio' ) ),
-			'value' => $f['technique_lbl'],
-		);
-		$rows[]  = array(
-			'label' => self::l( __( 'Maat', 'borduur-patch-studio' ) ),
-			'value' => self::num( $f['size_cm'] ) . ' cm (' . self::num( round( $f['width_mm'] ), 0 ) . ' × ' . self::num( round( $f['height_mm'] ), 0 ) . ' mm)',
-		);
-		$rows[]  = array(
-			'label' => self::l( __( 'Vorm', 'borduur-patch-studio' ) ),
-			'value' => $f['shape_lbl'],
-		);
-		$rows[]  = array(
-			'label' => self::l( __( 'Aantal', 'borduur-patch-studio' ) ),
-			/* translators: %s: quantity */
-			'value' => sprintf( self::l( __( '%s stuks', 'borduur-patch-studio' ) ), number_format( $f['qty'], 0, ',', '.' ) ),
-		);
-		$groups = array();
-		foreach ( (array) ( $p['options'] ?? array() ) as $oid ) {
-			$opt = self::option( (string) $oid );
-			if ( $opt && ( empty( $opt['requiresAny'] ) || array_intersect( (array) $opt['requiresAny'], (array) $p['options'] ) ) ) {
-				$groups[ (string) ( $opt['group'] ?? '' ) ][] = self::label( $opt['label'] ?? $oid );
-			}
-		}
-		if ( ! empty( $groups['edge'] ) ) {
-			$rows[] = array(
-				'label' => self::l( __( 'Rand', 'borduur-patch-studio' ) ),
-				'value' => implode( ', ', $groups['edge'] ),
-			);
-		}
-		if ( ! empty( $p['edgeColor']['code'] ) ) {
-			$ti     = self::thread_info( (string) $p['edgeColor']['code'], (string) ( $p['edgeColor']['name'] ?? '' ), (string) ( $p['edgeColor']['hex'] ?? '' ) );
-			$rows[] = array(
-				'label' => self::l( __( 'Randkleur', 'borduur-patch-studio' ) ),
-				'value' => $ti['name'],
-				'hex'   => $ti['hex'],
-			);
-		}
-		$back = $groups['backing'] ?? array();
-		foreach ( $groups['velcro_color'] ?? array() as $vc ) {
-			/* translators: %s: velcro colour */
-			$back[] = sprintf( self::l( __( 'klittenband %s', 'borduur-patch-studio' ) ), function_exists( 'mb_strtolower' ) ? mb_strtolower( $vc ) : strtolower( $vc ) );
-		}
-		$back = array_merge( $back, $groups['backing_extra'] ?? array() );
-		if ( $back ) {
-			$rows[] = array(
-				'label' => self::l( __( 'Achterkant', 'borduur-patch-studio' ) ),
-				'value' => implode( ', ', $back ),
-			);
-		}
-		if ( ! empty( $p['fabric'] ) && is_array( $p['fabric'] ) ) {
-			$rows[] = array(
-				'label' => self::l( __( 'Stofkleur', 'borduur-patch-studio' ) ),
-				'value' => self::fabric_label( $p['fabric'] ),
-				'hex'   => self::hex( $p['fabric']['hex'] ?? '' ),
-			);
-		}
-		$names = array();
-		foreach ( (array) ( $p['threads'] ?? array() ) as $th ) {
-			if ( is_array( $th ) ) {
-				$names[] = self::thread_info( (string) ( $th['code'] ?? '' ), (string) ( $th['name'] ?? '' ) )['name'];
-			}
-		}
-		if ( $names && $f['thread_based'] ) {
-			$rows[] = array(
-				'label' => self::l( __( 'Garenkleuren', 'borduur-patch-studio' ) ),
-				'value' => count( $names ) . ': ' . implode( ', ', array_slice( $names, 0, 16 ) ),
-			);
-		}
-		$texts = array();
-		foreach ( (array) ( $p['texts'] ?? array() ) as $tx ) {
-			if ( is_array( $tx ) && '' !== trim( (string) ( $tx['text'] ?? '' ) ) ) {
-				$texts[] = '“' . (string) $tx['text'] . '”';
-			}
-		}
-		if ( $texts ) {
-			$rows[] = array(
-				'label' => self::l( __( 'Tekst', 'borduur-patch-studio' ) ),
-				'value' => implode( ' · ', $texts ),
-			);
-		}
-		self::set_lang( $prev );
-		return $rows;
-	}
-
-	/* =====================================================================
-	 * E-mails
-	 * =================================================================== */
-
-	/**
-	 * Register BPS_Email_Proof (customer) and BPS_Email_Proof_Response (shop).
-	 *
-	 * @param array $emails Emails.
-	 */
-	public static function email_classes( $emails ) {
-		$emails = is_array( $emails ) ? $emails : array();
-		if ( declare_emails() ) {
-			$emails['BPS_Email_Proof']          = new Proof_Email();
-			$emails['BPS_Email_Proof_Response'] = new Proof_Response_Email();
-		}
-		return $emails;
-	}
-
-	/**
-	 * One of our e-mail objects.
-	 *
-	 * @param string $key Class key.
-	 * @return \WC_Email|null
-	 */
-	private static function email( string $key ) {
-		if ( ! function_exists( 'WC' ) ) {
-			return null;
-		}
-		$mailer = WC()->mailer();
-		$all    = $mailer ? $mailer->get_emails() : array();
-		return $all[ $key ] ?? null;
 	}
 
 	/* =====================================================================
@@ -2018,7 +1117,7 @@ final class Order_Production {
 	 */
 	public static function list_column_hpos( $column, $order ): void {
 		if ( 'bps_proof' === $column ) {
-			self::list_cell( $order instanceof \WC_Order ? $order : wc_get_order( $order ) );
+			echo self::list_cell_html( $order instanceof \WC_Order ? $order : wc_get_order( $order ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in list_cell_html().
 		}
 	}
 
@@ -2030,35 +1129,31 @@ final class Order_Production {
 	 */
 	public static function list_column_legacy( $column, $post_id ): void {
 		if ( 'bps_proof' === $column ) {
-			self::list_cell( wc_get_order( $post_id ) );
+			echo self::list_cell_html( wc_get_order( $post_id ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in list_cell_html().
 		}
 	}
 
 	/**
-	 * Cell: aggregated proof status of the patch lines.
+	 * Cell markup: aggregated proof status of the patch lines ("Geannuleerd" in red for stopped orders).
 	 *
 	 * @param mixed $order Order.
 	 */
-	private static function list_cell( $order ): void {
+	public static function list_cell_html( $order ): string {
 		$items = self::design_items( $order );
 		if ( ! $items ) {
-			echo '<span aria-hidden="true">–</span>';
-			return;
+			return '<span aria-hidden="true">–</span>';
 		}
-		$count = array(
-			'none'              => 0,
-			'sent'              => 0,
-			'approved'          => 0,
-			'changes_requested' => 0,
-		);
+		$count = array_fill_keys( self::STATUSES, 0 );
 		foreach ( $items as $item ) {
 			$s = (string) ( $item->get_meta( self::ITEM_PROOF_META ) ?: 'none' );
-			$count[ isset( $count[ $s ] ) ? $s : 'none' ]++;
+			++$count[ isset( $count[ $s ] ) ? $s : 'none' ];
 		}
 		$n = count( $items );
-		if ( $count['changes_requested'] > 0 ) {
+		if ( '' !== Proof_Service::blocked_status( $order ) || $count['cancelled'] === $n ) {
+			$s = 'cancelled';
+		} elseif ( $count['changes_requested'] > 0 ) {
 			$s = 'changes_requested';
-		} elseif ( $count['approved'] === $n ) {
+		} elseif ( $count['approved'] + $count['cancelled'] === $n ) {
 			$s = 'approved';
 		} elseif ( $count['sent'] > 0 ) {
 			$s = 'sent';
@@ -2070,214 +1165,21 @@ final class Order_Production {
 			'sent'              => __( 'Wacht op klant', 'borduur-patch-studio' ),
 			'approved'          => __( 'Goedgekeurd', 'borduur-patch-studio' ),
 			'changes_requested' => __( 'Aanpassing gevraagd', 'borduur-patch-studio' ),
+			'cancelled'         => __( 'Geannuleerd', 'borduur-patch-studio' ),
 		);
 		$colors = array(
 			'none'              => '#6B6B6B',
 			'sent'              => '#0B74A6',
 			'approved'          => '#15803D',
 			'changes_requested' => '#B45309',
+			'cancelled'         => '#B42318',
 		);
-		$text = $labels[ $s ] . ( $n > 1 ? ' (' . $count['approved'] . '/' . $n . ')' : '' );
-		printf(
+		$text = $labels[ $s ] . ( $n > 1 && 'cancelled' !== $s ? ' (' . $count['approved'] . '/' . $n . ')' : '' );
+		return sprintf(
 			'<span class="bps-proof-pill bps-proof-pill--%1$s" style="display:inline-block;padding:2px 8px;border-radius:10px;border:1px solid %2$s;color:%2$s;font-size:12px;line-height:1.6;white-space:nowrap">%3$s</span>',
 			esc_attr( $s ),
 			esc_attr( $colors[ $s ] ),
 			esc_html( $text )
 		);
 	}
-}
-
-/**
- * Declare our WC_Email classes. They extend Woo\Emails\Base (customer language + our templates), which only exists once
- * WooCommerce has loaded WC_Email, so they are declared lazily from the woocommerce_email_classes filter.
- * (PHP does not allow class declarations inside methods, hence this namespaced function.)
- *
- * @return bool True when the classes are available.
- */
-function declare_emails(): bool {
-	if ( class_exists( __NAMESPACE__ . '\Proof_Email', false ) ) {
-		return true;
-	}
-	if ( ! class_exists( '\WC_Email' ) || ! class_exists( '\BorduurPatchStudio\Woo\Emails\Base' ) ) {
-		return false;
-	}
-
-	/**
-	 * BPS_Email_Proof: digital proof to the customer (SPEC §6.6).
-	 */
-	class Proof_Email extends \BorduurPatchStudio\Woo\Emails\Base {
-
-		/**
-		 * Constructor.
-		 */
-		public function __construct() {
-			$this->id             = 'bps_proof';
-			$this->customer_email = true;
-			$this->title          = __( 'Patch Studio: digitale proef', 'borduur-patch-studio' );
-			$this->description    = __( 'Wordt vanuit de bestelling verstuurd met de knop "Digitale proef versturen": proefafbeelding, samenvatting en knoppen om goed te keuren of een aanpassing te vragen. In de taal van het ontwerp.', 'borduur-patch-studio' );
-			$this->template_html  = 'admin/emails/proof.php';
-			$this->template_plain = 'admin/emails/plain/proof.php';
-			$this->placeholders   = array(
-				'{order_number}' => '',
-			);
-			$this->bps_setup();
-			parent::__construct();
-		}
-
-		/**
-		 * Default subject.
-		 */
-		public function get_default_subject() {
-			return Order_Production::l( __( 'Je digitale proef voor patch {ref} staat klaar', 'borduur-patch-studio' ) );
-		}
-
-		/**
-		 * Default heading.
-		 */
-		public function get_default_heading() {
-			return Order_Production::l( __( 'Je digitale proef', 'borduur-patch-studio' ) );
-		}
-
-		/**
-		 * Send the proof.
-		 *
-		 * @param array                  $design    DesignRecord.
-		 * @param \WC_Order              $order     Order.
-		 * @param \WC_Order_Item_Product $item      Item.
-		 * @param int                    $round     Round.
-		 * @param string                 $image_url Proof image.
-		 * @param string                 $message   Message from the atelier.
-		 * @param string                 $recipient Recipient.
-		 */
-		public function trigger( $design = null, $order = null, $item = null, $round = 1, $image_url = '', $message = '', $recipient = '' ) {
-			if ( ! is_array( $design ) || ! $order instanceof \WC_Order || ! $item instanceof \WC_Order_Item_Product ) {
-				return false;
-			}
-			$locale           = (string) ( $design['payload']['locale'] ?? '' );
-			$lang             = Order_Production::lang_of( '' !== $locale ? $locale : get_locale() );
-			$this->bps_locale = 'fr' === $lang ? 'fr-BE' : 'nl-BE';
-			$this->setup_locale();
-			$prev = Order_Production::set_lang( $lang );
-
-			$this->object                         = $order;
-			$this->recipient                      = '' !== $recipient ? $recipient : (string) $order->get_billing_email();
-			$this->placeholders['{ref}']          = (string) $design['ref'];
-			$this->placeholders['{order_number}'] = (string) $order->get_order_number();
-			$this->bps_args                       = array(
-				'design'      => $design,
-				'order'       => $order,
-				'round'       => (int) $round,
-				'image_url'   => (string) $image_url,
-				'message'     => (string) $message,
-				'rows'        => Order_Production::customer_rows( $item, $lang ),
-				'approve_url' => Order_Production::proof_url( (int) $design['id'], (int) $order->get_id(), (int) $round, 'approve' ),
-				'changes_url' => Order_Production::proof_url( (int) $design['id'], (int) $order->get_id(), (int) $round, 'changes' ),
-				'first_name'  => trim( (string) $order->get_billing_first_name() ),
-				'contact'     => (array) ( class_exists( Settings::class ) ? Settings::get_path( 'contact', array() ) : array() ),
-				'lang'        => $lang,
-			);
-			$sent = $this->bps_send();
-			Order_Production::set_lang( $prev );
-			$this->restore_locale();
-			return $sent;
-		}
-	}
-
-	/**
-	 * BPS_Email_Proof_Response: the customer answered a proof (to the shop).
-	 */
-	class Proof_Response_Email extends \BorduurPatchStudio\Woo\Emails\Base {
-
-		/**
-		 * Constructor.
-		 */
-		public function __construct() {
-			$this->id             = 'bps_proof_response';
-			$this->customer_email = false;
-			$this->title          = __( 'Patch Studio: antwoord op digitale proef', 'borduur-patch-studio' );
-			$this->description    = __( 'Melding aan de winkel wanneer een klant een digitale proef goedkeurt of een aanpassing vraagt.', 'borduur-patch-studio' );
-			$this->template_html  = 'admin/emails/proof-response.php';
-			$this->template_plain = 'admin/emails/plain/proof-response.php';
-			$this->placeholders   = array(
-				'{order_number}' => '',
-				'{answer}'       => '',
-			);
-			$this->bps_setup();
-			parent::__construct();
-			$default         = class_exists( Settings::class ) ? (string) Settings::get_path( 'woo.quoteRecipient', '' ) : '';
-			$this->recipient = $this->get_option( 'recipient', '' !== $default ? $default : get_option( 'admin_email' ) );
-		}
-
-		/**
-		 * Settings fields (+ recipient).
-		 */
-		public function init_form_fields() {
-			parent::init_form_fields();
-			$this->form_fields = array_merge(
-				array_slice( $this->form_fields, 0, 1, true ),
-				array(
-					'recipient' => array(
-						'title'       => __( 'Ontvanger(s)', 'borduur-patch-studio' ),
-						'type'        => 'text',
-						/* translators: %s: admin e-mail */
-						'description' => sprintf( __( 'Komma-gescheiden. Standaard: %s.', 'borduur-patch-studio' ), esc_attr( get_option( 'admin_email' ) ) ),
-						'placeholder' => '',
-						'default'     => '',
-						'desc_tip'    => true,
-					),
-				),
-				array_slice( $this->form_fields, 1, null, true )
-			);
-		}
-
-		/**
-		 * Default subject.
-		 */
-		public function get_default_subject() {
-			return __( '[{site_title}] Proef {ref} (bestelling #{order_number}): {answer}', 'borduur-patch-studio' );
-		}
-
-		/**
-		 * Default heading.
-		 */
-		public function get_default_heading() {
-			return __( 'Antwoord op een digitale proef', 'borduur-patch-studio' );
-		}
-
-		/**
-		 * Send.
-		 *
-		 * @param array     $design DesignRecord.
-		 * @param \WC_Order $order  Order.
-		 * @param string    $action approve|changes.
-		 * @param string    $note   Note.
-		 * @param int       $round  Round.
-		 */
-		public function trigger( $design = null, $order = null, $action = 'approve', $note = '', $round = 1 ) {
-			if ( ! is_array( $design ) || ! $order instanceof \WC_Order ) {
-				return false;
-			}
-			$this->setup_locale();
-			$answer                               = 'changes' === $action ? __( 'aanpassing gevraagd', 'borduur-patch-studio' ) : __( 'goedgekeurd', 'borduur-patch-studio' );
-			$this->object                         = $order;
-			$this->placeholders['{ref}']          = (string) $design['ref'];
-			$this->placeholders['{order_number}'] = (string) $order->get_order_number();
-			$this->placeholders['{answer}']       = $answer;
-			$this->bps_args                       = array(
-				'design'    => $design,
-				'order'     => $order,
-				'action'    => 'changes' === $action ? 'changes' : 'approve',
-				'answer'    => $answer,
-				'note'      => (string) $note,
-				'round'     => (int) $round,
-				'order_url' => method_exists( $order, 'get_edit_order_url' ) ? $order->get_edit_order_url() : admin_url( 'post.php?post=' . $order->get_id() . '&action=edit' ),
-				'customer'  => trim( $order->get_formatted_billing_full_name() ),
-			);
-			$sent = $this->bps_send();
-			$this->restore_locale();
-			return $sent;
-		}
-	}
-
-	return true;
 }

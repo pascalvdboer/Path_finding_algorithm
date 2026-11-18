@@ -13,6 +13,8 @@
 
 namespace BorduurPatchStudio\Crosssell;
 
+use BorduurPatchStudio\Logger;
+use BorduurPatchStudio\Woo\Cart as WooCart;
 use BorduurPatchStudio\Woo\Config as WooConfig;
 use WP_Error;
 
@@ -30,7 +32,9 @@ final class Cart {
 		'nl' => array(
 			'gone'      => 'We haalden "%s" uit je winkelmand: het ontwerp bestaat niet meer.',
 			'unfit'     => 'We haalden "%s" uit je winkelmand: het ontwerp past niet (meer) op dit product. Neem gerust contact op.',
-			'price'     => 'We haalden "%s" uit je winkelmand: de prijs kon niet berekend worden. Voeg het opnieuw toe of neem contact op.',
+			'price'     => 'We haalden "%1$s" (ontwerp %2$s) uit je winkelmand: we konden de prijs niet berekenen. Probeer opnieuw of neem contact op.',
+			'custom'    => 'Maatwerk',
+			'custom_v'  => 'Speciaal voor jou gemaakt, geen herroepingsrecht.',
 			'direct'    => 'Dit product maken we enkel met je eigen ontwerp. Start in de ontwerptool en kies het daarna als extra.',
 			'qty_min'   => '"%1$s": bestel minstens %2$d stuks (vaste mal).',
 			'qty_step'  => '"%1$s": bestel per %2$d stuks.',
@@ -48,7 +52,9 @@ final class Cart {
 		'fr' => array(
 			'gone'      => 'Nous avons retiré « %s » de votre panier : le design n\'existe plus.',
 			'unfit'     => 'Nous avons retiré « %s » de votre panier : le design ne convient (plus) pour ce produit. N\'hésitez pas à nous contacter.',
-			'price'     => 'Nous avons retiré « %s » de votre panier : le prix n\'a pas pu être calculé. Ajoutez-le à nouveau ou contactez-nous.',
+			'price'     => 'Nous avons retiré « %1$s » (design %2$s) de votre panier : nous n\'avons pas pu calculer le prix. Réessayez ou contactez-nous.',
+			'custom'    => 'Sur mesure',
+			'custom_v'  => 'Fabriqué spécialement pour vous, pas de droit de rétractation.',
 			'direct'    => 'Nous réalisons ce produit uniquement avec votre propre design. Commencez dans l\'outil de création et choisissez-le ensuite en extra.',
 			'qty_min'   => '« %1$s » : commandez au moins %2$d pièces (moule fixe).',
 			'qty_step'  => '« %1$s » : commandez par %2$d pièces.',
@@ -79,6 +85,8 @@ final class Cart {
 		add_action( 'woocommerce_cart_calculate_fees', array( __CLASS__, 'add_fees' ), 30 );
 		add_filter( 'woocommerce_add_to_cart_validation', array( __CLASS__, 'block_direct' ), 10, 2 );
 		add_action( 'woocommerce_cart_loaded_from_session', array( __CLASS__, 'drop_orphans' ), 25 );
+		// Mini-cart / Store API requests only load the cart: price the lines right away (woo-compat-2).
+		add_action( 'woocommerce_cart_loaded_from_session', array( __CLASS__, 'set_prices' ), 30 );
 		add_action( 'woocommerce_check_cart_items', array( __CLASS__, 'check_cart_items' ), 25 );
 
 		add_filter( 'advanced_woo_discount_rules_calculate_discount_for_cart_item', array( __CLASS__, 'wdr_exclude' ), 10, 2 );
@@ -299,12 +307,26 @@ final class Cart {
 			try {
 				$q = self::price_line( (string) $key, $line, $items, $main );
 			} catch ( \Throwable $e ) {
-				$q = array( 'ok' => false, 'errors' => array( 'exception' ) );
+				$q = array(
+					'ok'     => false,
+					'errors' => array( 'exception' ),
+				);
+				Logger::error(
+					'crosssell_price_failed',
+					array(
+						'design_id' => (int) ( $line[ self::KEY ]['design_id'] ?? 0 ),
+						'ref'       => (string) ( $line[ self::KEY ]['ref'] ?? '' ),
+						'item'      => (string) ( $line[ self::KEY ]['item'] ?? '' ),
+						'qty'       => (int) $line['quantity'],
+						'error'     => $e->getMessage(),
+					)
+				);
 			}
 			self::$priced[ $key ] = $q;
 			// Geen geldige prijs → prijs niet aanraken; check_cart_items haalt de regel weg (nooit gratis).
 			if ( ! empty( $q['ok'] ) && is_finite( (float) $q['unitExcl'] ) && $q['unitExcl'] > 0 ) {
-				$line['data']->set_price( (float) $q['unitExcl'] );
+				// Excl. btw uit de engine → wat WooCommerce verwacht (incl. btw als de winkel zo invoert, woo-compat-1).
+				WooCart::apply_price( $line['data'], WooConfig::woo_unit_price( (float) $q['unitExcl'], $line['data'] ) );
 			}
 		}
 	}
@@ -423,8 +445,18 @@ final class Cart {
 			$q = self::$priced[ $key ] ?? self::price_line( (string) $key, $it, $items, $main );
 			if ( empty( $q['ok'] ) || ! ( $q['unitExcl'] > 0 ) ) {
 				if ( ! array_intersect( (array) ( $q['errors'] ?? array() ), array( 'below_min_qty', 'qty_step' ) ) ) {
+					Logger::error(
+						'crosssell_price_missing',
+						array(
+							'design_id' => (int) ( $cs['design_id'] ?? 0 ),
+							'ref'       => (string) ( $cs['ref'] ?? '' ),
+							'item'      => (string) ( $cs['item'] ?? '' ),
+							'qty'       => (int) $it['quantity'],
+							'errors'    => array_values( (array) ( $q['errors'] ?? array() ) ),
+						)
+					);
 					$cart->remove_cart_item( $key );
-					wc_add_notice( sprintf( self::text( 'price' ), $name ), 'error' );
+					wc_add_notice( esc_html( sprintf( self::text( 'price' ), $name, (string) ( $cs['ref'] ?? '' ) ) ), 'error' );
 					continue;
 				}
 			}
@@ -616,6 +648,10 @@ final class Cart {
 				'value' => $r[1],
 			);
 		}
+		$item_data[] = array(
+			'key'   => self::text( 'custom', $lang ),
+			'value' => self::text( 'custom_v', $lang ),
+		);
 		$key = (string) ( $cart_item['key'] ?? '' );
 		$q   = '' !== $key ? ( self::$priced[ $key ] ?? null ) : null;
 		if ( is_array( $q ) && ! empty( $q['ok'] ) && ! empty( $q['parts'] ) ) {
@@ -640,7 +676,7 @@ final class Cart {
 	 */
 	public static function rows( array $cs, string $lang ): array {
 		$rows  = array();
-		$tech  = class_exists( WooConfig::class ) ? WooConfig::technique_label( (string) ( $cs['technique'] ?? '' ), $lang ) : (string) ( $cs['technique'] ?? '' );
+		$tech  = WooConfig::technique_label( (string) ( $cs['technique'] ?? '' ), $lang );
 		$tech  = function_exists( 'mb_strtolower' ) ? mb_strtolower( $tech ) : strtolower( $tech );
 		$patch = Lines::patch_text( $cs, $tech, $lang );
 		$rows[] = array( self::text( 'design', $lang ), (string) ( $cs['ref'] ?? '' ) );
@@ -680,9 +716,11 @@ final class Cart {
 		if ( empty( $cart_item[ self::KEY ]['preview_url'] ) ) {
 			return $html;
 		}
+		$img = WooCart::preview_images( $cart_item[ self::KEY ] );
 		return sprintf(
-			'<img src="%1$s" alt="%2$s" width="300" height="300" class="bps-cart-preview skip-lazy attachment-woocommerce_thumbnail" data-no-lazy="1" loading="eager" decoding="async" />',
-			esc_url( (string) $cart_item[ self::KEY ]['preview_url'] ),
+			'<img src="%1$s"%2$s alt="%3$s" width="300" height="300" class="bps-cart-preview skip-lazy attachment-woocommerce_thumbnail" data-no-lazy="1" loading="eager" decoding="async" />',
+			esc_url( $img['src'] ),
+			'' !== $img['srcset'] ? ' srcset="' . esc_attr( $img['srcset'] ) . '"' : '',
 			esc_attr( sprintf( self::text( 'alt' ), (string) ( $cart_item[ self::KEY ]['ref'] ?? '' ) ) )
 		);
 	}
@@ -697,7 +735,7 @@ final class Cart {
 		if ( empty( $cart_item[ self::KEY ]['preview_url'] ) ) {
 			return $images;
 		}
-		$url = esc_url_raw( (string) $cart_item[ self::KEY ]['preview_url'] );
+		$url = esc_url_raw( WooCart::preview_images( $cart_item[ self::KEY ] )['src'] );
 		return array(
 			(object) array(
 				'id'        => 0,
@@ -745,6 +783,8 @@ final class Cart {
 			// Volledige lijst (de rij hierboven is ingekort voor de mand).
 			$item->update_meta_data( 'bps_cs_names', implode( ', ', (array) $cs['names'] ) );
 		}
+		// Zichtbaar, zodat ook de bestelmails de maatwerkmelding dragen (gdpr-juridisch-4).
+		$item->add_meta_data( 'bps_cs_custom', self::text( 'custom_v', $lang ), true );
 		$item->add_meta_data( '_bps_cs', wp_json_encode( $cs ), true );
 		$item->add_meta_data( '_bps_cs_design_id', (int) ( $cs['design_id'] ?? 0 ), true );
 		$q = self::$priced[ (string) $key ] ?? null;
@@ -767,6 +807,7 @@ final class Cart {
 			'bps_cs_plate'   => 'plate',
 			'bps_cs_names'   => 'names',
 			'bps_cs_options' => 'options',
+			'bps_cs_custom'  => 'custom',
 		);
 		return isset( $map[ $display_key ] ) ? self::text( $map[ $display_key ] ) : $display_key;
 	}

@@ -7,6 +7,9 @@
 
 namespace BorduurPatchStudio\Woo;
 
+use BorduurPatchStudio\Emb_File;
+use BorduurPatchStudio\Logger;
+use BorduurPatchStudio\Rest\Account_Routes;
 use BorduurPatchStudio\Uploads;
 use WP_Error;
 
@@ -29,6 +32,15 @@ final class Designs {
 		'ordered' => 4,
 	);
 
+	/** Statuses whose originals count against woo.maxDraftStorageMb (security-3). */
+	const STORAGE_STATUSES = array( 'draft', 'carted' );
+
+	/** Statuses a clone may start in. */
+	const CLONE_STATUSES = array( 'draft', 'carted' );
+
+	/** Longest customer title of a design ("Naam wijzigen" in My account). */
+	const TITLE_MAX = 80;
+
 	/**
 	 * Hooks.
 	 */
@@ -36,6 +48,32 @@ final class Designs {
 		add_action( 'init', array( __CLASS__, 'register_post_type' ), 5 );
 		add_action( 'admin_post_bps_download', array( __CLASS__, 'handle_download' ) );
 		add_action( 'before_delete_post', array( __CLASS__, 'on_delete_post' ), 10, 1 );
+		add_action( 'bps_design_released', array( __CLASS__, 'count_storage' ), 10, 1 );
+
+		// Parts of the design domain (P06) that live in their own classes.
+		Emb_File::register();
+		Account::register();
+		Reminder::register();
+		Account_Routes::register();
+	}
+
+	/* ---------------------------------------------------------------------
+	 * Clock (filter bps_now: a fixed clock for tests)
+	 * ------------------------------------------------------------------- */
+
+	/**
+	 * Current unix time, filterable with bps_now (int timestamp) so integration tests can move the clock.
+	 */
+	public static function now_ts(): int {
+		$now = apply_filters( 'bps_now', null );
+		return is_numeric( $now ) && (int) $now > 0 ? (int) $now : time();
+	}
+
+	/**
+	 * Current GMT time as Y-m-d H:i:s (bps_now aware).
+	 */
+	public static function now(): string {
+		return gmdate( 'Y-m-d H:i:s', self::now_ts() );
 	}
 
 	/**
@@ -133,7 +171,49 @@ final class Designs {
 			'order_item_id' => $item_id > 0 ? $item_id : null,
 			'email'         => '' !== $email ? $email : null,
 			'proof'         => is_array( $proof ) ? $proof : array( 'status' => 'none', 'history' => array() ),
+			'title'         => (string) get_post_meta( $id, '_bps_title', true ),
+			'author'        => (int) $post->post_author,
+			'parent_id'     => (int) get_post_meta( $id, '_bps_parent_id', true ),
+			'revision'      => max( 1, (int) get_post_meta( $id, '_bps_revision', true ) ),
+			'hidden'        => '' !== (string) get_post_meta( $id, '_bps_hidden_gmt', true ),
+			'preview_sizes' => self::preview_sizes( is_array( $preview ) ? $preview : array() ),
 		);
+	}
+
+	/**
+	 * Public URLs of the preview variants: {cart, cart2x, mail} (only those that exist).
+	 *
+	 * @param array $preview Preview meta.
+	 * @return array<string,string>
+	 */
+	private static function preview_sizes( array $preview ): array {
+		$out = array();
+		foreach ( (array) ( $preview['sizes'] ?? array() ) as $key => $v ) {
+			if ( is_array( $v ) && ! empty( $v['url'] ) ) {
+				$out[ (string) $key ] = (string) $v['url'];
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * Preview URL in a given size (contract C3): full (PNG master), cart (300 px webp), cart2x (600 px webp) or
+	 * mail (600 px jpg on white). Falls back to the PNG when the variant does not exist (older designs); '' when the
+	 * design has no preview at all.
+	 *
+	 * @param int    $id   Design id.
+	 * @param string $size full|cart|cart2x|mail.
+	 */
+	public static function preview_url( int $id, string $size = 'full' ): string {
+		$preview = $id > 0 ? get_post_meta( $id, '_bps_preview', true ) : '';
+		if ( ! is_array( $preview ) ) {
+			return '';
+		}
+		$png = (string) ( $preview['url'] ?? '' );
+		if ( 'full' !== $size && ! empty( $preview['sizes'][ $size ]['url'] ) ) {
+			return (string) $preview['sizes'][ $size ]['url'];
+		}
+		return $png;
 	}
 
 	/**
@@ -177,12 +257,24 @@ final class Designs {
 		if ( ! in_array( $status, self::STATUSES, true ) ) {
 			return;
 		}
+		if ( in_array( $status, array( 'carted', 'quoted', 'ordered' ), true ) ) {
+			// Also when the rank does not change (a saved design that is carted stays "saved"): the customer acted,
+			// so the promised reminder is no longer needed.
+			if ( 'carted' === $status ) {
+				update_post_meta( $id, '_bps_carted_gmt', self::now() );
+			}
+			Reminder::cancel( $id, 'status' );
+		}
 		$current = (string) get_post_meta( $id, '_bps_status', true );
 		if ( '' !== $current && ( self::RANK[ $current ] ?? 0 ) > self::RANK[ $status ] ) {
 			return;
 		}
 		update_post_meta( $id, '_bps_status', $status );
-		update_post_meta( $id, '_bps_status_changed_gmt', gmdate( 'Y-m-d H:i:s' ) );
+		update_post_meta( $id, '_bps_status_changed_gmt', self::now() );
+		if ( ! in_array( $status, self::STORAGE_STATUSES, true ) ) {
+			// Saved, quoted and ordered designs leave the draft storage budget (security-3).
+			self::uncount_storage( $id );
+		}
 	}
 
 	/**
@@ -225,43 +317,228 @@ final class Designs {
 	 * ------------------------------------------------------------------- */
 
 	/**
-	 * Create a design from a validated payload and stored files.
+	 * Create a design from a validated payload and stored files. The design belongs to the current user (0 for
+	 * guests; REST restores the logged-in user first, klant-account-2).
 	 *
 	 * @param array      $payload  Clean payload.
 	 * @param array|null $original {path,name,ext,bytes} or null.
-	 * @param array      $preview  {path,url}.
+	 * @param array      $preview  {path,url,sizes?}.
 	 * @param string     $page_url Studio page URL (for restore links).
 	 * @return int|WP_Error
 	 */
 	public static function create( array $payload, ?array $original, array $preview, string $page_url = '' ) {
+		$id = self::insert( $payload, $original, $preview, 'draft', get_current_user_id() );
+		if ( is_wp_error( $id ) ) {
+			return $id;
+		}
+		if ( '' !== $page_url ) {
+			update_post_meta( $id, '_bps_page_url', esc_url_raw( $page_url ) );
+		}
+		do_action( 'bps_design_created', $id, $payload );
+		return $id;
+	}
+
+	/**
+	 * Insert the post and its meta (shared by create() and clone()).
+	 *
+	 * @param array      $payload  Payload.
+	 * @param array|null $original Original or null.
+	 * @param array      $preview  Preview meta (may be empty).
+	 * @param string     $status   draft|carted.
+	 * @param int        $author   Owner (0 = guest).
+	 * @return int|WP_Error
+	 */
+	private static function insert( array $payload, ?array $original, array $preview, string $status, int $author ) {
 		$ref = self::next_ref( 'bps_ref_seq', 'PS' );
 		$id  = wp_insert_post(
 			array(
 				'post_type'   => self::CPT,
 				'post_status' => 'private',
 				'post_title'  => $ref,
-				'post_author' => 0,
+				'post_author' => max( 0, $author ),
 			),
 			true
 		);
-		if ( is_wp_error( $id ) ) {
+		if ( is_wp_error( $id ) || (int) $id <= 0 ) {
+			Logger::error( 'design_insert_failed', array( 'error' => is_wp_error( $id ) ? $id->get_error_message() : 'no id' ) );
 			return new WP_Error( 'bps_store', __( 'Opslaan is niet gelukt. Probeer het nog eens.', 'borduur-patch-studio' ), array( 'status' => 500 ) );
 		}
 		$id  = (int) $id;
-		$now = gmdate( 'Y-m-d H:i:s' );
+		$now = self::now();
+		Emb_File::attach( $id, $original, $payload );
 		update_post_meta( $id, '_bps_created_gmt', $now );
 		update_post_meta( $id, '_bps_last_opened_gmt', $now );
 		update_post_meta( $id, '_bps_payload', wp_slash( wp_json_encode( $payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ) ) );
-		update_post_meta( $id, '_bps_status', 'draft' );
-		update_post_meta( $id, '_bps_technique', (string) $payload['technique'] );
+		update_post_meta( $id, '_bps_status', in_array( $status, self::CLONE_STATUSES, true ) ? $status : 'draft' );
+		update_post_meta( $id, '_bps_technique', (string) ( $payload['technique'] ?? '' ) );
 		update_post_meta( $id, '_bps_original', $original ? $original : '' );
-		update_post_meta( $id, '_bps_preview', $preview );
+		update_post_meta( $id, '_bps_preview', $preview ? $preview : '' );
 		update_post_meta( $id, '_bps_proof', array( 'status' => 'none', 'history' => array() ) );
-		if ( '' !== $page_url ) {
-			update_post_meta( $id, '_bps_page_url', esc_url_raw( $page_url ) );
-		}
-		do_action( 'bps_design_created', $id, $payload );
+		self::count_storage( $id );
 		return $id;
+	}
+
+	/**
+	 * Copy a design into a new record (contract C3). Always a new ref and created time (so a new token), copied
+	 * files with new random names (never shared: cleanup of one design must not break the other), proof "none".
+	 *
+	 * Args:
+	 * - parent_id    int    stored as _bps_parent_id (default: the source id)
+	 * - reorder_of   array  {design_id, order_id} stored as _bps_reorder_of
+	 * - from_payload array  payload to use when the source (or its files) is gone, e.g. the order line snapshot
+	 * - status       string draft (default) | carted
+	 * - author       int    owner of the copy (default: the current user, else 0)
+	 * - payload      array  replace the payload (revise of an ordered design)
+	 * - preview      array  an already stored new preview instead of a copy (revise)
+	 * - original     array  an already stored new original instead of a copy (revise)
+	 *
+	 * @param int   $id   Source design id (may no longer exist when from_payload is given).
+	 * @param array $args Args.
+	 * @return int|WP_Error New design id.
+	 */
+	public static function clone( int $id, array $args = array() ) {
+		$src     = self::get( $id );
+		$payload = isset( $args['payload'] ) && is_array( $args['payload'] ) ? $args['payload'] : array();
+		if ( ! $payload ) {
+			$payload = $src && ! empty( $src['payload'] ) ? $src['payload'] : ( isset( $args['from_payload'] ) && is_array( $args['from_payload'] ) ? $args['from_payload'] : array() );
+		}
+		if ( ! $payload || empty( $payload['technique'] ) ) {
+			return new WP_Error( 'bps_not_found', __( 'We vonden dit ontwerp niet terug.', 'borduur-patch-studio' ), array( 'status' => 404 ) );
+		}
+		unset( $payload['embFile'] ); // Recomputed from the copied original.
+
+		// Files: new ones from the caller, else copies of the source files.
+		$original = null;
+		if ( isset( $args['original'] ) && is_array( $args['original'] ) ) {
+			$original = $args['original'];
+		} elseif ( $src && $src['original'] ) {
+			$original = Uploads::copy_original( $src['original'] );
+		}
+		$preview = array();
+		if ( isset( $args['preview'] ) && is_array( $args['preview'] ) ) {
+			$preview = $args['preview'];
+		} elseif ( $src ) {
+			$meta    = get_post_meta( $id, '_bps_preview', true );
+			$preview = is_array( $meta ) ? (array) Uploads::copy_preview( $meta ) : array();
+		}
+
+		$status = isset( $args['status'] ) && in_array( $args['status'], self::CLONE_STATUSES, true ) ? (string) $args['status'] : 'draft';
+		$author = isset( $args['author'] ) ? (int) $args['author'] : get_current_user_id();
+		$new    = self::insert( $payload, $original, $preview, $status, $author );
+		if ( is_wp_error( $new ) ) {
+			if ( $original && empty( $args['original'] ) ) {
+				Uploads::delete( (string) $original['path'] );
+			}
+			if ( $preview && empty( $args['preview'] ) ) {
+				Uploads::delete_preview( $preview );
+			}
+			return $new;
+		}
+
+		$parent = isset( $args['parent_id'] ) ? (int) $args['parent_id'] : $id;
+		if ( $parent > 0 ) {
+			update_post_meta( $new, '_bps_parent_id', $parent );
+		}
+		if ( isset( $args['reorder_of'] ) && is_array( $args['reorder_of'] ) ) {
+			update_post_meta(
+				$new,
+				'_bps_reorder_of',
+				array(
+					'design_id' => (int) ( $args['reorder_of']['design_id'] ?? 0 ),
+					'order_id'  => (int) ( $args['reorder_of']['order_id'] ?? 0 ),
+				)
+			);
+		}
+		if ( $src ) {
+			foreach ( array( '_bps_title', '_bps_page_url' ) as $key ) {
+				$val = (string) get_post_meta( $id, $key, true );
+				if ( '' !== $val ) {
+					update_post_meta( $new, $key, $val );
+				}
+			}
+		}
+		/**
+		 * A design was copied (security-4 cart clone, revise of an ordered design, reorder).
+		 *
+		 * @param int   $new  New design id.
+		 * @param int   $id   Source design id.
+		 * @param array $args Clone args.
+		 */
+		do_action( 'bps_design_cloned', $new, $id, $args );
+		return $new;
+	}
+
+	/**
+	 * Revise a design after the customer changed it (klant-account-3). A draft or saved design is updated in place:
+	 * same id, ref and token (the token depends on the created time, which stays). A carted, quoted or ordered design
+	 * is never changed (cart line, quote and order point to it): the revision becomes a new design with
+	 * _bps_parent_id, a copied original (unless a new one is given) and proof "none".
+	 *
+	 * @param int        $id       Design id.
+	 * @param array      $payload  Validated payload.
+	 * @param array      $preview  Newly stored preview.
+	 * @param array|null $original Newly stored original, or null to keep (or copy) the current one.
+	 * @return array|WP_Error {id, cloned, revision}
+	 */
+	public static function revise( int $id, array $payload, array $preview, ?array $original = null ) {
+		$d = self::get( $id );
+		if ( ! $d ) {
+			return new WP_Error( 'bps_not_found', __( 'Dit ontwerp bestaat niet meer.', 'borduur-patch-studio' ), array( 'status' => 404 ) );
+		}
+		if ( ! in_array( $d['status'], array( 'draft', 'saved' ), true ) ) {
+			$args = array(
+				'parent_id' => $id,
+				'status'    => 'draft',
+				'payload'   => $payload,
+				'preview'   => $preview,
+			);
+			if ( $original ) {
+				$args['original'] = $original;
+			}
+			$new = self::clone( $id, $args );
+			if ( is_wp_error( $new ) ) {
+				return $new;
+			}
+			return array(
+				'id'       => (int) $new,
+				'cloned'   => true,
+				'revision' => 1,
+			);
+		}
+
+		$old_preview = get_post_meta( $id, '_bps_preview', true );
+		if ( $original ) {
+			self::uncount_storage( $id );
+			if ( $d['original'] ) {
+				Uploads::delete( $d['original']['path'] );
+			}
+			update_post_meta( $id, '_bps_original', $original );
+			$current = $original;
+		} else {
+			$current = $d['original'];
+		}
+		Emb_File::attach( $id, $current, $payload );
+		update_post_meta( $id, '_bps_payload', wp_slash( wp_json_encode( $payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ) ) );
+		update_post_meta( $id, '_bps_technique', (string) ( $payload['technique'] ?? '' ) );
+		update_post_meta( $id, '_bps_preview', $preview );
+		Uploads::delete_preview( $old_preview );
+		$rev = max( 1, (int) get_post_meta( $id, '_bps_revision', true ) ) + 1;
+		update_post_meta( $id, '_bps_revision', $rev );
+		update_post_meta( $id, '_bps_updated_gmt', self::now() );
+		if ( $original ) {
+			self::count_storage( $id );
+		}
+		$uid = get_current_user_id();
+		if ( $uid > 0 && 0 === (int) $d['author'] ) {
+			self::claim( $id, $uid );
+		}
+		self::touch( $id );
+		do_action( 'bps_design_revised', $id, $payload );
+		return array(
+			'id'       => $id,
+			'cloned'   => false,
+			'revision' => $rev,
+		);
 	}
 
 	/**
@@ -304,7 +581,7 @@ final class Designs {
 	 * @param int $id Design id.
 	 */
 	public static function touch( int $id ): void {
-		update_post_meta( $id, '_bps_last_opened_gmt', gmdate( 'Y-m-d H:i:s' ) );
+		update_post_meta( $id, '_bps_last_opened_gmt', self::now() );
 	}
 
 	/**
@@ -367,19 +644,17 @@ final class Designs {
 	 * @param bool $keep_preview Keep the public preview (still referenced by order e-mails).
 	 */
 	public static function delete_files( int $id, bool $keep_preview = false ): void {
+		self::uncount_storage( $id );
 		$original = get_post_meta( $id, '_bps_original', true );
 		if ( is_array( $original ) && ! empty( $original['path'] ) ) {
 			Uploads::delete( (string) $original['path'] );
 		}
 		update_post_meta( $id, '_bps_original', '' );
 		if ( ! $keep_preview ) {
-			$preview = get_post_meta( $id, '_bps_preview', true );
-			if ( is_array( $preview ) && ! empty( $preview['path'] ) ) {
-				Uploads::delete( (string) $preview['path'] );
-			}
+			Uploads::delete_preview( get_post_meta( $id, '_bps_preview', true ) );
 			update_post_meta( $id, '_bps_preview', '' );
 		}
-		update_post_meta( $id, '_bps_files_removed_gmt', gmdate( 'Y-m-d H:i:s' ) );
+		update_post_meta( $id, '_bps_files_removed_gmt', self::now() );
 	}
 
 	/**
@@ -430,6 +705,142 @@ final class Designs {
 		header( 'Content-Length: ' . (string) filesize( $path ) );
 		readfile( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions
 		exit;
+	}
+
+	/* ---------------------------------------------------------------------
+	 * Draft storage counter (security-3)
+	 * ------------------------------------------------------------------- */
+
+	/**
+	 * Count the original of a draft/carted design once (idempotent: the counted bytes are kept on the design).
+	 *
+	 * @param mixed $id Design id.
+	 */
+	public static function count_storage( $id ): void {
+		$id = (int) $id;
+		if ( $id <= 0 || '' !== (string) get_post_meta( $id, '_bps_storage_bytes', true ) ) {
+			return;
+		}
+		$status   = (string) ( get_post_meta( $id, '_bps_status', true ) ?: 'draft' );
+		$original = get_post_meta( $id, '_bps_original', true );
+		if ( ! in_array( $status, self::STORAGE_STATUSES, true ) || ! is_array( $original ) || empty( $original['path'] ) ) {
+			return;
+		}
+		$bytes = max( 0, (int) ( $original['bytes'] ?? 0 ) );
+		if ( $bytes <= 0 && is_readable( (string) $original['path'] ) ) {
+			$bytes = (int) filesize( (string) $original['path'] );
+		}
+		if ( $bytes > 0 ) {
+			update_post_meta( $id, '_bps_storage_bytes', $bytes );
+			Uploads::storage_add( $bytes );
+		}
+	}
+
+	/**
+	 * Remove a design's original from the counter (status upgrade, delete).
+	 *
+	 * @param int $id Design id.
+	 */
+	public static function uncount_storage( int $id ): void {
+		$bytes = (string) get_post_meta( $id, '_bps_storage_bytes', true );
+		if ( '' === $bytes ) {
+			return;
+		}
+		delete_post_meta( $id, '_bps_storage_bytes' );
+		Uploads::storage_add( -1 * max( 0, (int) $bytes ) );
+	}
+
+	/* ---------------------------------------------------------------------
+	 * Customer account (klant-account-2)
+	 * ------------------------------------------------------------------- */
+
+	/**
+	 * Owner of a design (0 = guest / unknown).
+	 *
+	 * @param int $id Design id.
+	 */
+	public static function owner( int $id ): int {
+		$post = $id > 0 ? get_post( $id ) : null;
+		return $post && self::CPT === $post->post_type ? (int) $post->post_author : 0;
+	}
+
+	/**
+	 * Link a guest design to a customer. Never re-assigns a design that already belongs to someone else.
+	 *
+	 * @param int $id      Design id.
+	 * @param int $user_id Customer.
+	 * @return bool True when the design now belongs to $user_id.
+	 */
+	public static function claim( int $id, int $user_id ): bool {
+		if ( $user_id <= 0 ) {
+			return false;
+		}
+		$post = get_post( $id );
+		if ( ! $post || self::CPT !== $post->post_type ) {
+			return false;
+		}
+		$owner = (int) $post->post_author;
+		if ( $owner === $user_id ) {
+			return true;
+		}
+		if ( $owner > 0 ) {
+			return false;
+		}
+		$res = wp_update_post(
+			array(
+				'ID'          => $id,
+				'post_author' => $user_id,
+			),
+			true
+		);
+		if ( is_wp_error( $res ) ) {
+			Logger::warning(
+				'design_claim_failed',
+				array(
+					'design' => $id,
+					'error'  => $res->get_error_message(),
+				)
+			);
+			return false;
+		}
+		clean_post_cache( $id );
+		return true;
+	}
+
+	/**
+	 * Customer title ("Naam wijzigen"); '' removes it.
+	 *
+	 * @param int    $id    Design id.
+	 * @param string $title Title.
+	 */
+	public static function set_title( int $id, string $title ): string {
+		$title = trim( preg_replace( '/\s+/u', ' ', sanitize_text_field( $title ) ) );
+		$title = function_exists( 'mb_substr' ) ? mb_substr( $title, 0, self::TITLE_MAX ) : substr( $title, 0, self::TITLE_MAX );
+		if ( '' === $title ) {
+			delete_post_meta( $id, '_bps_title' );
+		} else {
+			update_post_meta( $id, '_bps_title', $title );
+		}
+		return $title;
+	}
+
+	/**
+	 * Remove a design from the customer's list. Draft, saved and carted designs are deleted with their files;
+	 * quoted and ordered designs only get hidden (the quote, order line and production sheet keep working).
+	 *
+	 * @param int $id Design id.
+	 * @return string deleted|hidden
+	 */
+	public static function remove_for_customer( int $id ): string {
+		$status = (string) ( get_post_meta( $id, '_bps_status', true ) ?: 'draft' );
+		$linked = (int) get_post_meta( $id, '_bps_order_id', true ) > 0;
+		if ( ! $linked && in_array( $status, array( 'draft', 'saved', 'carted' ), true ) ) {
+			wp_delete_post( $id, true ); // on_delete_post() removes the files.
+			return 'deleted';
+		}
+		update_post_meta( $id, '_bps_hidden_gmt', self::now() );
+		Reminder::cancel( $id, 'hidden' );
+		return 'hidden';
 	}
 
 	/**

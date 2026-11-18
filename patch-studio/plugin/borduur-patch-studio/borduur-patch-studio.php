@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Patch Studio
  * Description:       Patches online ontwerpen met deskundig advies, live prijs en digitale proef.
- * Version:           1.0.0
+ * Version:           2.0.0
  * Requires at least: 6.4
  * Requires PHP:      8.1
  * WC requires at least: 8.8
@@ -22,7 +22,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'BPS_VERSION', '1.0.0' );
+define( 'BPS_VERSION', '2.0.0' );
 define( 'BPS_DB_VERSION', 1 );
 define( 'BPS_FILE', __FILE__ );
 define( 'BPS_DIR', plugin_dir_path( __FILE__ ) );

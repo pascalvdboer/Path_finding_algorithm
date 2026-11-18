@@ -169,7 +169,7 @@ final class Shortcode {
 		}
 		$page['compact'] = 'yes' === $atts['compact'];
 		$cfg             = Config::public_config( $locale, $page );
-		// Help sentence built from the contact fields that are filled in (never a hard-coded phone/WhatsApp).
+		// Help sentence built from the contact fields that are filled in (never a hard-coded phone number or messenger).
 		$cfg['helpLine'] = self::help_line( $locale );
 		// Blood-group consent: the exact sentence the server hashes into the stored record.
 		$cfg['privacy'] = array( 'bloodConsent' => Privacy::blood_consent_public( $locale ) );

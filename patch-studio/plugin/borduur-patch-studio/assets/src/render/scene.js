@@ -27,7 +27,7 @@ function grainTile(kind) {
   for (let i = 0; i < s; i++) { rowN[i] = rnd(); colN[i] = rnd(); }
   // wood: wavy growth lines along the plank, a seam every 128 px (tileable: whole periods only)
   const wob = new Float32Array(s);
-  for (let i = 0; i < s; i++) wob[i] = Math.sin((i / s) * Math.PI * 2 * 3) * 3 + Math.sin((i / s) * Math.PI * 2 * 7 + 1) * 1.5;
+  for (let i = 0; i < s; i++) wob[i] = Math.sin((i / s) * Math.PI * 2 * 2) * 1.6 + Math.sin((i / s) * Math.PI * 2 * 5 + 1) * 0.6;
   for (let y = 0; y < s; y++) for (let x = 0; x < s; x++) {
     let v = (rnd() - 0.5) * 2;
     if (def.weave) {

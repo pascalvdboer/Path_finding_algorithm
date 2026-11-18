@@ -98,7 +98,13 @@ export function createAssistant(ctx) {
   function priceLine(id, d) {
     const q = d.quotes[id];
     const tech = config.techniques[id];
-    if (!q || tech.mode === 'quote' || q.mode === 'quote' || !(q.totalIncl > 0)) return h('span.bps-card__price.is-request', t('pricing.onRequest'));
+    if (!q || tech.mode === 'quote' || q.mode === 'quote' || !(q.totalIncl > 0)) {
+      // no fixed price: an indicative range when the settings give one, else an honest "price with your proof"
+      // (never "Aanrader" next to a bare "Prijs op aanvraag", critique-2 #11)
+      const ip = tech.indicativePrice;
+      if (ip && ip.from > 0 && ip.to >= ip.from) return h('span.bps-card__price.is-request', t('ui.s2.priceRange', { from: ctx.money(ip.from), to: ctx.money(ip.to) }));
+      return h('span.bps-card__price.is-request', t('ui.s2.priceAfterProof'));
+    }
     return h('span.bps-card__price', h('strong', t('pricing.perPiece', { amount: ctx.money(q.unitIncl, q.lineExcl / q.qty) })), ' ', h('span.bps-muted', t('ui.s2.forQty', { qty: q.qty })));
   }
 
@@ -179,10 +185,6 @@ export function createAssistant(ctx) {
     const tech = config.techniques[s.technique] || {};
     const edge = d.layout.edge || {};
     const opt = (id) => (config.options || []).find((o) => o.id === id && o.enabled !== false && (o.techniques || []).includes(s.technique));
-    // another technique that suits this design well (status ok), the best ranked one we are not using
-    const alt = (d.advice.ranking || []).find((id) => id !== s.technique && v[id] && v[id].status === 'ok' && config.techniques[id] && config.techniques[id].enabled);
-    if (alt) out.push({ id: 'tech-' + alt, txt: t('ui.idea.tech', { tech: L(config.techniques[alt].label).toLowerCase() }), why: v[alt].headline && v[alt].headline.text,
-      vis: () => thumb(ctx, s, d, alt, {}, 160), apply: () => ctx.applyPatch({ technique: alt, techniquePicked: true }) });
     // more relief for embroidery (3D look), when the atelier offers it
     if (tech.threadBased && s.technique === 'embroidered' && opt('extra_thick') && !s.options.includes('extra_thick') && (!v.embroidered || v.embroidered.status !== 'bad')) {
       const next = s.options.filter((x) => !['thickness_normal', 'thick'].includes(x)).concat('extra_thick');
@@ -198,6 +200,14 @@ export function createAssistant(ctx) {
     if ((s.mockup || 'none') === 'none' && ctx.preview && config.features && config.features.garmentView !== false) {
       out.push({ id: 'cap', txt: t('ui.idea.cap'), icon: 'image', apply: () => ctx.store.set({ mockup: 'cap_front' }) });
     }
+    // another technique only when it is a real step up: never the twin of the current one (printed ↔ sublimated)
+    // and never one that looks cheaper than what you have (critique-2 #11)
+    const LOOK = { sublimated: 1, printed: 1, woven: 2, embroidered: 3, chenille: 3, pvc: 3, leather: 3 };
+    const twin = (a, b) => LOOK[a] === 1 && LOOK[b] === 1;
+    const alt = (d.advice.ranking || []).find((id) => id !== s.technique && !twin(id, s.technique) && (LOOK[id] || 0) > (LOOK[s.technique] || 0)
+      && v[id] && v[id].status === 'ok' && config.techniques[id] && config.techniques[id].enabled);
+    if (alt) out.push({ id: 'tech-' + alt, txt: t('ui.idea.tech', { tech: L(config.techniques[alt].label).toLowerCase() }), why: v[alt].headline && v[alt].headline.text,
+      vis: () => thumb(ctx, s, d, alt, {}, 160), apply: () => ctx.applyPatch({ technique: alt, techniquePicked: true }) });
     return out.filter((x) => !dismissed.has(x.id)).slice(0, 2);
   }
 

@@ -39,6 +39,8 @@ async function open(opts = {}) {
   page.on('request', (r) => { const u = r.url(); if (/^https?:/.test(u)) problems.push('external request: ' + u); });
   await page.goto(URL0 + (opts.query || ''));
   await page.waitForFunction(() => window.BPS_DEMO && document.querySelector('#studio[data-bps-mounted]'));
+  // critique-2 #10: the example files sit behind "Probeer met een voorbeeld" (a <details>); open it like a customer
+  await page.evaluate(() => document.querySelectorAll('.bps-samples').forEach((d) => { d.open = true; }));
   return { page, ctx, problems };
 }
 
@@ -92,6 +94,7 @@ test('demo: extra samples (verloop, foto, vlak logo) each give consistent advice
     await page.evaluate(() => { window.BPS_DEMO.lastAdvice = null; });
     // Loading another example replaces the current design (as a customer would do).
     await page.evaluate(() => window.BPS_DEMO.app.ctx.go(0)); // back to the start screen, as "Terug" does
+    await page.evaluate(() => document.querySelectorAll('.bps-samples').forEach((d) => { d.open = true; }));
     await page.locator('.bps-studio [data-demo-sample]').nth(i).click();
     await waitAdvice(page);
     await page.waitForTimeout(1500); // the UI follows the advice until it is stable

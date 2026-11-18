@@ -1,109 +1,73 @@
 <?php
 /**
- * Customer page behind the links in the digital proof e-mail (noindex, never cached).
- * GET shows a confirmation; only the POST of this form changes the proof status.
+ * Customer page behind the links in the digital proof e-mail (noindex, never cached, no referrer).
+ * GET shows a page; only the POST of the form changes anything.
  *
  * @package BorduurPatchStudio
- * @var string          $view      confirm|done|answered|superseded|invalid
- * @var string          $action    approve|changes
- * @var string          $error     Validation message.
- * @var string          $lang      nl|fr
- * @var array|null      $design    DesignRecord.
- * @var array|null      $proof     Normalized proof.
- * @var \WC_Order|null  $order
- * @var array           $rows      Customer summary rows.
- * @var array           $form      {url, fields}.
- * @var string          $other_url Link to the other answer.
- * @var array           $contact   config.contact.
- * @var string          $note      Posted note (on validation error).
- * @var bool            $use_theme Wrap in the theme header/footer.
+ * @var string                      $view       confirm|done|answered|superseded|invalid|stopped|cancel_confirm|cancel_done|cancel_requested
+ * @var string                      $action     approve|changes|cancel
+ * @var string                      $error      Validation message.
+ * @var string                      $lang       nl|fr
+ * @var array|null                  $design     DesignRecord.
+ * @var array|null                  $proof      Normalized proof of the order line.
+ * @var \WC_Order|null              $order
+ * @var \WC_Order_Item_Product|null $item
+ * @var array                       $rows       Customer summary rows.
+ * @var array                       $form       {url, fields}.
+ * @var string                      $other_url  Link to the other answer.
+ * @var string                      $cancel_url Cancel link (promises.cancelUntilProof) or ''.
+ * @var string                      $pay_url    Pay now (promises.payAfterProof) or ''.
+ * @var string                      $img        Image to show.
+ * @var string                      $full_url   Full resolution image.
+ * @var string                      $prev_url   Image of the previous round when it differs.
+ * @var array                       $contact    config.contact.
+ * @var string                      $note       Posted note (on validation error).
+ * @var bool                        $use_theme  Wrap in the theme header/footer.
  */
 
 use BorduurPatchStudio\Admin\Order_Production as BPS_OP;
 
 defined( 'ABSPATH' ) || exit;
 
-$bps_ref   = $design ? (string) $design['ref'] : '';
-$bps_img   = $proof && '' !== $proof['image_url'] ? $proof['image_url'] : ( $design ? (string) $design['preview_url'] : '' );
-$bps_onum  = $order ? (string) $order->get_order_number() : '';
-$bps_phone = (string) ( $contact['phone'] ?? '' );
-$bps_mail  = (string) ( $contact['email'] ?? '' );
-$bps_wa    = preg_replace( '/\D+/', '', (string) ( $contact['whatsapp'] ?? '' ) );
+$bps_ref  = $item instanceof \WC_Order_Item_Product ? (string) $item->get_meta( 'bps_ref' ) : '';
+$bps_ref  = '' !== $bps_ref ? $bps_ref : ( $design ? (string) $design['ref'] : '' );
+$bps_onum = $order ? (string) $order->get_order_number() : '';
+/* translators: %s: design ref */
+$bps_alt = sprintf( __( 'Digitale proef van patch %s', 'borduur-patch-studio' ), $bps_ref );
 
-if ( 'confirm' === $view ) {
-	$bps_title = 'changes' === $action ? BPS_OP::l( __( 'Aanpassing vragen', 'borduur-patch-studio' ) ) : BPS_OP::l( __( 'Proef goedkeuren', 'borduur-patch-studio' ) );
-} elseif ( 'done' === $view ) {
-	$bps_title = 'changes' === $action ? BPS_OP::l( __( 'Bedankt, we hebben je opmerking ontvangen', 'borduur-patch-studio' ) ) : BPS_OP::l( __( 'Bedankt, je proef is goedgekeurd', 'borduur-patch-studio' ) );
-} elseif ( 'answered' === $view ) {
-	$bps_title = BPS_OP::l( __( 'Je reactie op de digitale proef', 'borduur-patch-studio' ) );
-} elseif ( 'superseded' === $view ) {
-	$bps_title = BPS_OP::l( __( 'Er is intussen een nieuwere proef verstuurd', 'borduur-patch-studio' ) );
-} else {
-	$bps_title = BPS_OP::l( __( 'Deze link werkt niet (meer)', 'borduur-patch-studio' ) );
-}
+$bps_titles = array(
+	'confirm'          => 'changes' === $action ? __( 'Aanpassing vragen', 'borduur-patch-studio' ) : __( 'Proef goedkeuren', 'borduur-patch-studio' ),
+	'done'             => 'changes' === $action ? __( 'Bedankt, we hebben je opmerking ontvangen', 'borduur-patch-studio' ) : __( 'Bedankt, je proef is goedgekeurd', 'borduur-patch-studio' ),
+	'answered'         => __( 'Je reactie op de digitale proef', 'borduur-patch-studio' ),
+	'superseded'       => __( 'Er is intussen een nieuwere proef verstuurd', 'borduur-patch-studio' ),
+	'stopped'          => __( 'Deze bestelling is geannuleerd', 'borduur-patch-studio' ),
+	'cancel_confirm'   => __( 'Bestelling annuleren?', 'borduur-patch-studio' ),
+	'cancel_done'      => __( 'Je bestelling is geannuleerd', 'borduur-patch-studio' ),
+	'cancel_requested' => __( 'We hebben je vraag om te annuleren ontvangen', 'borduur-patch-studio' ),
+);
+$bps_title  = $bps_titles[ $view ] ?? __( 'Deze link werkt niet (meer)', 'borduur-patch-studio' );
 
-if ( $use_theme ) {
-	add_filter( 'wp_robots', 'wp_robots_no_robots' );
-	add_filter(
-		'pre_get_document_title',
-		static function () use ( $bps_title ) {
-			return $bps_title;
-		}
-	);
-	get_header();
-} else {
-	?><!doctype html>
-<html lang="<?php echo esc_attr( 'fr' === $lang ? 'fr-BE' : 'nl-BE' ); ?>">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex, nofollow">
-<title><?php echo esc_html( $bps_title . ' · ' . get_bloginfo( 'name' ) ); ?></title>
-</head>
-<body>
-	<?php
-}
+BPS_OP::template(
+	'admin/proof-page-open.php',
+	array(
+		'bps_title' => $bps_title,
+		'lang'      => $lang,
+		'use_theme' => $use_theme,
+	)
+);
 ?>
-<style>
-	.bps-proofpage { --bps-cta:#0B74A6; --bps-navy:#0A1F44; --bps-blue:#21A9E2; --bps-ink:#1E1B1B; --bps-muted:#6B6B6B; --bps-line:#E3EBF2;
-		box-sizing: border-box; max-width: 760px; margin: 32px auto 48px; padding: 0 16px; color: var(--bps-ink); font-family: "Assistant", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; font-size: 17px; line-height: 1.55; }
-	.bps-proofpage *, .bps-proofpage *::before, .bps-proofpage *::after { box-sizing: inherit; }
-	.bps-proofpage h1 { font-family: "Sora", system-ui, sans-serif; font-weight: 700; color: var(--bps-navy); font-size: clamp(24px, 4vw, 32px); line-height: 1.2; margin: 0 0 8px; text-transform: none; letter-spacing: 0; }
-	.bps-proofpage .bps-pp__sub { color: var(--bps-muted); margin: 0 0 24px; }
-	.bps-proofpage .bps-pp__card { background: #fff; border: 1px solid var(--bps-line); border-radius: 12px; padding: 24px; box-shadow: 0 4px 24px rgba(10,31,68,.06); }
-	.bps-proofpage .bps-pp__img { display: block; margin: 0 auto 20px; max-width: min(100%, 420px); height: auto; border-radius: 8px; background: #F5F8FB; }
-	.bps-proofpage table { width: 100%; border-collapse: collapse; margin: 0 0 20px; font-size: 15px; }
-	.bps-proofpage th, .bps-proofpage td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--bps-line); vertical-align: top; }
-	.bps-proofpage th { width: 38%; font-weight: 600; color: var(--bps-navy); }
-	.bps-proofpage .bps-pp__sw { display: inline-block; width: 14px; height: 14px; border-radius: 3px; border: 1px solid rgba(0,0,0,.25); vertical-align: -2px; margin-right: 6px; }
-	.bps-proofpage label { display: block; font-weight: 700; color: var(--bps-navy); margin: 0 0 6px; }
-	.bps-proofpage textarea { width: 100%; min-height: 120px; padding: 12px; font: inherit; border: 1px solid #8A8A8A; border-radius: 8px; background: #fff; color: var(--bps-ink); }
-	.bps-proofpage .bps-pp__help { color: var(--bps-muted); font-size: 15px; margin: 6px 0 16px; }
-	.bps-proofpage .bps-pp__btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 12px 24px; border: 0; border-radius: 8px; background: var(--bps-cta); color: #fff; font: 700 17px/1.2 "Sora", system-ui, sans-serif; text-decoration: none; cursor: pointer; width: 100%; }
-	.bps-proofpage .bps-pp__btn:hover { background: var(--bps-navy); color: #fff; }
-	.bps-proofpage a:focus-visible, .bps-proofpage button:focus-visible, .bps-proofpage textarea:focus-visible { outline: 3px solid #5926C5; outline-offset: 2px; }
-	.bps-proofpage .bps-pp__alt { text-align: center; margin: 16px 0 0; }
-	.bps-proofpage .bps-pp__alt a, .bps-proofpage .bps-pp__contact a { color: var(--bps-cta); }
-	.bps-proofpage .bps-pp__error { border: 1px solid #B42318; background: #FEF3F2; color: #B42318; border-radius: 8px; padding: 10px 14px; margin: 0 0 16px; }
-	.bps-proofpage .bps-pp__ok { border-left: 4px solid #15803D; background: #F0FAF3; padding: 14px 16px; border-radius: 8px; margin: 0 0 20px; }
-	.bps-proofpage .bps-pp__info { border-left: 4px solid var(--bps-blue); background: #F7FBFE; padding: 14px 16px; border-radius: 8px; margin: 0 0 20px; }
-	.bps-proofpage blockquote { margin: 0 0 20px; padding: 12px 16px; border-left: 4px solid var(--bps-line); background: #FAFBFC; white-space: pre-line; }
-	.bps-proofpage .bps-pp__contact { color: var(--bps-muted); font-size: 15px; margin: 20px 0 0; text-align: center; }
-</style>
-<main class="bps-proofpage" id="bps-proof">
-	<h1><?php echo esc_html( $bps_title ); ?></h1>
 	<?php if ( '' !== $bps_ref ) : ?>
 		<p class="bps-pp__sub">
 			<?php
 			/* translators: %s: design ref */
-			echo esc_html( sprintf( BPS_OP::l( __( 'Patch %s', 'borduur-patch-studio' ) ), $bps_ref ) );
+			echo esc_html( sprintf( __( 'Patch %s', 'borduur-patch-studio' ), $bps_ref ) );
 			if ( '' !== $bps_onum ) {
 				/* translators: %s: order number */
-				echo esc_html( ' · ' . sprintf( BPS_OP::l( __( 'Bestelling #%s', 'borduur-patch-studio' ) ), $bps_onum ) );
+				echo esc_html( ' · ' . sprintf( __( 'Bestelling #%s', 'borduur-patch-studio' ), $bps_onum ) );
 			}
 			if ( $proof && $proof['round'] > 1 ) {
 				/* translators: %d: round */
-				echo esc_html( ' · ' . sprintf( BPS_OP::l( __( 'Proefronde %d', 'borduur-patch-studio' ) ), (int) $proof['round'] ) );
+				echo esc_html( ' · ' . sprintf( __( 'Proefronde %d', 'borduur-patch-studio' ), (int) $proof['round'] ) );
 			}
 			?>
 		</p>
@@ -111,25 +75,107 @@ if ( $use_theme ) {
 
 	<div class="bps-pp__card">
 		<?php if ( 'confirm' === $view ) : ?>
-			<?php if ( '' !== $bps_img ) : ?>
-				<img class="bps-pp__img" src="<?php echo esc_url( $bps_img ); ?>" alt="<?php echo esc_attr( BPS_OP::l( __( 'Digitale proef van je patch', 'borduur-patch-studio' ) ) ); ?>">
+			<form method="post" action="<?php echo esc_url( $form['url'] ); ?>" class="bps-pp__form">
+				<?php foreach ( $form['fields'] as $bps_k => $bps_v ) : ?>
+					<input type="hidden" name="<?php echo esc_attr( (string) $bps_k ); ?>" value="<?php echo esc_attr( (string) $bps_v ); ?>">
+				<?php endforeach; ?>
+				<?php if ( '' !== $img ) : ?>
+					<figure class="bps-pp__figure">
+						<a class="bps-pp__imglink" href="<?php echo esc_url( '' !== $full_url ? $full_url : $img ); ?>" target="_blank" rel="noopener noreferrer">
+							<img class="bps-pp__img" src="<?php echo esc_url( $img ); ?>" alt="<?php echo esc_attr( $bps_alt ); ?>">
+						</a>
+						<figcaption>
+							<a class="bps-pp__zoom" href="<?php echo esc_url( '' !== $full_url ? $full_url : $img ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Bekijk de proef op volle grootte', 'borduur-patch-studio' ); ?></a>
+							<?php if ( '' !== $prev_url ) : ?>
+								· <a class="bps-pp__zoom" href="<?php echo esc_url( $prev_url ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Vorige versie bekijken', 'borduur-patch-studio' ); ?></a>
+							<?php endif; ?>
+						</figcaption>
+					</figure>
+				<?php endif; ?>
+				<?php if ( $rows ) : ?>
+					<table>
+						<?php foreach ( $rows as $bps_row ) : ?>
+							<tr>
+								<th scope="row"><?php echo esc_html( $bps_row['label'] ); ?></th>
+								<td>
+									<?php if ( ! empty( $bps_row['hex'] ) ) : ?>
+										<span class="bps-pp__sw" style="background:<?php echo esc_attr( $bps_row['hex'] ); ?>" aria-hidden="true"></span>
+									<?php endif; ?>
+									<?php echo esc_html( $bps_row['value'] ); ?>
+								</td>
+							</tr>
+						<?php endforeach; ?>
+					</table>
+				<?php endif; ?>
+				<p class="bps-pp__info"><?php esc_html_e( 'Bekijk je proef en bevestig hieronder. Pas na jouw akkoord starten we de productie. Garen- en drukkleuren kunnen licht afwijken van je scherm.', 'borduur-patch-studio' ); ?></p>
+				<?php if ( '' !== $error ) : ?>
+					<p class="bps-pp__error" role="alert" id="bps-err"><?php echo esc_html( $error ); ?></p>
+				<?php endif; ?>
+				<?php if ( 'changes' === $action ) : ?>
+					<label class="bps-pp__label" for="bps-note"><?php esc_html_e( 'Wat wil je aanpassen?', 'borduur-patch-studio' ); ?></label>
+					<textarea id="bps-note" name="note" required maxlength="2000" aria-describedby="bps-note-help"<?php echo '' !== $error ? ' aria-invalid="true"' : ''; ?>><?php echo esc_textarea( $note ); ?></textarea>
+					<p class="bps-pp__help" id="bps-note-help"><?php esc_html_e( 'Beschrijf zo concreet mogelijk wat er anders moet, bijvoorbeeld een kleur, de maat of een tekst.', 'borduur-patch-studio' ); ?></p>
+					<div class="bps-pp__bar">
+						<button type="submit" class="bps-pp__btn" data-bps-submit><?php esc_html_e( 'Verstuur mijn opmerking', 'borduur-patch-studio' ); ?></button>
+					</div>
+				<?php else : ?>
+					<label class="bps-pp__label" for="bps-note"><?php esc_html_e( 'Opmerking (optioneel)', 'borduur-patch-studio' ); ?></label>
+					<textarea id="bps-note" name="note" maxlength="2000" rows="2"><?php echo esc_textarea( $note ); ?></textarea>
+					<div class="bps-pp__bar">
+						<label class="bps-pp__check" for="bps-confirm">
+							<input type="checkbox" id="bps-confirm" name="bps_confirm" value="1" required<?php echo '' !== $error ? ' aria-invalid="true" aria-describedby="bps-err"' : ''; ?>>
+							<span><?php esc_html_e( 'Ik heb de spelling, de kleuren, de maat en het aantal nagekeken', 'borduur-patch-studio' ); ?></span>
+						</label>
+						<button type="submit" class="bps-pp__btn" data-bps-submit><?php esc_html_e( 'Ja, ik keur deze proef goed', 'borduur-patch-studio' ); ?></button>
+					</div>
+				<?php endif; ?>
+			</form>
+			<?php if ( '' !== $other_url ) : ?>
+				<p class="bps-pp__alt">
+					<a href="<?php echo esc_url( $other_url ); ?>"><?php echo esc_html( 'changes' === $action ? __( 'Toch goedkeuren', 'borduur-patch-studio' ) : __( 'Toch iets aanpassen', 'borduur-patch-studio' ) ); ?></a>
+				</p>
 			<?php endif; ?>
-			<?php if ( $rows ) : ?>
-				<table>
-					<?php foreach ( $rows as $bps_row ) : ?>
-						<tr>
-							<th scope="row"><?php echo esc_html( $bps_row['label'] ); ?></th>
-							<td>
-								<?php if ( ! empty( $bps_row['hex'] ) ) : ?>
-									<span class="bps-pp__sw" style="background:<?php echo esc_attr( $bps_row['hex'] ); ?>" aria-hidden="true"></span>
-								<?php endif; ?>
-								<?php echo esc_html( $bps_row['value'] ); ?>
-							</td>
-						</tr>
-					<?php endforeach; ?>
-				</table>
+
+		<?php elseif ( 'done' === $view || 'answered' === $view ) : ?>
+			<?php if ( '' !== $img ) : ?>
+				<figure class="bps-pp__figure">
+					<a class="bps-pp__imglink" href="<?php echo esc_url( '' !== $full_url ? $full_url : $img ); ?>" target="_blank" rel="noopener noreferrer">
+						<img class="bps-pp__img" src="<?php echo esc_url( $img ); ?>" alt="<?php echo esc_attr( $bps_alt ); ?>" style="max-width:240px">
+					</a>
+				</figure>
 			<?php endif; ?>
-			<p class="bps-pp__info"><?php echo esc_html( BPS_OP::l( __( 'Bekijk je proef en bevestig hieronder. Pas na jouw akkoord starten we de productie.', 'borduur-patch-studio' ) ) ); ?></p>
+			<?php if ( '' !== $error ) : ?>
+				<p class="bps-pp__error" role="alert"><?php echo esc_html( $error ); ?></p>
+			<?php endif; ?>
+			<?php $bps_ok = $proof && 'approved' === $proof['status']; ?>
+			<p class="<?php echo $bps_ok ? 'bps-pp__ok' : 'bps-pp__info'; ?>" role="status">
+				<?php
+				$bps_when = $proof ? BPS_OP::date_text( (string) $proof['responded_at'] ) : '';
+				if ( 'done' === $view ) {
+					echo esc_html( $bps_ok ? __( 'We starten de productie van je patch. Je hoort van ons zodra je bestelling onderweg is.', 'borduur-patch-studio' ) : __( 'We passen je ontwerp aan en sturen je een nieuwe digitale proef.', 'borduur-patch-studio' ) );
+				} elseif ( $bps_ok ) {
+					/* translators: %s: date */
+					echo esc_html( sprintf( __( 'Je hebt deze proef al goedgekeurd op %s.', 'borduur-patch-studio' ), $bps_when ) );
+				} else {
+					/* translators: %s: date */
+					echo esc_html( sprintf( __( 'Je vroeg op %s een aanpassing. We sturen je een nieuwe proef.', 'borduur-patch-studio' ), $bps_when ) );
+				}
+				?>
+			</p>
+			<?php if ( '' !== $pay_url ) : ?>
+				<p><?php esc_html_e( 'Je kunt je bestelling nu betalen. Daarna starten we de productie.', 'borduur-patch-studio' ); ?></p>
+				<p><a class="bps-pp__btn" href="<?php echo esc_url( $pay_url ); ?>" data-bps-pay><?php esc_html_e( 'Nu betalen', 'borduur-patch-studio' ); ?></a></p>
+			<?php endif; ?>
+			<?php if ( $proof && '' !== $proof['note'] ) : ?>
+				<p class="bps-pp__line"><?php esc_html_e( 'Je opmerking', 'borduur-patch-studio' ); ?></p>
+				<blockquote><?php echo esc_html( $proof['note'] ); ?></blockquote>
+			<?php endif; ?>
+			<?php if ( 'answered' === $view ) : ?>
+				<p><?php esc_html_e( 'Wil je toch nog iets wijzigen? Neem dan contact met ons op.', 'borduur-patch-studio' ); ?></p>
+			<?php endif; ?>
+
+		<?php elseif ( 'cancel_confirm' === $view ) : ?>
+			<p class="bps-pp__warn"><?php esc_html_e( 'Je hebt de proef nog niet goedgekeurd, dus je kunt je bestelling nog annuleren. Is ze nog niet betaald, dan annuleren we ze meteen. Is ze al betaald, dan nemen we contact met je op voor de terugbetaling.', 'borduur-patch-studio' ); ?></p>
 			<?php if ( '' !== $error ) : ?>
 				<p class="bps-pp__error" role="alert"><?php echo esc_html( $error ); ?></p>
 			<?php endif; ?>
@@ -137,88 +183,37 @@ if ( $use_theme ) {
 				<?php foreach ( $form['fields'] as $bps_k => $bps_v ) : ?>
 					<input type="hidden" name="<?php echo esc_attr( (string) $bps_k ); ?>" value="<?php echo esc_attr( (string) $bps_v ); ?>">
 				<?php endforeach; ?>
-				<?php if ( 'changes' === $action ) : ?>
-					<label for="bps-note"><?php echo esc_html( BPS_OP::l( __( 'Wat wil je aanpassen?', 'borduur-patch-studio' ) ) ); ?></label>
-					<textarea id="bps-note" name="note" required maxlength="2000" aria-describedby="bps-note-help"<?php echo '' !== $error ? ' aria-invalid="true"' : ''; ?>><?php echo esc_textarea( $note ); ?></textarea>
-					<p class="bps-pp__help" id="bps-note-help"><?php echo esc_html( BPS_OP::l( __( 'Beschrijf zo concreet mogelijk wat er anders moet, bijvoorbeeld een kleur, de maat of een tekst.', 'borduur-patch-studio' ) ) ); ?></p>
-					<button type="submit" class="bps-pp__btn"><?php echo esc_html( BPS_OP::l( __( 'Verstuur mijn opmerking', 'borduur-patch-studio' ) ) ); ?></button>
-				<?php else : ?>
-					<label for="bps-note"><?php echo esc_html( BPS_OP::l( __( 'Opmerking (optioneel)', 'borduur-patch-studio' ) ) ); ?></label>
-					<textarea id="bps-note" name="note" maxlength="2000" rows="3" style="min-height:80px"><?php echo esc_textarea( $note ); ?></textarea>
-					<p class="bps-pp__help"></p>
-					<button type="submit" class="bps-pp__btn"><?php echo esc_html( BPS_OP::l( __( 'Ja, ik keur deze proef goed', 'borduur-patch-studio' ) ) ); ?></button>
-				<?php endif; ?>
+				<button type="submit" class="bps-pp__btn bps-pp__btn--danger" data-bps-cancel><?php esc_html_e( 'Ja, annuleer mijn bestelling', 'borduur-patch-studio' ); ?></button>
 			</form>
 			<?php if ( '' !== $other_url ) : ?>
-				<p class="bps-pp__alt">
-					<a href="<?php echo esc_url( $other_url ); ?>">
-						<?php echo esc_html( 'changes' === $action ? BPS_OP::l( __( 'Toch goedkeuren', 'borduur-patch-studio' ) ) : BPS_OP::l( __( 'Toch iets aanpassen', 'borduur-patch-studio' ) ) ); ?>
-					</a>
-				</p>
+				<p class="bps-pp__alt"><a href="<?php echo esc_url( $other_url ); ?>"><?php esc_html_e( 'Nee, terug naar mijn proef', 'borduur-patch-studio' ); ?></a></p>
 			<?php endif; ?>
 
-		<?php elseif ( 'done' === $view ) : ?>
-			<?php if ( '' !== $bps_img ) : ?>
-				<img class="bps-pp__img" src="<?php echo esc_url( $bps_img ); ?>" alt="<?php echo esc_attr( BPS_OP::l( __( 'Digitale proef van je patch', 'borduur-patch-studio' ) ) ); ?>" style="max-width:240px">
-			<?php endif; ?>
-			<p class="<?php echo 'changes' === $action ? 'bps-pp__info' : 'bps-pp__ok'; ?>" role="status">
-				<?php
-				echo esc_html(
-					'changes' === $action
-						? BPS_OP::l( __( 'We passen je ontwerp aan en sturen je een nieuwe digitale proef.', 'borduur-patch-studio' ) )
-						: BPS_OP::l( __( 'We starten de productie van je patch. Je hoort van ons zodra je bestelling onderweg is.', 'borduur-patch-studio' ) )
-				);
-				?>
-			</p>
-			<?php if ( $proof && '' !== $proof['note'] ) : ?>
-				<p><strong><?php echo esc_html( BPS_OP::l( __( 'Je opmerking', 'borduur-patch-studio' ) ) ); ?></strong></p>
-				<blockquote><?php echo esc_html( $proof['note'] ); ?></blockquote>
-			<?php endif; ?>
+		<?php elseif ( 'cancel_done' === $view ) : ?>
+			<p class="bps-pp__info" role="status"><?php esc_html_e( 'Je bestelling is geannuleerd. Je hoeft niets meer te betalen. Je krijgt een bevestiging per e-mail.', 'borduur-patch-studio' ); ?></p>
 
-		<?php elseif ( 'answered' === $view ) : ?>
-			<?php $bps_when = $proof ? BPS_OP::date_text( (string) $proof['responded_at'] ) : ''; ?>
-			<p class="<?php echo ( $proof && 'approved' === $proof['status'] ) ? 'bps-pp__ok' : 'bps-pp__info'; ?>">
-				<?php
-				if ( $proof && 'approved' === $proof['status'] ) {
-					/* translators: %s: date */
-					echo esc_html( sprintf( BPS_OP::l( __( 'Je hebt deze proef al goedgekeurd op %s.', 'borduur-patch-studio' ) ), $bps_when ) );
-				} else {
-					/* translators: %s: date */
-					echo esc_html( sprintf( BPS_OP::l( __( 'Je vroeg op %s een aanpassing. We sturen je een nieuwe proef.', 'borduur-patch-studio' ) ), $bps_when ) );
-				}
-				?>
-			</p>
-			<p><?php echo esc_html( BPS_OP::l( __( 'Wil je toch nog iets wijzigen? Neem dan contact met ons op.', 'borduur-patch-studio' ) ) ); ?></p>
+		<?php elseif ( 'cancel_requested' === $view ) : ?>
+			<p class="bps-pp__info" role="status"><?php esc_html_e( 'Je bestelling is al betaald. We nemen zo snel mogelijk contact met je op om de annulering en de terugbetaling te regelen. We starten intussen niet met de productie.', 'borduur-patch-studio' ); ?></p>
+
+		<?php elseif ( 'stopped' === $view ) : ?>
+			<p class="bps-pp__info"><?php esc_html_e( 'Deze bestelling is geannuleerd of terugbetaald. Deze proef kan niet meer goedgekeurd worden. Is dit een vergissing? Neem dan contact met ons op.', 'borduur-patch-studio' ); ?></p>
 
 		<?php elseif ( 'superseded' === $view ) : ?>
-			<p class="bps-pp__info"><?php echo esc_html( BPS_OP::l( __( 'Gebruik de knoppen in de laatste e-mail met je digitale proef.', 'borduur-patch-studio' ) ) ); ?></p>
+			<p class="bps-pp__info"><?php esc_html_e( 'Gebruik de knoppen in de laatste e-mail met je digitale proef.', 'borduur-patch-studio' ); ?></p>
 
 		<?php else : ?>
-			<p class="bps-pp__info"><?php echo esc_html( BPS_OP::l( __( 'Controleer of je de volledige link uit de e-mail gebruikt, of neem contact met ons op.', 'borduur-patch-studio' ) ) ); ?></p>
+			<p class="bps-pp__info"><?php esc_html_e( 'Controleer of je de volledige link uit de e-mail gebruikt, of neem contact met ons op.', 'borduur-patch-studio' ); ?></p>
 		<?php endif; ?>
 
-		<?php if ( '' !== $bps_phone || '' !== $bps_mail ) : ?>
-			<p class="bps-pp__contact">
-				<?php echo esc_html( BPS_OP::l( __( 'Contact', 'borduur-patch-studio' ) ) ); ?>:
-				<?php if ( '' !== $bps_phone ) : ?>
-					<a href="tel:<?php echo esc_attr( preg_replace( '/[^0-9+]/', '', $bps_phone ) ); ?>"><?php echo esc_html( $bps_phone ); ?></a>
-				<?php endif; ?>
-				<?php if ( '' !== $bps_wa ) : ?>
-					· <a href="<?php echo esc_url( 'https://wa.me/' . $bps_wa ); ?>" rel="noopener">WhatsApp</a>
-				<?php endif; ?>
-				<?php if ( '' !== $bps_mail ) : ?>
-					· <a href="<?php echo esc_url( 'mailto:' . $bps_mail ); ?>"><?php echo esc_html( $bps_mail ); ?></a>
-				<?php endif; ?>
-			</p>
+		<?php if ( '' !== $cancel_url && in_array( $view, array( 'confirm', 'answered', 'done' ), true ) ) : ?>
+			<p class="bps-pp__alt"><a href="<?php echo esc_url( $cancel_url ); ?>" data-bps-cancel-link><?php esc_html_e( 'Bestelling annuleren', 'borduur-patch-studio' ); ?></a></p>
 		<?php endif; ?>
 	</div>
-	<?php if ( ! $use_theme ) : ?>
-		<p class="bps-pp__alt"><a href="<?php echo esc_url( home_url( '/' ) ); ?>"><?php echo esc_html( BPS_OP::l( __( 'Terug naar de website', 'borduur-patch-studio' ) ) ); ?></a></p>
-	<?php endif; ?>
-</main>
 <?php
-if ( $use_theme ) {
-	get_footer();
-} else {
-	echo "</body>\n</html>\n";
-}
+BPS_OP::template(
+	'admin/proof-page-close.php',
+	array(
+		'contact'   => $contact,
+		'use_theme' => $use_theme,
+	)
+);
