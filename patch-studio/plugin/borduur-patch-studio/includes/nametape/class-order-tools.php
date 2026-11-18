@@ -1,7 +1,8 @@
 <?php
 /**
  * Name tapes: tools on the order screen (SPEC-EXTRA §1.8): name list as CSV, printable production list / digital proof,
- * and the daily clean-up of orphan preview files (cron bps_nt_cleanup).
+ * and the daily clean-up (cron bps_nt_cleanup): orphan preview files, and anonymisation of name-tape lines of orders
+ * finished longer than nametape retention.daysAfterComplete ago (Privacy::run_retention, gdpr-juridisch-1).
  *
  * @package BorduurPatchStudio
  */
@@ -91,7 +92,7 @@ final class Order_Tools {
 	 */
 	public static function hidden_meta( $keys ): array {
 		$keys   = is_array( $keys ) ? $keys : array();
-		foreach ( array( '_bps_nt_batch', '_bps_nt_preview', '_bps_nt_unit_excl', '_bps_nt_line_excl', '_bps_nt_review', '_bps_nt_schema' ) as $k ) {
+		foreach ( array( '_bps_nt_batch', '_bps_nt_preview', '_bps_nt_unit_excl', '_bps_nt_line_excl', '_bps_nt_review', '_bps_nt_schema', Privacy::ANON_META ) as $k ) {
 			$keys[] = $k;
 		}
 		return $keys;
@@ -293,9 +294,24 @@ final class Order_Tools {
 	}
 
 	/**
-	 * Delete preview PNGs older than KEEP_DAYS that no order line references (§1.8). Returns the number removed.
+	 * Daily clean-up: anonymise name-tape lines past the retention period, then delete preview PNGs older than
+	 * KEEP_DAYS that no order line references (§1.8). Returns the number of preview files removed.
 	 */
 	public static function cleanup(): int {
+		try {
+			Privacy::run_retention();
+		} catch ( \Throwable $e ) {
+			if ( class_exists( '\BorduurPatchStudio\Logger' ) ) {
+				\BorduurPatchStudio\Logger::error( 'nametape_retention_failed', array( 'exception' => $e ) );
+			}
+		}
+		return self::cleanup_previews();
+	}
+
+	/**
+	 * Delete preview PNGs older than KEEP_DAYS that no order line references. Returns the number removed.
+	 */
+	public static function cleanup_previews(): int {
 		global $wpdb;
 		$up = wp_upload_dir( null, false );
 		if ( ! empty( $up['error'] ) ) {
@@ -303,6 +319,10 @@ final class Order_Tools {
 		}
 		$dir = trailingslashit( $up['basedir'] ) . Rest::PREVIEW_DIR;
 		if ( ! is_dir( $dir ) ) {
+			return 0;
+		}
+		Privacy::protect_dir( $dir );
+		if ( ! isset( $wpdb ) || ! is_object( $wpdb ) ) {
 			return 0;
 		}
 		$limit = time() - self::KEEP_DAYS * DAY_IN_SECONDS;

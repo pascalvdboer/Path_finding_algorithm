@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<g stroke="#0B2545" stroke-width="12" stroke-linejoin="round" stroke-linecap="round">
+<path d="M512 190 L720 250 L712 470 C704 590 620 670 512 720 C404 670 320 590 312 470 L304 250 Z" fill="#FFFFFF"/>
+<path d="M330 430 L512 330 L694 430 L694 500 L512 400 L330 500 Z" fill="#21A9E2"/>
+<path d="M512 470 L534 530 L598 532 L548 570 L566 632 L512 596 L458 632 L476 570 L426 532 L490 530 Z" fill="#E4572E"/>
+</g>
+</svg>

@@ -169,6 +169,10 @@ final class Shortcode {
 		}
 		$page['compact'] = 'yes' === $atts['compact'];
 		$cfg             = Config::public_config( $locale, $page );
+		// Help sentence built from the contact fields that are filled in (never a hard-coded phone/WhatsApp).
+		$cfg['helpLine'] = self::help_line( $locale );
+		// Blood-group consent: the exact sentence the server hashes into the stored record.
+		$cfg['privacy'] = array( 'bloodConsent' => Privacy::blood_consent_public( $locale ) );
 
 		self::register_assets();
 		wp_enqueue_style( self::STYLE );
@@ -185,11 +189,27 @@ final class Shortcode {
 		<h2><?php echo esc_html( $fr ? 'Bandes nominatives avec scratch' : 'Naamstroken met klittenband' ); ?></h2>
 		<p><?php echo esc_html( $fr ? 'Tapez un nom ou collez votre liste. Vous voyez tout de suite chaque bande.' : 'Typ een naam of plak je lijst. Je ziet meteen hoe elke strook eruitziet.' ); ?></p>
 		<p><label><?php echo esc_html( $fr ? 'Nom sur votre bande' : 'Naam op je strook' ); ?><br><input type="text" disabled placeholder="PEETERS J."></label></p>
-		<noscript><p><?php echo esc_html( $fr ? 'Cet outil a besoin de JavaScript. Appelez-nous ou écrivez-nous sur WhatsApp : nous vous aidons volontiers.' : 'Deze tool heeft JavaScript nodig. Bel of WhatsApp ons gerust: we helpen je graag verder.' ); ?></p></noscript>
+		<noscript><p><?php echo esc_html( trim( ( $fr ? 'Cet outil a besoin de JavaScript.' : 'Deze tool heeft JavaScript nodig.' ) . ' ' . $cfg['helpLine'] ) ); ?></p></noscript>
 	</div>
 </div>
 		<?php
 		return (string) ob_get_clean();
+	}
+
+	/**
+	 * "How to reach us" sentence for this locale (Help_Line, contract C4), with a neutral fallback.
+	 *
+	 * @param string $locale Locale (nl-BE | fr-BE).
+	 */
+	public static function help_line( string $locale ): string {
+		$cls = '\BorduurPatchStudio\Help_Line';
+		if ( class_exists( $cls ) && is_callable( array( $cls, 'text' ) ) ) {
+			$t = trim( (string) call_user_func( array( $cls, 'text' ), $locale ) );
+			if ( '' !== $t ) {
+				return $t;
+			}
+		}
+		return 0 === stripos( $locale, 'fr' ) ? 'N’hésitez pas à nous contacter.' : 'Neem gerust contact met ons op.';
 	}
 
 	/**

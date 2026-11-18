@@ -59,7 +59,7 @@ final class Email_Gate {
 		$store   = $credits->store();
 		$per_ip  = max( 1, (int) Config::get( 'limits.emailCodesPerIpPerHour', 5 ) );
 		$per_adr = max( 1, (int) Config::get( 'limits.emailCodesPerEmailPerHour', 3 ) );
-		$adr_key = 'email_adr|' . self::slot( $email );
+		$adr_key = 'email_adr|' . self::slot( Owner::canonical_email( $email ) ); // Aliases share one mailbox limit.
 		if ( ( '' !== $ip_hash && $store->counter_get( 'email_ip|' . $ip_hash ) >= $per_ip ) || $store->counter_get( $adr_key ) >= $per_adr ) {
 			return new \WP_Error( 'bps_ai_slow_down', Text::t( 'email.too_many', $lang ), array( 'status' => 429, 'retryAfter' => HOUR_IN_SECONDS ) );
 		}
@@ -125,7 +125,15 @@ final class Email_Gate {
 
 		$email_owner = Owner::for_email( $email );
 		Owner::remember( $email_owner, null, $email, true );
-		$lot     = $credits->grant_free_email( $email_owner );
+		// One free bonus per mailbox: name+1@…, n.a.m.e@gmail.com … are the same inbox (abuse check only).
+		$canon_key = 'free_email_canon|' . self::slot( Owner::canonical_email( $email ) );
+		$lot       = null;
+		if ( $credits->store()->counter_get( $canon_key ) < 1 ) {
+			$lot = $credits->grant_free_email( $email_owner );
+			if ( $lot ) {
+				$credits->store()->counter_incr( $canon_key, 400 * DAY_IN_SECONDS );
+			}
+		}
 		$granted = $lot ? (int) Config::get( 'free.withEmail', 2 ) : 0;
 
 		// Weaker keys flow into the strongest one: anonymous browser → e-mail → account.

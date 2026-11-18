@@ -73,11 +73,27 @@ export function createColorPicker(ctx) {
   const status = h('p.bps-cp__status', { role: 'status' });
   const allBtn = h('button.bps-btn.bps-btn--small.bps-btn--ghost.bps-cp__all', { type: 'button' });
   const autoBtn = h('button.bps-btn.bps-btn--small.bps-btn--link.bps-cp__auto', { type: 'button', hidden: true });
-  const el = h('dialog.bps-dialog.bps-cp', { 'aria-labelledby': titleId },
+  // Non-modal side panel (desktop) / low bottom sheet (phone): the patch stays visible and sharp while you choose,
+  // hover or focus on a colour shows it on the canvas right away, a click commits it (critique-2 #1).
+  const el = h('div.bps-dialog.bps-cp', { role: 'dialog', 'aria-modal': 'false', 'aria-labelledby': titleId, hidden: true },
     h('div.bps-dialog__head', h('div', title, sub), h('button.bps-ibtn.bps-panel__close', { type: 'button', 'aria-label': t('ui.panel.close'), onclick: () => close() }, icon('bad'))),
     h('div.bps-dialog__body', q, fams, grid, h('div.bps-cp__foot', status, autoBtn, allBtn)));
-  el.addEventListener('click', (e) => { if (e.target === el) close(); });
-  el.addEventListener('close', () => { if (state) { const st = state; state = null; if (st.onClose) st.onClose(); } });
+  el.addEventListener('keydown', (e) => { if (e.key === 'Escape') { e.preventDefault(); close(); } });
+  let hoverT = 0;
+  const preview = (x) => {
+    clearTimeout(hoverT);
+    if (!state || !state.patchFor || !ctx.previewPatch) return;
+    if (!x) { hoverT = setTimeout(() => ctx.previewPatch(null), 60); return; }
+    ctx.previewPatch(state.patchFor(ensureThread(config, x)));
+  };
+  grid.addEventListener('pointerleave', () => preview(null));
+  grid.addEventListener('focusout', (e) => { if (!grid.contains(e.relatedTarget)) preview(null); });
+  const outside = (e) => {
+    if (!state || el.contains(e.target)) return;
+    // clicks in the canvas pick another colour area; anything else closes the picker
+    if (e.target.closest && e.target.closest('.bps-preview__canvas, .bps-swbtn, [data-pi]')) return;
+    close();
+  };
 
   let state = null, fam = 'all', showAll = false;
   const curated = () => (config.threads || []).filter((x) => !x.fullCard).map((x) => ({ ...x, family: familyOf(x.hex, x.family) }));
@@ -102,6 +118,7 @@ export function createColorPicker(ctx) {
     grid.replaceChildren(...items.slice(0, 420).map((x) => h('button.bps-cp__sw' + (x.code === cur ? '.is-on' : ''), {
       type: 'button', role: 'option', 'aria-selected': String(x.code === cur), title: `${x.code} · ${L(x.name)}`, 'data-code': x.code,
       'aria-label': `Polyneon ${x.code} ${L(x.name)}`, onclick: () => pick(x),
+      onpointerenter: (e) => { if (e.pointerType !== 'touch') preview(x); }, onfocus: () => preview(x),
     }, h('span.bps-cp__chip', { style: { background: x.hex }, 'aria-hidden': 'true' }), h('span.bps-cp__code', x.code))));
     text(status, items.length ? t('ui.cp.count', { n: items.length }) : t('ui.cp.none'));
     allBtn.hidden = showAll && !!fullCard;
@@ -130,19 +147,25 @@ export function createColorPicker(ctx) {
     const th = ensureThread(config, x);
     const s = state;
     close();
+    if (s && s.patchFor) ctx.store.set(s.patchFor(th));
     if (s && s.onPick) s.onPick(th);
   }
   function close() {
     const st = state;
     state = null;
-    if (el.open) { if (el.close) el.close(); else el.removeAttribute('open'); }
+    clearTimeout(hoverT);
+    if (ctx.previewPatch) ctx.previewPatch(null);
+    el.hidden = true;
+    el.classList.remove('is-open');
+    document.removeEventListener('pointerdown', outside, true);
     if (st && st.onClose) st.onClose();
     const back = st && st.returnFocus;
     if (back && back.focus && back.isConnected) back.focus({ preventScroll: true });
   }
 
   /**
-   * @param {object} o  {title, sub, current (code), onPick(thread), onAuto?, autoLabel?, returnFocus?}
+   * @param {object} o  {title, sub, current (code), patchFor(thread) → store patch (previewed on hover, set on click),
+   *                    onPick?(thread), onAuto?, autoLabel?, returnFocus?}
    */
   function open(o) {
     state = { ...o, returnFocus: o.returnFocus || document.activeElement };
@@ -156,7 +179,9 @@ export function createColorPicker(ctx) {
     showAll = !!(o.current && !curated().some((x) => x.code === String(o.current)) && fullCard);
     if (!el.parentNode) ctx.root.querySelector('.bps-app').appendChild(el);
     draw();
-    if (el.showModal) { if (!el.open) el.showModal(); } else el.setAttribute('open', '');
+    el.hidden = false;
+    el.classList.add('is-open');
+    setTimeout(() => { if (state) document.addEventListener('pointerdown', outside, true); }, 0);
     const on = grid.querySelector('.is-on');
     if (on) on.scrollIntoView({ block: 'nearest' });
     if (!ctx.isMobile || !ctx.isMobile()) q.focus({ preventScroll: true });

@@ -104,15 +104,15 @@ function frame(shape, c1, fill, sw) {
   const st = `stroke="${c1}" stroke-width="${sw}" fill="${fill}"`;
   switch (shape) {
     case 'oval':
-      return [`<ellipse cx="512" cy="512" rx="486" ry="370" ${st}/>`, 0.62, 0];
+      return [`<ellipse cx="512" cy="512" rx="486" ry="370" ${st}/>`, 0.72, 0];
     case 'rect':
-      return [`<rect x="40" y="170" width="944" height="684" rx="40" ${st}/>`, 0.6, 0];
+      return [`<rect x="40" y="170" width="944" height="684" rx="40" ${st}/>`, 0.68, 0];
     case 'rounded':
-      return [`<rect x="40" y="120" width="944" height="784" rx="150" ${st}/>`, 0.66, 0];
+      return [`<rect x="40" y="120" width="944" height="784" rx="150" ${st}/>`, 0.78, 0];
     case 'shield':
-      return [`<path d="M512 40 L944 150 L944 470 C944 700 760 880 512 984 C264 880 80 700 80 470 L80 150 Z" ${st}/>`, 0.66, -30];
+      return [`<path d="M512 40 L944 150 L944 470 C944 700 760 880 512 984 C264 880 80 700 80 470 L80 150 Z" ${st}/>`, 0.8, -40];
     default:
-      return [`<circle cx="512" cy="512" r="480" ${st}/>`, 0.7, 0];
+      return [`<circle cx="512" cy="512" r="480" ${st}/>`, 0.86, 0];
   }
 }
 
@@ -353,6 +353,7 @@ export function createMockApi(o = {}) {
         freePaused: false,
         emailGate: { offer: 2, done: st.emailDone },
         packs,
+        validityMonths: 24,
         orderCredit: { percent: 100, minArticleIncl: 50, validMonths: 12 },
         packsBuyable: o.packsBuyable !== false,
         limits: { descriptionMaxChars: 400, refineMaxChars: 200, textMaxChars: 60 },

@@ -519,10 +519,10 @@
       "embleem van"
     ],
     "copyIntent": [
-      "\\b(namaken|nagemaakt|nabootsen|kopieer|kopieren|kopie van|copie de|copier|reproduire|imiter|replica|precies zoals|exactement comme|zoals het logo van|comme le logo de|namaak|contrefacon|contrefait)\\b"
+      "\\b(namaken|nagemaakt|nabootsen|kopieer|kopieren|kopie van|copie de|copier|reproduire|imiter|replica|precies zoals|exactement comme|zoals het logo van|comme le logo de|namaak|contrefacon|contrefait|in de stijl van het logo|dans le style du logo)\\b"
     ],
     "officialInsignia": [
-      "\\b(politie|police|polizei|defensie|defense|armee|leger|armée|gendarmerie|douane|brandweer\\s+logo|logo\\s+pompiers|para-commando|paracommando|special forces|navy seals?|seals?\\s+team|swat|fbi|cia|interpol|ambulance\\s+logo|staatsveiligheid|olympische ringen|anneaux olympiques|olympic rings)\\b"
+      "\\b(politie|police|polizei|defensie|defense|armee|leger|armée|gendarmerie|douane|brandweer\\s+logo|logo\\s+pompiers|para-commando|paracommando|special forces|navy seals?|seals?\\s+team|swat|fbi|cia|interpol|ambulance\\s+logo|staatsveiligheid|olympische ringen|anneaux olympiques|olympic rings|stadswapen|gemeentewapen|wapenschild van (de )?(stad|gemeente|provincie)|blason de la (ville|commune)|armoiries de la (ville|commune))\\b"
     ],
     "person": [
       "\\b(lijkt op|gelijkend op|ressemble a|ressemblant a|ressemblant|bekende vlaming|beroemdheid|celebrite|celebrity|koning filip|roi philippe|koningin mathilde|trump|biden|poetin|putin|elon musk|messi|ronaldo|taylor swift)\\b",

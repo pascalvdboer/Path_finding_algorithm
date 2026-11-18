@@ -84,13 +84,15 @@ test('demo: built-in example → advice → all steps → order (desktop)', { sk
 
 test('demo: extra samples (verloop, foto, vlak logo) each give consistent advice', { skip }, async () => {
   const { page, ctx, problems } = await open();
-  const n = await page.locator('#demo-try button').count();
+  // The demo's example files live in the studio's start screen (critique-1 #4: no separate demo bar).
+  const n = await page.locator('.bps-studio [data-demo-sample]').count();
   assert.equal(n, 3);
   const tops = [];
   for (let i = 0; i < n; i++) {
     await page.evaluate(() => { window.BPS_DEMO.lastAdvice = null; });
     // Loading another example replaces the current design (as a customer would do).
-    await page.locator('#demo-try button').nth(i).click();
+    await page.evaluate(() => window.BPS_DEMO.app.ctx.go(0)); // back to the start screen, as "Terug" does
+    await page.locator('.bps-studio [data-demo-sample]').nth(i).click();
     await waitAdvice(page);
     await page.waitForTimeout(1500); // the UI follows the advice until it is stable
     const a = await page.evaluate(() => window.BPS_DEMO.lastAdvice);
@@ -126,7 +128,7 @@ test('demo: phone 390 px, text-only patch with a text layer, no horizontal scrol
 test('demo: phone 390 px with the photo sample + FR', { skip }, async () => {
   const { page, ctx, problems } = await open({ width: 390, query: '?lang=fr' });
   assert.equal(await page.evaluate(() => document.documentElement.lang), 'fr-BE');
-  await page.locator('#demo-try button').nth(1).click();
+  await page.locator('.bps-studio [data-demo-sample]').nth(1).click();
   await waitAdvice(page);
   assert.equal(await hscroll(page), 0);
   const { scroll } = await walk(page, 'fr', { checkScroll: true });

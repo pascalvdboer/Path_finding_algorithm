@@ -21,6 +21,9 @@ final class Rest {
 
 	const NS = 'patch-studio/v1';
 
+	/** WooCommerce session key for dismissed service offers (only when a session already exists). */
+	const SESSION_DISMISSED = 'bps_svc_dismissed';
+
 	/** @var Credits|null Tests. */
 	public static $credits = null;
 
@@ -476,7 +479,8 @@ final class Rest {
 	}
 
 	/**
-	 * POST /services/dismiss {serviceId, designRef} → remember "Nee, dank je" (WC session, else transient per owner).
+	 * POST /services/dismiss {serviceId, designRef} → remember "Nee, dank je" (existing owner and/or WC session; never
+	 * a new cookie).
 	 *
 	 * @param WP_REST_Request $r Request.
 	 * @return WP_REST_Response|WP_Error
@@ -508,12 +512,35 @@ final class Rest {
 	 * @return string[]
 	 */
 	public static function dismissed_list(): array {
+		$out   = array();
 		$owner = Owner::current();
 		if ( '' !== $owner ) {
-			$v = get_transient( 'bps_svc_dis_' . substr( md5( $owner ), 0, 24 ) );
-			return is_array( $v ) ? array_values( array_map( 'strval', $v ) ) : array();
+			$v   = get_transient( 'bps_svc_dis_' . substr( md5( $owner ), 0, 24 ) );
+			$out = is_array( $v ) ? array_values( array_map( 'strval', $v ) ) : array();
 		}
-		return array();
+		$session = self::wc_session();
+		if ( $session ) {
+			$v   = $session->get( self::SESSION_DISMISSED );
+			$out = array_values( array_unique( array_merge( $out, is_array( $v ) ? array_map( 'strval', $v ) : array() ) ) );
+		}
+		return $out;
+	}
+
+	/**
+	 * The visitor's existing WooCommerce session (never starts one: that would set a cookie).
+	 *
+	 * @return object|null
+	 */
+	private static function wc_session() {
+		if ( ! function_exists( 'WC' ) ) {
+			return null;
+		}
+		$wc = WC();
+		$s  = is_object( $wc ) && isset( $wc->session ) ? $wc->session : null;
+		if ( ! is_object( $s ) || ! method_exists( $s, 'get' ) || ! method_exists( $s, 'set' ) ) {
+			return null;
+		}
+		return ( ! method_exists( $s, 'has_session' ) || $s->has_session() ) ? $s : null;
 	}
 
 	/**
@@ -534,14 +561,20 @@ final class Rest {
 	}
 
 	/**
-	 * Store the list (30 days, like the browser id).
+	 * Store the list: on the existing owner (30 days, like the browser id) and/or the existing WooCommerce session.
+	 * "No thanks" is a preference, so it never creates the bps_ai_sid cookie or a session (gdpr-juridisch-11):
+	 * without either, nothing is stored on the server and the client remembers it for its own session.
 	 *
 	 * @param string[] $list List.
 	 */
 	private static function store_dismissed( array $list ): void {
-		$owner = self::owner( true );
+		$owner = self::owner( false );
 		if ( '' !== $owner ) {
 			set_transient( 'bps_svc_dis_' . substr( md5( $owner ), 0, 24 ), $list, 30 * DAY_IN_SECONDS );
+		}
+		$session = self::wc_session();
+		if ( $session ) {
+			$session->set( self::SESSION_DISMISSED, $list );
 		}
 	}
 }

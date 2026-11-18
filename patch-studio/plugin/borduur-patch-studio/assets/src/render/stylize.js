@@ -9,6 +9,8 @@
  * Light comes from the top left everywhere (relief, sheen, bevels, engraving walls).
  */
 
+import { regionDistance } from './field.js';
+
 const LIGHT = -Math.PI * 0.75; // direction the light comes FROM (top-left), screen radians
 
 /* Lookup tables (lazy): thread cross-section profile sin(pi t), and its 6th power for specular. */
@@ -58,8 +60,12 @@ export function analyzeComponents(labels) {
     comp, n,
     cos: new Float32Array(n), sin: new Float32Array(n), cx: new Float32Array(n), cy: new Float32Array(n),
     radius: new Float32Array(n), thick: new Float32Array(n), mode: new Uint8Array(n), area: new Float32Array(n),
-    ring: new Uint8Array(n), width: w, height: h,
+    ring: new Uint8Array(n), colW: new Float32Array(n), width: w, height: h,
   };
+  // column width per region = 2 × the deepest point of its distance field (label px). A digitiser chooses satin or
+  // tatami on this width, not on the topology (holes), so every letter of one text gets the same stitch (critique-2 #12).
+  const dist = regionDistance(labels);
+  for (let i = 0; i < N; i++) { const c = comp[i]; if (c >= 0 && dist[i] * 2 > out.colW[c]) out.colW[c] = dist[i] * 2; }
   for (let c = 0; c < n; c++) {
     const [k, sx, sy, sxx, syy, sxy, per] = acc[c];
     const mx = sx / k, my = sy / k;
@@ -87,12 +93,13 @@ export function analyzeComponents(labels) {
  */
 export function chooseModes(comps, mmPerLabelPx, satinMaxMm = 7) {
   for (let c = 0; c < comps.n; c++) {
-    const tMm = comps.thick[c] * mmPerLabelPx;
+    // satin only where the column is narrow enough for one stitch to span it (±7 mm); wider → tatami fill
+    const wMm = (comps.colW ? comps.colW[c] : comps.thick[c]) * mmPerLabelPx;
     const aMm2 = comps.area[c] * mmPerLabelPx * mmPerLabelPx;
-    if (aMm2 < 2.5 && tMm <= satinMaxMm) {
+    if (aMm2 < 2.5 && wMm <= satinMaxMm) {
       // tiny specks: one calm common direction instead of a noisy mix of angles
       comps.mode[c] = 0; comps.cos[c] = 0.8776; comps.sin[c] = -0.4794;
-    } else if (tMm > satinMaxMm || (aMm2 > 60 && tMm > 1.8)) comps.mode[c] = 2; // wide or large (ground with holes): tatami fill
+    } else if (wMm > satinMaxMm) comps.mode[c] = 2;
     else comps.mode[c] = comps.ring[c] ? 1 : 0;
   }
   return comps;

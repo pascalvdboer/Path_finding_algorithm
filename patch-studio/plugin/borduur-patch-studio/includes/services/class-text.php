@@ -313,9 +313,29 @@ final class Text {
 			'nl' => 'Je herroeping is goed ontvangen. We betalen {amount} manueel terug binnen 14 dagen; je krijgt een mail zodra het gebeurd is.',
 			'fr' => 'Votre rétractation a bien été reçue. Nous remboursons {amount} manuellement dans les 14 jours ; vous recevrez un e-mail dès que c\'est fait.',
 		),
+		'cart.pack_terms'           => array(
+			'nl' => 'Voorwaarden',
+			'fr' => 'Conditions',
+		),
+		'svc_withdraw.subject'      => array(
+			'nl' => 'Herroeping ontvangen: bestelling {nr}',
+			'fr' => 'Rétractation reçue : commande {nr}',
+		),
+		'svc_withdraw.done'         => array(
+			'nl' => 'Je herroeping is bevestigd. We betalen {amount} terug via je oorspronkelijke betaalmethode.',
+			'fr' => 'Votre rétractation est confirmée. Nous remboursons {amount} via votre moyen de paiement initial.',
+		),
+		'svc_withdraw.done_started' => array(
+			'nl' => 'Je herroeping is bevestigd. We stoppen het werk en mailen je binnen 14 dagen wat we terugbetalen.',
+			'fr' => 'Votre rétractation est confirmée. Nous arrêtons le travail et vous indiquons par e-mail, dans les 14 jours, le montant remboursé.',
+		),
+		'svc_withdraw.email_line'   => array(
+			'nl' => 'Bedenk je je binnen 14 dagen voor een dienst die nog niet volledig uitgevoerd is?',
+			'fr' => 'Vous changez d\'avis dans les 14 jours pour un service qui n\'est pas encore entièrement exécuté ?',
+		),
 		'account.guest_title'    => array(
-			'nl' => 'Je ontwerppakket herroepen',
-			'fr' => 'Vous rétracter de votre pack design',
+			'nl' => 'Je bestelling herroepen',
+			'fr' => 'Vous rétracter de votre commande',
 		),
 		'account.link_invalid'   => array(
 			'nl' => 'Deze link is verlopen of klopt niet. Log in op je account of antwoord op je bevestigingsmail, dan helpen we je verder.',

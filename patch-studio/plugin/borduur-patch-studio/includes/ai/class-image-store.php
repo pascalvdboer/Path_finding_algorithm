@@ -225,7 +225,8 @@ final class Image_Store {
 		$ihdr_len = unpack( 'N', substr( $png, 8, 4 ) )[1];
 		$cut      = 8 + 12 + $ihdr_len;
 		$comment  = self::comment( $provider, $model );
-		$chunks   = self::itxt( 'Description', $comment ) . self::itxt( 'XML:com.adobe.xmp', self::xmp( self::source_type(), $comment ) );
+		// tEXt "Comment" (04 §1.2: simple readers), iTXt "Description" and the XMP packet with the IPTC source type.
+		$chunks   = self::text_chunk( 'Comment', $comment ) . self::itxt( 'Description', $comment ) . self::itxt( 'XML:com.adobe.xmp', self::xmp( self::source_type(), $comment ) );
 		return substr( $png, 0, $cut ) . $chunks . substr( $png, $cut );
 	}
 
@@ -270,6 +271,17 @@ final class Image_Store {
 	private static function source_type(): string {
 		$legal = Module::legal();
 		return (string) ( $legal['marking']['iptcDigitalSourceType'] ?? 'http://cv.iptc.org/newscodes/digitalsourcetype/trainedAlgorithmicMedia' );
+	}
+
+	/**
+	 * PNG tEXt chunk (Latin-1; non-ASCII bytes are replaced by '?').
+	 *
+	 * @param string $keyword Keyword (1–79 chars).
+	 * @param string $text    Text.
+	 */
+	private static function text_chunk( string $keyword, string $text ): string {
+		$data = $keyword . "\0" . preg_replace( '/[^\x20-\x7E]/', '?', $text );
+		return pack( 'N', strlen( $data ) ) . 'tEXt' . $data . pack( 'N', crc32( 'tEXt' . $data ) );
 	}
 
 	/**

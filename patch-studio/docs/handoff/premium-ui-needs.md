@@ -76,3 +76,31 @@
 - **gdpr-juridisch-11 (cookieloos tot de eerste AI-actie):** vraag `GET /ai/status` pas op als de klant de AI-sectie echt opent, niet bij het laden van de studio. Bewaar het wegklikken van een dienstaanbod ("Nee, bedankt") in `sessionStorage` (`bps:svc:dismissed`, try/catch) en niet via een serveroproep die een cookie zet.
 - **gdpr-juridisch-12 (uitleg bij upload concreet):** vervang in `ui.empty.privacy` de zin "We bewaren het niet langer dan nodig." door de echte termijn uit `config.retention.orphanDays` (komt mee in de public config): "Bestel je niet, dan wissen we het na {days} dagen." / "Sans commande, nous le supprimons après {days} jours." De link naar het privacybeleid blijft.
 - **gdpr-juridisch-14 (elke cookietool):** `ctx.track` controleert eerst `window.wp_has_consent?.('statistics')` (WP Consent API) of `config.consent.statistics === true`, en pas daarna `getCkyConsent`. Zonder een van beide wordt er niets gepusht.
+
+## [P01] REST-beveiliging: wat de klant-UI moet overnemen (18-11)
+- **security-4 (opnieuw bestellen = kloon):** `POST /cart` antwoordt bij een al besteld ontwerp met extra velden `cloned: true`, `designId`, `token` en `ref` (zodra `Designs::clone()` van P06 er is). Neem ze meteen over in de state en in sessionStorage, en gebruik ze voor alle latere calls (`/email`, `/quotes`, herstel, `revise`). Toon desgewenst de nieuwe referentie. Ontbreken de velden, dan blijft alles zoals het was.
+- **security-5 (token in een header):** `GET /designs/{id}` aanvaardt nu de header `X-BPS-Design-Token` naast `?token=`. Stuur het token liefst in de header, zodat het niet in URL's, serverlogs of analytics belandt. Lees een herstellink bij voorkeur uit het fragment `#bps=ID.TOKEN` en verwijder het fragment met `history.replaceState` vóór analytics laadt.
+- **security-8 (Origin-controle):** alle publieke schrijfroutes (`/designs`, `/cart`, `/quotes`, `/designs/{id}/email` en die van andere modules via `Guard::public_write`) weigeren een Origin of Referer van een andere site met 403 `bps_bad_origin`. Bij normaal gebruik komt dat niet voor. Toon dan de algemene foutmelding en probeer niet automatisch opnieuw (anders dan bij `bps_bad_token`).
+- **security-3 (opslag):** `POST /designs` kan 507 `bps_storage` geven (schijf vol of opslagplafond bereikt). Toon de servertekst (die biedt e-mail/WeTransfer aan) met dezelfde opmaak als `bps_too_big`, en laat de klant het ontwerp zonder bestand verder afwerken of een offerte vragen. Een preview-PNG groter dan 8 MB geeft 413 `bps_too_big`: maak de preview 1200 px en comprimeer gewoon als PNG; probeer bij 413 eventueel één keer opnieuw met een kleinere preview (bv. 900 px).
+- **tests-ci-6 (te grote upload):** een request groter dan `post_max_size` geeft nu 413 `bps_too_big` met "Je bestand is groter dan … MB" in plaats van een misleidende ontwerpfout. De UI hoeft niets te wijzigen; controleer wel vooraf `file.size` tegen de limiet uit de config, zodat de klant niet eerst een lange upload afwacht.
+- **gdpr-juridisch-10 (offerte zonder toestemmingsvinkje):** `POST /quotes` eist `consent` niet meer (rechtsgrond art. 6.1.b AVG). Vervang het verplichte vinkje door de bestaande zin `ui.quote.privacy` met een link naar het privacybeleid. Een meegestuurd `consent` wordt genegeerd, dus de huidige UI blijft werken.
+- **productisering-4 (hulpzin):** de 429-melding van de server kiest zelf de juiste hulpzin uit de contactinstellingen (telefoon, WhatsApp, e-mail of de offertepagina). Toon `message` uit het antwoord ongewijzigd en plak er geen eigen "bel of WhatsApp ons" achter.
+- **Rate limit:** de limieten tellen nu echt per verzoek (eerder telde elk verzoek dubbel, waardoor bv. 5 offertes per uur er in de praktijk 3 waren). Bij 429 niet automatisch opnieuw proberen.
+
+## [P02] Taalbundels en verder splitsen van de studiobundel (18-11)
+- **Wat er nu is (geen wijziging in ui/main.js nodig):** `npm run build` maakt naast `assets/dist/patch-studio.js` (tweetalig,
+  voor demo/dev/terugval) ook `assets/dist/nl/patch-studio.js` en `assets/dist/fr/patch-studio.js`. Een esbuild-plugin
+  houdt in elke `*/messages.js` alleen de doeltaal over (FR aangevuld met NL voor ontbrekende sleutels). De vorm
+  `{nl:{…}, fr:{…}}` blijft, dus `createT` werkt ongewijzigd; in de NL-bundel is `fr` leeg, in de FR-bundel `nl`.
+  PHP (`Plugin::app_bundle()`) kiest de bundel per `Settings::public_locale()`. Gewonnen: ±13 kB gzip (131,4 → 117,8 / 118,9).
+- **Afspraak voor het UI-team:** lees teksten alleen via `createT`/`t()` met `config.locale`. Geen code die rechtstreeks
+  `catalog.fr[...]` of `catalog.nl[...]` leest in een andere taal dan `config.locale`, en geen taalwissel in de browser
+  zonder herladen (de andere taal zit niet in de bundel). Wie dat toch nodig heeft: filter `bps_app_bundle_lang` → `'all'`.
+- **Nodig om het doel ≤ 110 kB gzip per taal te halen (vraagt main.js/ui, dus voor jullie):** laad `render/**` (±32 kB,
+  pas nodig na de eerste upload of sjabloonkeuze) en de adviesteksten van `advice/**` lui via `import()`. esbuild met
+  `format: 'esm'` + `splitting: true` of een tweede IIFE-bundel die `main.js` met `loadScriptOnce()` laadt (zoals de
+  AI-bundel). Laat het weten, dan pas ik `scripts/build.mjs` (entries + budget) aan.
+- **Nieuwe modulebundels in de build:** `patch-studio-ai.js`, `patch-studio-ai-mock.js` (enkel demo/test) en
+  `patch-studio-nametape.js` worden nu gebouwd. De cross-sell-bundel nog niet: zodra hij bestaat zet
+  `Crosssell\Module` het paneel aan, en de studio opent het nog niet na "In winkelmand" (handoff extra-products 2.3).
+  Zeg het wanneer `ui/flows.js` dat doet, dan komt de entry `crosssell/index.js` erbij.

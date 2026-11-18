@@ -63,6 +63,34 @@ final class Owner {
 	}
 
 	/**
+	 * Mailbox behind an address, for abuse checks only (free-round dedupe, code limits): drops a +tag on every
+	 * domain and the dots of Gmail addresses, maps googlemail.com to gmail.com. Never used to send mail or as the
+	 * owner key, so a customer keeps exactly the address they typed.
+	 *
+	 * @param string $email E-mail.
+	 */
+	public static function canonical_email( string $email ): string {
+		$email = self::normalize_email( $email );
+		$at    = strrpos( $email, '@' );
+		if ( false === $at ) {
+			return $email;
+		}
+		$local  = substr( $email, 0, $at );
+		$domain = substr( $email, $at + 1 );
+		$plus   = strpos( $local, '+' );
+		if ( false !== $plus && $plus > 0 ) {
+			$local = substr( $local, 0, $plus );
+		}
+		if ( 'googlemail.com' === $domain ) {
+			$domain = 'gmail.com';
+		}
+		if ( 'gmail.com' === $domain ) {
+			$local = str_replace( '.', '', $local );
+		}
+		return $local . '@' . $domain;
+	}
+
+	/**
 	 * Valid owner key?
 	 *
 	 * @param string $key Key.
@@ -295,6 +323,15 @@ final class Owner {
 			$ip = (string) \BorduurPatchStudio\Rest\Guard::client_ip();
 		} else {
 			$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+		}
+		if ( false !== strpos( $ip, ':' ) ) {
+			// IPv6: one line owns a whole /64, so the /64 is the bucket (same rule as AI\Identity::ip_bucket).
+			$bin = @inet_pton( $ip ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+			if ( false !== $bin && 16 === strlen( $bin ) ) {
+				$ip = 0 === strncmp( $bin, str_repeat( "\0", 10 ) . "\xff\xff", 12 )
+					? (string) inet_ntop( substr( $bin, 12 ) )
+					: (string) inet_ntop( substr( $bin, 0, 8 ) . str_repeat( "\0", 8 ) ) . '/64';
+			}
 		}
 		return hash_hmac( 'sha256', $ip, function_exists( 'wp_salt' ) ? wp_salt( 'nonce' ) : 'bps' );
 	}

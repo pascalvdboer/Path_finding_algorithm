@@ -7,6 +7,8 @@
 
 namespace BorduurPatchStudio\Rest;
 
+use BorduurPatchStudio\I18n;
+use BorduurPatchStudio\Logger;
 use BorduurPatchStudio\Pricing;
 use BorduurPatchStudio\Uploads;
 use BorduurPatchStudio\Woo\Cart;
@@ -28,8 +30,9 @@ defined( 'ABSPATH' ) || exit;
  *   POST /quote                      → PriceQuote (server engine)
  *   POST /designs  (multipart)       → 201 {designId, ref, token, previewUrl}
  *   GET  /designs/{id}?token=        → {designId, ref, payload, previewUrl, originalUrl|null}
+ *                                      (token also accepted in header X-BPS-Design-Token, preferred)
  *   GET  /designs/{id}/original      → file (signed, 1 h; used by originalUrl)
- *   POST /cart                       → {ok, cartUrl, cartCount, cartItemKey, quote}
+ *   POST /cart                       → {ok, cartUrl, cartCount, cartItemKey, quote[, cloned, designId, token, ref]}
  *   POST /quotes                     → {ok, ref}
  *   POST /designs/{id}/email         → {ok}
  */
@@ -37,14 +40,24 @@ final class Routes {
 
 	const NS = 'patch-studio/v1';
 
+	/** Header that may carry the design token instead of ?token= (keeps it out of URLs and logs). */
+	const DESIGN_TOKEN_HEADER = 'x-bps-design-token';
+
+	/** Default max size of the browser-made preview PNG (1200 px; a photo-like canvas stays far below this). */
+	const PREVIEW_MAX_BYTES = 8388608;
+
 	/** @var bool Locale switched for this request. */
 	private static $switched = false;
+
+	/** @var bool The switch went through I18n (contract C9) and must be undone with I18n::restore(). */
+	private static $switched_i18n = false;
 
 	/**
 	 * Hooks.
 	 */
 	public static function register(): void {
 		add_action( 'rest_api_init', array( __CLASS__, 'routes' ) );
+		Guard::register();
 		add_filter( 'rest_pre_dispatch', array( __CLASS__, 'pre_dispatch' ), 10, 3 );
 		add_filter( 'rest_post_dispatch', array( __CLASS__, 'post_dispatch' ), 10, 3 );
 	}
@@ -94,7 +107,7 @@ final class Routes {
 					),
 					'token' => array(
 						'type'     => 'string',
-						'required' => true,
+						'required' => false, // Or header X-BPS-Design-Token.
 					),
 				),
 			)
@@ -172,7 +185,19 @@ final class Routes {
 				$locale = $m[1];
 			}
 		}
-		if ( '' !== $locale && 'fr' === Config::lang( $locale ) && 'fr' !== Config::lang() ) {
+		if ( '' === $locale ) {
+			return $result;
+		}
+		$lang = Config::lang( $locale );
+		if ( $lang === Config::lang() ) {
+			return $result;
+		}
+		if ( is_callable( array( I18n::class, 'switch_lang' ) ) ) {
+			// Contract C9: picks the best installed fr_* locale and always loads our own catalogue.
+			self::$switched      = (bool) I18n::switch_lang( $lang );
+			self::$switched_i18n = self::$switched;
+		} elseif ( 'fr' === $lang ) {
+			// Fallback until I18n (P11) is present.
 			self::$switched = (bool) switch_to_locale( 'fr_BE' );
 		}
 		return $result;
@@ -199,8 +224,13 @@ final class Routes {
 			$response->header( 'X-Robots-Tag', 'noindex' );
 		}
 		if ( self::$switched ) {
-			restore_previous_locale();
-			self::$switched = false;
+			if ( self::$switched_i18n ) {
+				I18n::restore();
+			} else {
+				restore_previous_locale();
+			}
+			self::$switched      = false;
+			self::$switched_i18n = false;
 		}
 		return $response;
 	}
@@ -230,6 +260,87 @@ final class Routes {
 		return new WP_Error( $code, $msg, array( 'status' => $status ) );
 	}
 
+	/**
+	 * Log without personal data (contract C1). Falls back to error_log with WP_DEBUG_LOG until Logger exists.
+	 *
+	 * @param string $level   error|warning|info|debug.
+	 * @param string $event   Event name.
+	 * @param array  $context Context (no e-mail addresses, names or IPs).
+	 */
+	private static function log( string $level, string $event, array $context = array() ): void {
+		if ( is_callable( array( Logger::class, $level ) ) ) {
+			call_user_func( array( Logger::class, $level ), $event, $context );
+			return;
+		}
+		if ( defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
+			error_log( 'borduur-patch-studio [' . $level . '] ' . $event . ' ' . wp_json_encode( $context ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions
+		}
+	}
+
+	/**
+	 * 413 with the customer-facing upload limit.
+	 */
+	private static function too_big(): WP_Error {
+		return self::error(
+			'bps_too_big',
+			/* translators: %s: max size in MB */
+			sprintf( __( 'Je bestand is groter dan %s MB. Stuur het gerust via WeTransfer of per e-mail, dan bekijken we het samen.', 'borduur-patch-studio' ), Config::num( Uploads::max_bytes() / MB_IN_BYTES, 0 ) ),
+			413
+		);
+	}
+
+	/**
+	 * Request body larger than post_max_size? PHP then silently empties $_POST and $_FILES, which would
+	 * otherwise surface as a misleading "design missing" error.
+	 *
+	 * @param WP_REST_Request $r Request.
+	 */
+	private static function body_too_large( WP_REST_Request $r ): bool {
+		$limit = (int) wp_convert_hr_to_bytes( (string) ini_get( 'post_max_size' ) );
+		if ( $limit <= 0 ) {
+			return false; // 0 = unlimited.
+		}
+		$length = isset( $_SERVER['CONTENT_LENGTH'] ) ? (int) $_SERVER['CONTENT_LENGTH'] : (int) $r->get_header( 'content_length' );
+		return $length > $limit;
+	}
+
+	/**
+	 * Room to store an original of $bytes? Uses Uploads::check_storage() (contract C3: quota + free disk).
+	 * Until that exists, a temporary guard checks only the free disk space (filter bps_min_free_disk_bytes).
+	 *
+	 * @param int $bytes Size of the new original.
+	 * @return true|WP_Error
+	 */
+	private static function check_storage( int $bytes ) {
+		if ( is_callable( array( Uploads::class, 'check_storage' ) ) ) {
+			$ok = call_user_func( array( Uploads::class, 'check_storage' ), $bytes );
+		} else {
+			$ok   = true;
+			$min  = (int) apply_filters( 'bps_min_free_disk_bytes', GB_IN_BYTES );
+			$dir  = (string) ( wp_upload_dir( null, false )['basedir'] ?? '' );
+			$free = ( '' !== $dir && is_dir( $dir ) && function_exists( 'disk_free_space' ) ) ? @disk_free_space( $dir ) : false; // phpcs:ignore WordPress.PHP.NoSilencedErrors
+			if ( false !== $free && (float) $free - $bytes < $min ) {
+				$ok = new WP_Error( 'bps_storage', 'low disk space', array( 'status' => 507 ) );
+			}
+		}
+		if ( true === $ok ) {
+			return true;
+		}
+		self::log(
+			'error',
+			'design_storage_refused',
+			array(
+				'bytes'  => $bytes,
+				'reason' => is_wp_error( $ok ) ? $ok->get_error_code() : 'unknown',
+			)
+		);
+		return self::error(
+			'bps_storage',
+			__( 'We kunnen je bestand nu even niet bewaren. Stuur het gerust per e-mail of via WeTransfer, dan bekijken we het samen.', 'borduur-patch-studio' ),
+			507
+		);
+	}
+
 	/* ---------------------------------------------------------------------
 	 * Callbacks
 	 * ------------------------------------------------------------------- */
@@ -247,9 +358,6 @@ final class Routes {
 	 * @param WP_REST_Request $r Request.
 	 */
 	public static function quote( WP_REST_Request $r ) {
-		if ( ! class_exists( Pricing::class ) ) {
-			return self::error( 'bps_unavailable', __( 'De prijsberekening is even niet beschikbaar. Probeer het straks opnieuw.', 'borduur-patch-studio' ), 503 );
-		}
 		$b    = self::body( $r );
 		$tech = Payload::str( $b['technique'] ?? '', 20 );
 		$size = Payload::num( $b['sizeCm'] ?? null );
@@ -285,6 +393,14 @@ final class Routes {
 		try {
 			$quote = Pricing::quote( $input );
 		} catch ( \Throwable $e ) {
+			self::log(
+				'error',
+				'rest_quote_failed',
+				array(
+					'technique' => $tech,
+					'error'     => $e->getMessage(),
+				)
+			);
 			return self::error( 'bps_invalid', __( 'We konden geen prijs berekenen voor deze keuzes.', 'borduur-patch-studio' ) );
 		}
 		return new WP_REST_Response( $quote, 200 );
@@ -296,10 +412,14 @@ final class Routes {
 	 * @param WP_REST_Request $r Request.
 	 */
 	public static function create_design( WP_REST_Request $r ) {
+		// Body over post_max_size: PHP dropped every field, so answer "too big" before anything else.
+		if ( self::body_too_large( $r ) ) {
+			return self::too_big();
+		}
 		if ( '' !== trim( (string) $r->get_param( 'website' ) ) ) {
 			return self::error( 'bps_invalid_design', __( 'We konden je ontwerp niet bewaren. Laad de pagina opnieuw en probeer het nog eens.', 'borduur-patch-studio' ) );
 		}
-		$raw = $r->get_param( 'design' ); // JSON string (multipart) or object (JSON body).
+		$raw     = $r->get_param( 'design' ); // JSON string (multipart) or object (JSON body).
 		$payload = Payload::validate( $raw );
 		if ( is_wp_error( $payload ) ) {
 			return $payload;
@@ -309,22 +429,28 @@ final class Routes {
 		if ( empty( $files['preview'] ) || ! is_array( $files['preview'] ) ) {
 			return self::error( 'bps_invalid_design', __( 'Het voorbeeld van je patch ontbreekt. Probeer het nog eens.', 'borduur-patch-studio' ) );
 		}
+		$preview_max  = (int) apply_filters( 'bps_preview_max_bytes', self::PREVIEW_MAX_BYTES );
+		$preview_err  = (int) ( $files['preview']['error'] ?? UPLOAD_ERR_OK );
+		$preview_size = (int) ( $files['preview']['size'] ?? 0 );
+		if ( UPLOAD_ERR_INI_SIZE === $preview_err || UPLOAD_ERR_FORM_SIZE === $preview_err || $preview_size > $preview_max ) {
+			return self::error( 'bps_too_big', __( 'Het voorbeeld van je patch is te groot om te bewaren. Laad de pagina opnieuw en probeer het nog eens.', 'borduur-patch-studio' ), 413 );
+		}
+
+		$original = null;
 		if ( ! empty( $files['original'] ) && is_array( $files['original'] ) && UPLOAD_ERR_NO_FILE !== (int) ( $files['original']['error'] ?? UPLOAD_ERR_NO_FILE ) ) {
 			// Size first: friendlier than a generic error after a long upload.
-			if ( (int) ( $files['original']['size'] ?? 0 ) > Uploads::max_bytes() ) {
-				return self::error(
-					'bps_too_big',
-					/* translators: %s: max size in MB */
-					sprintf( __( 'Je bestand is groter dan %s MB. Stuur het gerust via WeTransfer of per e-mail, dan bekijken we het samen.', 'borduur-patch-studio' ), Config::num( Uploads::max_bytes() / MB_IN_BYTES, 0 ) ),
-					413
-				);
+			$bytes = (int) ( $files['original']['size'] ?? 0 );
+			if ( $bytes > Uploads::max_bytes() ) {
+				return self::too_big();
+			}
+			$room = self::check_storage( $bytes );
+			if ( is_wp_error( $room ) ) {
+				return $room;
 			}
 			$original = Uploads::store_original( $files['original'] );
 			if ( is_wp_error( $original ) ) {
 				return $original;
 			}
-		} else {
-			$original = null;
 		}
 
 		$preview = Uploads::store_preview( $files['preview'] );
@@ -335,8 +461,11 @@ final class Routes {
 			return $preview;
 		}
 
+		// klant-account-2: the design belongs to the logged-in customer (token + Origin were checked already).
+		Guard::restore_logged_in_user();
 		$id = Designs::create( $payload, $original, $preview, self::page_url( $r ) );
 		if ( is_wp_error( $id ) ) {
+			self::log( 'error', 'design_create_failed', array( 'code' => $id->get_error_code() ) );
 			if ( $original ) {
 				Uploads::delete( $original['path'] );
 			}
@@ -386,7 +515,7 @@ final class Routes {
 	 */
 	private static function log_price_mismatch( int $id, array $payload ): void {
 		$client = (float) ( $payload['priceClient']['totalIncl'] ?? 0 );
-		if ( $client <= 0 || ! class_exists( Pricing::class ) ) {
+		if ( $client <= 0 ) {
 			return;
 		}
 		$server = Cart::quote_for(
@@ -405,22 +534,34 @@ final class Routes {
 			return;
 		}
 		$diff = abs( (float) $server['totalIncl'] - $client );
-		if ( $diff > 0.01 && function_exists( 'wc_get_logger' ) ) {
-			wc_get_logger()->info(
-				sprintf( 'Price mismatch for design %d (%s %s cm x %d): client %.2f, server %.2f. The server price is used.', $id, $payload['technique'], $payload['sizeCm'], $payload['qty'], $client, (float) $server['totalIncl'] ),
-				array( 'source' => 'patch-studio' )
+		if ( $diff > 0.01 ) {
+			// The server price is used; this only flags a JS/PHP engine drift.
+			self::log(
+				'info',
+				'price_mismatch',
+				array(
+					'design'    => $id,
+					'technique' => $payload['technique'],
+					'sizeCm'    => $payload['sizeCm'],
+					'qty'       => $payload['qty'],
+					'client'    => round( $client, 2 ),
+					'server'    => round( (float) $server['totalIncl'], 2 ),
+				)
 			);
 		}
 	}
 
 	/**
-	 * GET /designs/{id}?token=.
+	 * GET /designs/{id} with header X-BPS-Design-Token (preferred) or ?token=.
 	 *
 	 * @param WP_REST_Request $r Request.
 	 */
 	public static function get_design( WP_REST_Request $r ) {
 		$id    = (int) $r['id'];
-		$token = (string) $r->get_param( 'token' );
+		$token = trim( (string) $r->get_header( self::DESIGN_TOKEN_HEADER ) );
+		if ( '' === $token ) {
+			$token = (string) $r->get_param( 'token' );
+		}
 		if ( ! Designs::verify_token( $id, $token ) ) {
 			return self::error( 'bps_forbidden', __( 'Deze link naar je ontwerp werkt niet (meer). Misschien is hij verlopen; je kan gewoon opnieuw beginnen.', 'borduur-patch-studio' ), 403 );
 		}
@@ -485,7 +626,39 @@ final class Routes {
 			return self::error( 'bps_unavailable', __( 'De winkelmand is even niet beschikbaar. Probeer het straks opnieuw.', 'borduur-patch-studio' ), 503 );
 		}
 
-		self::restore_logged_in_user();
+		// Before the clone and the cart session: both belong to the logged-in customer (klant-account-2).
+		Guard::restore_logged_in_user();
+
+		// security-4: an ordered design is never put in a second order as is (that would overwrite the order
+		// link and proof state of the first order). Re-ordering works on a fresh copy with its own ref and token.
+		$cloned = false;
+		if ( 'ordered' === ( $design['status'] ?? '' ) || ! empty( $design['order_id'] ) ) {
+			if ( is_callable( array( Designs::class, 'clone' ) ) ) {
+				$new = call_user_func( array( Designs::class, 'clone' ), $id, array( 'parent_id' => $id ) );
+				if ( is_wp_error( $new ) ) {
+					self::log(
+						'error',
+						'cart_clone_failed',
+						array(
+							'design' => $id,
+							'code'   => $new->get_error_code(),
+						)
+					);
+					return self::error( 'bps_store', __( 'We konden je ontwerp niet opnieuw klaarzetten. Probeer het nog eens of contacteer ons.', 'borduur-patch-studio' ), 500 );
+				}
+				$id     = (int) $new;
+				$design = Designs::get( $id );
+				if ( ! $design || empty( $design['payload'] ) ) {
+					self::log( 'error', 'cart_clone_unreadable', array( 'design' => $id ) );
+					return self::error( 'bps_store', __( 'We konden je ontwerp niet opnieuw klaarzetten. Probeer het nog eens of contacteer ons.', 'borduur-patch-studio' ), 500 );
+				}
+				$cloned = true;
+			} else {
+				// Temporary until Designs::clone() (contract C3, P06) exists: keep the old behaviour, but flag it.
+				self::log( 'warning', 'cart_ordered_design_without_clone', array( 'design' => $id ) );
+			}
+		}
+
 		wc_load_cart();
 		if ( ! WC()->cart ) {
 			return self::error( 'bps_unavailable', __( 'De winkelmand is even niet beschikbaar. Probeer het straks opnieuw.', 'borduur-patch-studio' ), 503 );
@@ -501,31 +674,21 @@ final class Routes {
 		Designs::set_status( $id, 'carted' );
 		Designs::touch( $id );
 
-		return new WP_REST_Response(
-			array(
-				'ok'          => true,
-				'cartUrl'     => wc_get_cart_url(),
-				'cartCount'   => (int) WC()->cart->get_cart_contents_count(),
-				'cartItemKey' => $res['key'],
-				'quote'       => $res['quote'],
-			),
-			200
+		$out = array(
+			'ok'          => true,
+			'cartUrl'     => wc_get_cart_url(),
+			'cartCount'   => (int) WC()->cart->get_cart_contents_count(),
+			'cartItemKey' => $res['key'],
+			'quote'       => $res['quote'],
 		);
-	}
-
-	/**
-	 * Logged-in customers: REST runs as user 0 without X-WP-Nonce, which would make WooCommerce drop
-	 * their (user-bound) cart session. Restore the user from the logged_in cookie for the cart only.
-	 * Safe against CSRF: the request needs our custom X-BPS-Token header (preflighted cross-site).
-	 */
-	private static function restore_logged_in_user(): void {
-		if ( is_user_logged_in() ) {
-			return;
+		if ( $cloned ) {
+			// The UI must continue with the copy (see docs/handoff/premium-ui-needs.md, security-4).
+			$out['cloned']   = true;
+			$out['designId'] = $id;
+			$out['token']    = Designs::token_for( $id );
+			$out['ref']      = (string) $design['ref'];
 		}
-		$uid = (int) wp_validate_auth_cookie( '', 'logged_in' );
-		if ( $uid > 0 ) {
-			wp_set_current_user( $uid );
-		}
+		return new WP_REST_Response( $out, 200 );
 	}
 
 	/**
@@ -551,9 +714,9 @@ final class Routes {
 			$design = Designs::get( $id );
 		}
 
-		$name  = Payload::str( $b['name'] ?? '', 100 );
-		$email = sanitize_email( (string) ( $b['email'] ?? '' ) );
-		$qty   = Payload::int( $b['qty'] ?? null );
+		$name   = Payload::str( $b['name'] ?? '', 100 );
+		$email  = sanitize_email( (string) ( $b['email'] ?? '' ) );
+		$qty    = Payload::int( $b['qty'] ?? null );
 		$fields = array();
 		if ( '' === $name ) {
 			$fields['name'] = __( 'Vul je naam in.', 'borduur-patch-studio' );
@@ -564,9 +727,8 @@ final class Routes {
 		if ( null === $qty || $qty < 1 || $qty > 1000000 ) {
 			$fields['qty'] = __( 'Vul in hoeveel patches je nodig hebt.', 'borduur-patch-studio' );
 		}
-		if ( true !== ( $b['consent'] ?? false ) && 'true' !== ( $b['consent'] ?? '' ) ) {
-			$fields['consent'] = __( 'Bevestig dat we je gegevens mogen gebruiken om je offerte te maken.', 'borduur-patch-studio' );
-		}
+		// No consent checkbox: a quote request is processed on art. 6.1.b GDPR (steps at the customer's request
+		// before a contract). A 'consent' field that still comes along is ignored.
 		$rights = isset( $b['rightsConsent'] ) && is_array( $b['rightsConsent'] ) ? $b['rightsConsent'] : array();
 		if ( $design && true !== ( $rights['accepted'] ?? false ) && 'true' !== ( $rights['accepted'] ?? '' ) ) {
 			$fields['rightsConsent'] = __( 'Vink aan dat je dit ontwerp mag laten maken. Zo weten we dat alles in orde is.', 'borduur-patch-studio' );
@@ -654,8 +816,18 @@ final class Routes {
 		$mail = Emails::get( 'BPS_Email_Saved_Design' );
 		$sent = $mail ? $mail->trigger( $id, $email, $locale ) : false;
 		if ( ! $sent ) {
+			self::log( 'error', 'design_email_failed', array( 'design' => $id ) );
 			return self::error( 'bps_mail', __( 'Je ontwerp is bewaard, maar de e-mail kon niet verstuurd worden. Probeer het later nog eens of contacteer ons.', 'borduur-patch-studio' ), 500 );
 		}
+
+		/**
+		 * The design was mailed to the customer (contract C4; e.g. the reminder scheduler listens here).
+		 *
+		 * @param int             $id    Design id.
+		 * @param string          $email Recipient.
+		 * @param WP_REST_Request $r     Request.
+		 */
+		do_action( 'bps_design_emailed', $id, $email, $r );
 		return new WP_REST_Response( array( 'ok' => true ), 200 );
 	}
 }

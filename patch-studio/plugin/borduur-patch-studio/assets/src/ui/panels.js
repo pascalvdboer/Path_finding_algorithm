@@ -200,7 +200,14 @@ export function createPanels(ctx) {
     const list = h('div.bps-texts__list');
     const addBtn = h('button.bps-btn.bps-btn--secondary.bps-btn--block', { type: 'button', onclick: () => ctx.addText() }, icon('plus'), t('ui.text.add').replace(/^\+\s*/, ''));
     const max = h('p.bps-help', { hidden: true });
-    const el = panel(ctx, 'text', t('ui.panel.text'), [h('section.bps-texts', list, addBtn, max, h('p.bps-help', t('ui.text.dragHint')))], 'advice');
+    const shrunk = h('p.bps-notice.bps-notice--info.bps-shrunk', { hidden: true, role: 'status' }, icon('info'),
+      h('span', t('ui.text.shrunk'), ' ', h('button.bps-btn.bps-btn--small.bps-btn--link', { type: 'button', 'data-fk': 'shrunk-undo', onclick: () => {
+        const sh = ctx.ui.shrunk;
+        ctx.ui.shrunk = null;
+        if (sh) store.set({ art: sh.art });
+        ctx.refresh();
+      } }, t('ui.text.shrunkUndo'))));
+    const el = panel(ctx, 'text', t('ui.panel.text'), [h('section.bps-texts', shrunk, list, addBtn, max, h('p.bps-help', t('ui.text.dragHint')))], 'advice');
 
     function fit(l, Lp) {
       if (!Lp || !l.text || !l.text.trim()) return null;
@@ -286,7 +293,7 @@ export function createPanels(ctx) {
           keyed(cbox, [l.threadCode, d.textHex[l.id], lbl].join('|'), () => swatchButton(ctx, {
             hex: d.textHex[l.id], label: lbl, fk: 'tc-' + l.id,
             onClick: (e) => ctx.picker.open({ title: t('ui.cp.textTitle'), current: l.threadCode !== 'auto' ? l.threadCode : autoCode, returnFocus: e.currentTarget,
-              onPick: (th) => store.set({ texts: store.get().texts.map((x) => (x.id === l.id ? { ...x, threadCode: th.code } : x)) }),
+              patchFor: (th) => ({ texts: store.get().texts.map((x) => (x.id === l.id ? { ...x, threadCode: th.code } : x)) }),
               onAuto: () => store.set({ texts: store.get().texts.map((x) => (x.id === l.id ? { ...x, threadCode: 'auto' } : x)) }), autoLabel: t('ui.cp.autoText') }),
           }));
           // Eigenaar: alles blijft binnen de rand. Te lange tekst: eerlijk zeggen in plaats van stil bij te snijden.
@@ -295,6 +302,7 @@ export function createPanels(ctx) {
           f.hidden = !tl;
           text(f, tl ? t('ui.text.tooLong', { w: ctx.n(tl.w, 0), room: ctx.n(tl.room, 0) }) : '');
         }
+        shrunk.hidden = !(ctx.ui.shrunk && s.texts.some((l) => l.id === ctx.ui.shrunk.id));
         addBtn.hidden = s.texts.length >= n;
         max.hidden = s.texts.length < n;
         text(max, t('ui.text.max', { n }));
@@ -332,14 +340,14 @@ export function createPanels(ctx) {
     if (g.showIfAny && !g.showIfAny.some((id) => s.options.includes(id))) return null;
     const name = `${ctx.uidBase}-opt-${gid}`;
     return h('fieldset.bps-fieldset.bps-group', h('legend.bps-legend' + (legend ? '' : '.bps-sr'), L(g.label)),
-      h('div.bps-optlist', opts.map((o) => {
+      h('div.bps-optlist' + (gid === 'edge' ? '.bps-optlist--edge' : ''), opts.map((o) => {
         const id = `${name}-${o.id}`;
         const eff = optionEffect(o, s.technique, config, ctx.locale, ctx.overrides);
         const help = L(o.help);
         const on = s.options.includes(o.id);
         return h('div.bps-opt' + (on ? '.is-on' : ''),
           h('input', { type: g.type === 'radio' ? 'radio' : 'checkbox', id, name, value: o.id, checked: on, 'data-fk': id, 'aria-describedby': help ? id + '-h' : null, onchange: (e) => choose(gid, o.id, e.target.checked) }),
-          h('label', { for: id }, h('span.bps-opt__label', L(o.label)), h('span.bps-opt__eff' + (eff.amountIncl < 0 ? '.is-minus' : ''), eff.text)),
+          h('label', { for: id }, gid === 'edge' ? h('span.bps-edgeico.is-' + o.id, { 'aria-hidden': 'true' }) : null, h('span.bps-opt__label', L(o.label)), h('span.bps-opt__eff' + (eff.amountIncl < 0 ? '.is-minus' : ''), eff.text)),
           help ? h('p.bps-opt__help', { id: id + '-h' }, help) : null);
       })),
       gid === 'backing' ? h('p.bps-help', icon('info'), t('ui.s4.backingTip')) : null);
@@ -363,7 +371,7 @@ export function createPanels(ctx) {
         keyed(edgeBox, JSON.stringify([s.edgeColor, d.edgeHex, elbl]), () => swatchButton(ctx, {
           hex: d.edgeHex, label: elbl, fk: 'edge-color',
           onClick: (e) => ctx.picker.open({ title: t('ui.cp.edgeTitle'), current: et && et.code, returnFocus: e.currentTarget,
-            onPick: (th) => store.set({ edgeColor: th.code }), onAuto: () => store.set({ edgeColor: 'auto' }), autoLabel: t('ui.cp.autoEdge') }),
+            patchFor: (th) => ({ edgeColor: th.code }), onAuto: () => store.set({ edgeColor: 'auto' }), autoLabel: t('ui.cp.autoEdge') }),
         }));
       },
     };

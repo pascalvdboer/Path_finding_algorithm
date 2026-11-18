@@ -379,10 +379,13 @@ export function baseTile(look, stitched, ppm) {
     const n = Math.max(1, Math.round(48 / pitch));
     T = Math.max(8, Math.round(n * pitch));
     const a = n / T, fade = smooth((T / n - 1.5) / 2);
-    const amp = (kind === 'poly' ? 0.025 : 0.06) * q * fade + 0.2;
+    // twill ribs at half the old contrast plus a faint colour wobble per yarn: reads as fine twill at 200 %,
+    // not as pinstripes (critique-2 #12)
+    const amp = (kind === 'poly' ? 0.025 : 0.03) * q * fade + 0.12;
     fn = (x, y, o) => {
-      const u = (x + y) * a, tt = u - Math.floor(u), pr = P[(tt * 256) | 0];
-      o.h = amp * pr; o.cav = 0.86 + 0.14 * pr; o.f = 0.97 + 0.04 * pr;
+      const u = (x + y) * a, ui = Math.floor(u), tt = u - ui, pr = P[(tt * 256) | 0];
+      const yarn = kind === 'twill' ? (hashI(((ui % n) + n) % n, 9) - 0.5) * 0.04 : 0;
+      o.h = amp * pr; o.cav = 0.93 + 0.07 * pr; o.f = 0.985 + 0.02 * pr + yarn;
       if (kind === 'poly') { o.tx = 0.7071; o.ty = -0.7071; }
     };
   } else if (kind === 'tatami') {

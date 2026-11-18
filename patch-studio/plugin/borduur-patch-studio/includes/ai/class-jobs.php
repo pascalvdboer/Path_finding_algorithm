@@ -429,10 +429,12 @@ final class Jobs {
 	 */
 	private static function maybe_vectorize( array $job, int $index, array $row ): ?string {
 		$result = self::json( $job['result'] ?? null );
-		if ( ! empty( $result[ $index ]['vector'] ) ) {
+		if ( ! empty( $row['vector'] ) ) {
 			return Image_Store::signed_url( (string) $job['id'], $index, 'svg' );
 		}
-		if ( 'image/png' !== $row['mime'] ) {
+		// "Choose" is free and polled often: a paid vectorisation runs at most once per proposal (also when it fails),
+		// and never past the hard budget cap. Otherwise repeated choose calls would be an unmetered cost tap.
+		if ( 'image/png' !== $row['mime'] || ! empty( $row['vectorTried'] ) || Limits::budget()['hardCapped'] ) {
 			return null;
 		}
 		$vec = Providers\Provider_Registry::vectorizer();
@@ -440,6 +442,12 @@ final class Jobs {
 		if ( ! $vec || '' === $abs ) {
 			return null;
 		}
+		foreach ( $result as $k => $res_row ) {
+			if ( (int) ( $res_row['index'] ?? -1 ) === $index ) {
+				$result[ $k ]['vectorTried'] = 1;
+			}
+		}
+		Module::store()->job_update( (string) $job['id'], array( 'result' => wp_json_encode( $result ) ) );
 		$start = microtime( true );
 		try {
 			$r           = $vec->vectorize( $abs );
@@ -481,7 +489,7 @@ final class Jobs {
 	 * @param string $id    Job id.
 	 * @return array{status:int, body:array}|WP_Error
 	 */
-	public static function cancel( string $owner, string $id ) {
+	public static function cancel( string $owner, string $id, array $ctx = array() ) {
 		$job = self::get_for_owner( $owner, $id );
 		if ( ! $job ) {
 			return Messages::error( 'bps_ai_not_found', 404 );
@@ -500,6 +508,10 @@ final class Jobs {
 			if ( 1 === $n ) {
 				self::refund( $job, 'job_cancelled' );
 				Limits::release( (string) $job['id'] );
+				if ( 'running' === $job['status'] && (int) ( $job['rounds'] ?? 0 ) > 0 ) {
+					// The provider call is already under way (paid by the shop): cap how often that can be free.
+					Limits::record_running_cancel( $owner, (string) ( $ctx['ip_hash'] ?? Identity::ip_hash() ) );
+				}
 			}
 			$job = Module::store()->job_get( (string) $job['id'] );
 		}
@@ -606,6 +618,8 @@ final class Jobs {
 				'done'  => $email,
 			),
 			'packs'         => self::packs(),
+			// Validity of paid rounds, shown next to every pack (04-juridisch §4.5); never below the minimum.
+			'validityMonths' => max( (int) AI_Settings::path( 'validityMinMonths', 12 ), (int) AI_Settings::path( 'validityMonths', 24 ) ),
 			'orderCredit'   => array(
 				'percent'        => (int) ( $credit['percent'] ?? 100 ),
 				'minArticleIncl' => (float) ( $credit['minArticleIncl'] ?? 50 ),

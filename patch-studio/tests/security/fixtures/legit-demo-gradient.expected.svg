@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="900" viewBox="0 0 900 900">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2b1b5a"/>
+      <stop offset="0.45" stop-color="#c2477a"/>
+      <stop offset="0.8" stop-color="#ff9a4a"/>
+      <stop offset="1" stop-color="#ffd27a"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fff6c8"/>
+      <stop offset="0.7" stop-color="#ffd27a"/>
+      <stop offset="1" stop-color="#ffb25a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="m1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3d2b6b"/>
+      <stop offset="1" stop-color="#1a1236"/>
+    </linearGradient>
+    <linearGradient id="m2" x1="1" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#26194a"/>
+      <stop offset="1" stop-color="#0e0a20"/>
+    </linearGradient>
+    <clipPath id="c"><circle cx="450" cy="450" r="360"/></clipPath>
+  </defs>
+  <rect width="900" height="900" fill="#ffffff"/>
+  <g clip-path="url(#c)">
+    <rect x="90" y="90" width="720" height="720" fill="url(#sky)"/>
+    <circle cx="450" cy="520" r="150" fill="url(#sun)"/>
+    <path d="M60 640L250 400l90 90 120-170 150 190 90-80 140 210v250H60z" fill="url(#m1)"/>
+    <path d="M60 720l170-120 110 70 150-110 160 120 110-60 100 70v240H60z" fill="url(#m2)"/>
+    <path d="M460 320l-30 48 22-6 10 28 14-30 22 8z" fill="#efe6ff" opacity="0.85"/>
+  </g>
+  <circle cx="450" cy="450" r="372" fill="none" stroke="#14102a" stroke-width="28"/>
+  <defs><path id="arc" d="M170 450a280 280 0 01560 0"/></defs>
+  <text font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="58" fill="#ffffff" letter-spacing="8"><textPath href="#arc" startOffset="50%" text-anchor="middle">SUNSET TRAIL</textPath></text>
+</svg>

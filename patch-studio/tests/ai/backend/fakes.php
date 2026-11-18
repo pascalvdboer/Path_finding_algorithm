@@ -18,6 +18,9 @@ final class Memory_Store implements Store {
 	public $jobs   = array();
 	public $owners = array();
 	public $costs  = array();
+	/** Lots and ledger rows (owned by commerce in production; only read here for owner retention). */
+	public $lots   = array();
+	public $ledger = array();
 
 	public function job_insert( array $row ): bool {
 		foreach ( $this->jobs as $j ) {
@@ -133,6 +136,45 @@ final class Memory_Store implements Store {
 			}
 		}
 		return $n;
+	}
+	public function owner_purge( string $known_before, string $anon_before, string $now, int $limit ): array {
+		$out = array( 'deleted' => 0, 'anonymised' => 0 );
+		foreach ( $this->owners as $k => $o ) {
+			$cut = 0 === strpos( $k, 'a:' ) ? $anon_before : $known_before;
+			if ( $o['last_seen_at'] >= $cut ) {
+				continue;
+			}
+			foreach ( $this->jobs as $j ) {
+				if ( $j['owner_key'] === $k && in_array( $j['status'], array( 'queued', 'running' ), true ) ) {
+					continue 2;
+				}
+			}
+			foreach ( $this->lots as $l ) {
+				if ( $l['owner_key'] === $k && 'active' === $l['status'] && $l['expires_at'] > $now && (int) $l['rounds_used'] < (int) $l['rounds_total'] ) {
+					continue 2;
+				}
+			}
+			$ref = false;
+			foreach ( array( $this->jobs, $this->lots, $this->ledger ) as $rows ) {
+				foreach ( $rows as $r ) {
+					if ( $r['owner_key'] === $k ) {
+						$ref = true;
+						break 2;
+					}
+				}
+			}
+			if ( ! $ref ) {
+				if ( $out['deleted'] < $limit ) {
+					unset( $this->owners[ $k ] );
+					++$out['deleted'];
+				}
+			} elseif ( ( null !== $o['email'] || null !== $o['email_verified_at'] ) && $out['anonymised'] < $limit ) {
+				$this->owners[ $k ]['email']             = null;
+				$this->owners[ $k ]['email_verified_at'] = null;
+				++$out['anonymised'];
+			}
+		}
+		return $out;
 	}
 	public function cost_insert( array $row ): bool {
 		$this->costs[] = $row;

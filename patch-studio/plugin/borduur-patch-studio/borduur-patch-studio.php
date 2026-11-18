@@ -1,14 +1,15 @@
 <?php
 /**
- * Plugin Name:       Patch Studio – Borduurservice België
- * Plugin URI:        https://borduurservicebelgie.be/
+ * Plugin Name:       Patch Studio
  * Description:       Patches online ontwerpen met deskundig advies, live prijs en digitale proef.
  * Version:           1.0.0
  * Requires at least: 6.4
  * Requires PHP:      8.1
  * WC requires at least: 8.8
- * WC tested up to:   9.9
+ * WC tested up to:   11.3
+ * Requires Plugins:  woocommerce
  * Author:            Borduurservice België
+ * Update URI:        https://borduurservicebelgie.be/
  * Text Domain:       borduur-patch-studio
  * Domain Path:       /languages
  * License:           GPL-2.0-or-later
@@ -27,6 +28,14 @@ define( 'BPS_FILE', __FILE__ );
 define( 'BPS_DIR', plugin_dir_path( __FILE__ ) );
 define( 'BPS_URL', plugin_dir_url( __FILE__ ) );
 define( 'BPS_MIN_PHP', '8.1' );
+
+/*
+ * Optional licence/update client (docs/premium/license-client-security.md). The update host is a constant, never a
+ * setting; it may be overridden in wp-config.php (HTTPS only). Off until a licence key is saved.
+ */
+if ( ! defined( 'BPS_UPDATE_URL' ) ) {
+	define( 'BPS_UPDATE_URL', 'https://borduurservicebelgie.be/' );
+}
 
 /*
  * Refuse to run on an unsupported PHP version instead of fataling the site.
@@ -51,35 +60,11 @@ if ( version_compare( PHP_VERSION, BPS_MIN_PHP, '<' ) ) {
 }
 
 /*
- * PSR-4-like autoloader following the WordPress file naming convention (SPEC §4.1):
- *   BorduurPatchStudio\Woo\Order_Meta     -> includes/woo/class-order-meta.php
- *   BorduurPatchStudio\Settings           -> includes/class-settings.php
- *   BorduurPatchStudio\Admin\Settings_Page -> includes/admin/class-settings-page.php
+ * Autoloader following the WordPress file naming convention (SPEC §4.1); it lives in Plugin::autoload() so
+ * uninstall.php can use the very same loader.
  */
-spl_autoload_register(
-	static function ( string $class ): void {
-		$prefix = 'BorduurPatchStudio\\';
-		if ( 0 !== strncmp( $class, $prefix, strlen( $prefix ) ) ) {
-			return;
-		}
-		$parts = explode( '\\', substr( $class, strlen( $prefix ) ) );
-		$name  = array_pop( $parts );
-		if ( '' === $name || preg_match( '/[^A-Za-z0-9_]/', $name ) ) {
-			return;
-		}
-		$dir = '';
-		foreach ( $parts as $part ) {
-			if ( preg_match( '/[^A-Za-z0-9_]/', $part ) ) {
-				return;
-			}
-			$dir .= str_replace( '_', '-', strtolower( $part ) ) . '/';
-		}
-		$file = BPS_DIR . 'includes/' . $dir . 'class-' . str_replace( '_', '-', strtolower( $name ) ) . '.php';
-		if ( is_readable( $file ) ) {
-			require_once $file;
-		}
-	}
-);
+require_once BPS_DIR . 'includes/class-plugin.php';
+spl_autoload_register( array( \BorduurPatchStudio\Plugin::class, 'autoload' ) );
 
 /*
  * Declare compatibility with WooCommerce HPOS and cart/checkout blocks (06 §6c).

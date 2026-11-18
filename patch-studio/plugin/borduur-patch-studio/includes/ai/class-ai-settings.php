@@ -68,6 +68,7 @@ final class AI_Settings {
 			'writePerHour'           => 30,
 			'pollPerMinute'          => 120,
 			'emailPerHour'           => 5,
+			'runningCancelsPerDay'   => 4,
 		),
 		'alerts'           => array( 'email' => '' ),
 		'usdToEur'         => 0.93,
@@ -92,6 +93,7 @@ final class AI_Settings {
 		'limits.emailCodesPerIpPerHour' => array( 1, 100, true ),
 		'limits.writePerHour'           => array( 5, 1000, true ),
 		'limits.pollPerMinute'          => array( 30, 2000, true ),
+		'limits.runningCancelsPerDay'   => array( 1, 100, true ),
 		'usdToEur'                      => array( 0.5, 2, false ),
 		'mock.latencyMs'                => array( 0, 10000, true ),
 	);

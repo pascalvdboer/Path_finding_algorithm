@@ -79,7 +79,14 @@ export function createStage(ctx) {
   const sel = h('div.bps-sel', { hidden: true, 'aria-hidden': 'true' }, ['nw', 'ne', 'sw', 'se'].map((k) => h('span.bps-sel__h', { dataset: { h: k } })));
   const ctxbar = h('div.bps-ctxbar', { role: 'toolbar', hidden: true, 'aria-label': t('ui.ctx.label') });
   const chip = h('p.bps-stage__chip', { 'aria-hidden': 'true' });
-  const wrap = h('div.bps-stage__wrap', canvas, fade, sel, ctxbar);
+  // arc texts: the selection follows the arc instead of a straight box (critique-2 #3)
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  const selArc = document.createElementNS(SVGNS, 'svg');
+  selArc.setAttribute('class', 'bps-selarc');
+  selArc.setAttribute('aria-hidden', 'true');
+  const selArcPath = document.createElementNS(SVGNS, 'path');
+  selArc.appendChild(selArcPath);
+  const wrap = h('div.bps-stage__wrap', canvas, fade, selArc, sel, ctxbar);
   const zoomOut = h('output.bps-zoom__out', { 'aria-live': 'off' }, '100 %');
   const zbtn = (name, lbl, fn) => h('button.bps-ibtn.bps-zoom__btn', { type: 'button', 'aria-label': lbl, title: lbl, onclick: fn }, icon(name));
   const zoomBar = h('div.bps-zoom', { role: 'group', 'aria-label': t('ui.zoom.label') },
@@ -90,6 +97,29 @@ export function createStage(ctx) {
   // On a garment: framed on the patch by default (it stays readable), one tap shows the whole piece (critique-1 #10).
   const wholeBtn = h('button.bps-wholebtn', { type: 'button', hidden: true, 'aria-pressed': 'false', onclick: () => { ctx.ui.wholeGarment = !ctx.ui.wholeGarment; setZoom(1); center = null; syncWhole(); } });
   const garmentHint = h('p.bps-garmenthint', { hidden: true });
+  // Close-up surface under the patch (critique-2 #5): auto = linen under a dark patch, dark oak under a light one
+  // (contrast ≥ 3:1), the button cycles through linen, kraft and oak.
+  const SCENES = ['linen', 'kraft', 'oak'];
+  const sceneBtn = h('button.bps-ibtn.bps-scenebtn', { type: 'button', onclick: () => {
+    const cur = sceneOf();
+    ctx.ui.scene = SCENES[(SCENES.indexOf(cur) + 1) % SCENES.length];
+    syncScene(); schedule();
+  } }, h('span.bps-scenebtn__dot', { 'aria-hidden': 'true' }));
+  function sceneOf() {
+    if (ctx.ui.scene && SCENES.includes(ctx.ui.scene)) return ctx.ui.scene;
+    const hx = (d && (d.groundHex || d.fabricHex)) || '#ffffff';
+    const n = parseInt(String(hx).slice(1, 7), 16) || 0;
+    const lin = (v) => { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+    const Y = 0.2126 * lin((n >> 16) & 255) + 0.7152 * lin((n >> 8) & 255) + 0.0722 * lin(n & 255);
+    return Y > 0.3 ? 'oak' : 'linen';
+  }
+  function syncScene() {
+    const k = sceneOf();
+    sceneBtn.dataset.scene = k;
+    const lbl = t('ui.scene.label', { name: t('ui.scene.' + k) });
+    sceneBtn.setAttribute('aria-label', lbl); sceneBtn.title = lbl;
+    sceneBtn.hidden = !!garmentOf();
+  }
   function syncWhole() {
     const g = garmentOf();
     wholeBtn.hidden = !g;
@@ -99,7 +129,7 @@ export function createStage(ctx) {
     garmentHint.hidden = !g || hint === 'ui.view.hint.' + g || !state || state.sizeCm >= 15;
     text(garmentHint, hint);
   }
-  const el = h('figure.bps-stage.bps-preview', { 'aria-label': t('ui.preview.label') }, views, wrap, zoomBar, chip, wholeBtn, garmentHint);
+  const el = h('figure.bps-stage.bps-preview', { 'aria-label': t('ui.preview.label') }, views, wrap, zoomBar, chip, wholeBtn, garmentHint, sceneBtn);
   el.addEventListener('pointerdown', () => { el.classList.add('is-touched'); });
 
   let renderer = null, broken = false, lastResult = null, queued = false, quality = 'high', hiTimer = 0;
@@ -149,6 +179,7 @@ export function createStage(ctx) {
       pxSize: Math.max(canvas.width, canvas.height),
       zoom,
       zoomCenterMm: center || undefined,
+      scene: sceneOf(),
       ...extra,
     });
     if ((CAPS.light || lightFrom) && light) o.light = light;
@@ -327,31 +358,87 @@ export function createStage(ctx) {
     return null;
   }
 
+  /** SVG path (stage px) of an arc text band, or '' for straight texts / non-round patches. */
+  function arcPath(id) {
+    const L = d.layout;
+    const l = (state.texts || []).find((x) => x.id === id);
+    if (!l || l.path === 'straight' || !(L.shape === 'circle' || L.shape === 'oval')) return '';
+    const top = l.path === 'arc_top';
+    const edge = (L.edge && L.edge.widthMm) || 0;
+    const R0 = Math.min(L.patchWmm, L.patchHmm) / 2;
+    const rad = top ? R0 - Math.max(l.insetMm, edge + l.heightMm + 0.5) + l.heightMm / 2 : R0 - Math.max(l.insetMm, edge + 0.7) - l.heightMm / 2;
+    const w = Math.max(6, textWidthMm(config, l)) + 2, hh = l.heightMm * 1.3 + 1;
+    const span = Math.min(Math.PI * 1.9, w / Math.max(1, rad));
+    const a0 = ((top ? -90 : 90) + l.angleDeg) * Math.PI / 180;
+    const pts = (r, rev) => {
+      const out = [];
+      for (let i = 0; i <= 24; i++) {
+        const k = rev ? 24 - i : i;
+        const a = a0 - span / 2 + (span * k) / 24;
+        const p = toPx(Math.cos(a) * r, Math.sin(a) * r);
+        out.push(p.x.toFixed(1) + ' ' + p.y.toFixed(1));
+      }
+      return out;
+    };
+    const o = pts(rad + hh / 2, false), inn = pts(rad - hh / 2, true);
+    return 'M' + o.join(' L') + ' L' + inn.join(' L') + ' Z';
+  }
+
   /* ---------------------------- overlay ---------------------------- */
   function placeOverlay() {
     const tgt = ctx.dragTarget;
     const b = state && d && lastResult && tgt ? boxOf(tgt) : null;
     const editable = !!b && !editing;
     sel.hidden = !editable;
+    if (!editable) selArc.style.display = 'none';
     ctxbar.hidden = !editable || !!drag;
     el.classList.toggle('has-ctx', !ctxbar.hidden);
-    if (!editable) return;
+    if (!editable) { dockTools(); return; }
     const ppm = (lastResult.pxPerMm || 1) / pxScale();
     const c = toPx(b.x, b.y);
     const w = b.w * ppm, hh = b.h * ppm;
     Object.assign(sel.style, { left: c.x + 'px', top: c.y + 'px', width: w + 'px', height: hh + 'px', transform: `translate(-50%,-50%) rotate(${b.rot}deg)` });
     sel.classList.toggle('is-text', tgt !== 'art');
-    // Toolbar above the selection, kept inside the stage.
+    const arcD = tgt !== 'art' ? arcPath(tgt) : '';
+    sel.classList.toggle('is-arc', !!arcD);
+    selArc.style.display = arcD ? '' : 'none';
+    if (arcD) selArcPath.setAttribute('d', arcD);
+    // Toolbar above the selection, kept inside the stage. On a phone it lives in the sheet bar under the canvas.
     const ww = wrap.clientWidth, wh = wrap.clientHeight;
-    if (ctx.isMobile && ctx.isMobile()) { ctxbar.style.left = Math.max(8, (ww - (ctxbar.offsetWidth || 200)) / 2) + 'px'; ctxbar.style.top = ''; return; }
+    if (dockTools()) return;
     const bw = ctxbar.offsetWidth || 200, bh = ctxbar.offsetHeight || 44;
     const extent = Math.max(w, hh) / 2;
     const minY = 8;
     let y = c.y - (b.rot ? extent : hh / 2) - bh - 12;
+    // a selection in the lower half (arc under the design): the toolbar goes under the patch, not over the design
+    const pb = toPx(0, d.layout.patchHmm / 2).y;
+    if (b.y > d.layout.patchHmm * 0.15 && pb + 10 + bh <= wh - 8) y = pb + 10;
     if (y < minY) y = Math.min(wh - bh - 64, c.y + (b.rot ? extent : hh / 2) + 12);
     if (y < minY) y = minY;
     ctxbar.style.left = clamp(c.x - bw / 2, 8, Math.max(8, ww - bw - 8)) + 'px';
     ctxbar.style.top = Math.max(minY, Math.min(y, wh - bh - 8)) + 'px';
+  }
+
+  /**
+   * Phone: nothing may lie over the patch (critique-2 #4). The text/art toolbar and the zoom buttons move into the
+   * sheet bar between canvas and panel (ctx.toolHost); on a desktop they float in the stage again.
+   * @returns {boolean} true when docked
+   */
+  function dockTools() {
+    const host = ctx.toolHost;
+    const mob = !!(host && ctx.isMobile && ctx.isMobile());
+    if (mob) {
+      if (zoomBar.parentNode !== host) host.append(zoomBar);
+      if (sceneBtn.parentNode !== host) host.append(sceneBtn);
+      if (ctxbar.parentNode !== host) host.append(ctxbar);
+      ctxbar.style.left = ''; ctxbar.style.top = '';
+      host.classList.toggle('has-ctx', !ctxbar.hidden);
+    } else {
+      if (zoomBar.parentNode !== el) el.insertBefore(zoomBar, chip);
+      if (sceneBtn.parentNode !== el) el.appendChild(sceneBtn);
+      if (ctxbar.parentNode !== wrap) wrap.appendChild(ctxbar);
+    }
+    return mob;
   }
 
   function tbtn(name, lbl, fn, extra = {}) {
@@ -624,7 +711,9 @@ export function createStage(ctx) {
   return {
     el,
     canvas,
-    update(s, derived) {
+    /** @param {{fast?:boolean}} [uo]  fast = quick render first (live previews from the picker / comparer) */
+    update(s, derived, uo) {
+      if (uo && uo.fast) interacting(220);
       // Crossfade when the technique or the view (close-up / garment) changes; render v2 needs one full render then.
       const techChanged = state && lastTech && (s.technique !== lastTech || (s.mockup || 'none') !== (state.mockup || 'none'));
       state = s;
@@ -636,6 +725,7 @@ export function createStage(ctx) {
       views.querySelectorAll('input').forEach((i) => { i.checked = i.value === cur; i.parentNode.classList.toggle('is-on', i.value === cur); });
       zoomBar.hidden = false;
       syncWhole();
+      syncScene();
       buildBar();
       text(chip, chipText());
       chip.hidden = !chip.textContent;
@@ -643,6 +733,8 @@ export function createStage(ctx) {
       describe();
     },
     nudge(dx, dy) { moveTarget(ctx.dragTarget || 'art', dx, dy); },
+    /** Patch width on screen in CSS px (tests, analytics). */
+    patchCssPx() { return lastResult && d ? Math.round((d.layout.patchWmm * (lastResult.pxPerMm || 0)) / pxScale()) : 0; },
     redraw: schedule,
     startEdit,
     setZoom,

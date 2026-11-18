@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" width="64" height="64" viewBox="0 0 64 64" inkscape:version="1.3">
+  
+  <metadata>made with inkscape</metadata>
+  <g inkscape:label="Layer 1" inkscape:groupmode="layer" id="layer1">
+    <path d="M8 32 C8 18 18 8 32 8 S56 18 56 32 46 56 32 56 8 46 8 32 Z" style="fill:#21a9e2;fill-opacity:1;stroke:#0b2545;stroke-width:2" sodipodi:nodetypes="csssc"/>
+    <filter id="f"><feGaussianBlur stdDeviation="1"/><feOffset dx="1" dy="1"/></filter>
+    <circle cx="32" cy="32" r="10" filter="url(#f)" fill="#fff"/>
+    <mask id="m"><rect width="64" height="64" fill="#fff"/></mask>
+    <rect x="20" y="20" width="24" height="24" mask="url(#m)" fill="#E4572E" opacity="0.5" transform="rotate(45 32 32)"/>
+  </g>
+</svg>

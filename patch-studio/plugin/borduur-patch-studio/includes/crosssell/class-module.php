@@ -1,8 +1,8 @@
 <?php
 /**
  * Cross-sell module (SPEC-EXTRA §2): "zelfde ontwerp, meer producten" na "In winkelmand".
- * Component `BorduurPatchStudio\Crosssell\Module` (opname in Plugin::COMPONENTS = handoff). Zonder WooCommerce doet
- * de module niets (geen notices); de beheerpagina blijft bereikbaar zodat de eigenaar ze kan instellen.
+ * Module `crosssell` of the registry in Plugin::modules() (switch `modules.crosssell.enabled`, default on). Without
+ * WooCommerce it does nothing (no notices); the admin page stays reachable so the owner can configure it.
  *
  * @package BorduurPatchStudio
  */
@@ -53,14 +53,32 @@ final class Module {
 	}
 
 	/**
-	 * Activatie: niets aan te maken (producten maakt de eigenaar met één knop aan).
+	 * Hooks that stay when the module is off in the registry. Cross-sell has no cron and keeps no personal data of
+	 * its own (statistics are counts per product), so there is nothing to keep running.
+	 */
+	public static function register_always(): void {}
+
+	/**
+	 * Activation: nothing to create (the owner creates the products with one button).
 	 */
 	public static function activate(): void {}
 
 	/**
-	 * Deactivatie: geen cron of tijdelijke gegevens.
+	 * Deactivation: no cron or temporary data.
 	 */
 	public static function deactivate(): void {}
+
+	/**
+	 * Data owned by the module (merged into Plugin::owned_data(), also during uninstall).
+	 *
+	 * @return array<string, string[]>
+	 */
+	public static function owned_data(): array {
+		return array(
+			'options'      => array( Config::OPTION, Stats::OPTION ),
+			'product_meta' => array( Products::META ),
+		);
+	}
 
 	/**
 	 * Studio-config: laat de UI weten dat cross-sell aan staat (SPEC-EXTRA handoff 10).

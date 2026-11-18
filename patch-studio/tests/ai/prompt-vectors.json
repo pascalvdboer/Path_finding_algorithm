@@ -78,7 +78,12 @@
     { "id": "S13", "input": { "lang": "fr", "description": "un portrait de Stromae" }, "expect": { "code": "person" } },
     { "id": "S14", "input": { "lang": "fr", "description": "une feuille de cannabis rasta" }, "expect": { "code": "drugs" } },
     { "id": "S15", "input": { "lang": "fr", "description": "insigne de la police belge avec une étoile" }, "expect": { "code": "official" } },
-    { "id": "S16", "input": { "lang": "fr", "description": "un portrait de mon chien avec une couronne" }, "expect": { "ok": true } }
+    { "id": "S16", "input": { "lang": "fr", "description": "un portrait de mon chien avec une couronne" }, "expect": { "ok": true } },
+    { "id": "S17", "input": { "lang": "nl", "description": "het wapenschild van de stad Antwerpen in goud" }, "expect": { "code": "official" } },
+    { "id": "S18", "input": { "lang": "fr", "description": "le blason de la ville de Namur sur un écusson" }, "expect": { "code": "official" } },
+    { "id": "S19", "input": { "lang": "nl", "description": "een leeuw in de stijl van het logo van onze buren" }, "expect": { "code": "copy" } },
+    { "id": "S20", "input": { "lang": "fr", "description": "une contrefaçon d'un écusson connu" }, "expect": { "code": "copy" } },
+    { "id": "S21", "input": { "lang": "nl", "description": "een wapenschild met een leeuw en een kroon voor onze club" }, "expect": { "ok": true } }
   ],
   "refine": [
     { "id": "R01", "base": "T01", "instruction": "maak de wolf bozer", "expect": { "route": "ai_edit", "promptContains": ["CHANGE ONLY THIS: make the wolf angrier", "the color palette"] } },

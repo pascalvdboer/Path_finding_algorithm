@@ -48,6 +48,11 @@ export function createApp(root, cfg) {
     return s.rows;
   }
   function hasBlood(rows) { return rows.some((r) => r.blood && r.blood.group); }
+  /** Toestemmingstekst bloedgroep: de server levert de exacte zin (die hij hasht), messages.js is de terugval. */
+  function bloodConsentCfg() { return (cfg.privacy && cfg.privacy.bloodConsent) || {}; }
+  function bloodConsentText() { return bloodConsentCfg().text || t('nt.s3.bloodConsent'); }
+  /** Algemene fout + hulpzin uit de ingevulde contactvelden (Help_Line), nooit een vaste telefoon/WhatsApp. */
+  function genericError() { return [t('nt.error.generic'), cfg.helpLine || ''].filter(Boolean).join(' '); }
   function hasLine2(rows) { return rows.some((r) => cleanText(r.line2) !== ''); }
 
   function bloodModeFor(s, rows, format) {
@@ -276,6 +281,7 @@ export function createApp(root, cfg) {
     else if (s.step === 3) {
       target = el.main.querySelector('.bps-nt__row.is-error [data-act="rowfix"], [data-act="fix"], .bps-nt__row.is-error .bps-nt__rowMain');
       if (!target && !s.rights) target = el.main.querySelector('[data-act="rights"]');
+      if (!target && !s.bloodConsent) target = el.main.querySelector('[data-act="bloodConsent"]');
     }
     if (!target) return;
     // Alleen het paneel scrollen (op gsm moet het voorbeeld bovenaan blijven staan, pagina-scrollTop 0).
@@ -296,6 +302,7 @@ export function createApp(root, cfg) {
     if (!all.batch.rows.length) out.push(t('nt.bar.needName'));
     if (bad) out.push(t('nt.s3.blocked'));
     if (!s.rights) out.push(t('nt.s3.needRights'));
+    if (hasBlood(all.batch.rows) && !s.bloodConsent) out.push(t('nt.s3.needBloodConsent'));
     return out;
   }
 
@@ -730,6 +737,11 @@ export function createApp(root, cfg) {
     if (lead) html += `<p class="bps-nt__promise">${esc(lead)}</p>`;
     html += `<label class="bps-nt__check bps-nt__rights"><input type="checkbox" data-act="rights" data-fk="rights" ${s.rights ? 'checked' : ''} required><span>${esc(t('nt.s3.rights'))}</span></label>
       <p class="bps-nt__hint">${esc(t('nt.s3.customMade'))}</p>`;
+    // Bloedgroep = gezondheidsgegeven: apart vakje, nooit vooraf aangevinkt, alleen als er een bloedgroep in de lijst staat.
+    if (hasBlood(all.batch.rows)) {
+      html += `<label class="bps-nt__check bps-nt__rights bps-nt__bloodConsent"><input type="checkbox" data-act="bloodConsent" data-fk="bloodConsent" aria-describedby="${id}-bc-hint" ${s.bloodConsent ? 'checked' : ''} required><span>${esc(bloodConsentText())}</span></label>
+      <p class="bps-nt__hint" id="${id}-bc-hint">${esc(t('nt.s3.bloodConsentHint'))}</p>`;
+    }
     const why = blockers(s, all);
     html += `<p class="bps-nt__why" id="${id}-why">${why.length ? esc(why.join(' ')) : ''}</p>`;
     if (s.status === 'error' && s.message) html += `<p class="bps-nt__notice is-error" role="alert">${esc(s.message)}</p>`;
@@ -989,6 +1001,7 @@ export function createApp(root, cfg) {
       priceClient: { totalIncl: all.quote.totalIncl },
       rightsConsent: { v: (cfg.legal && cfg.legal.rightsTextVersion) || '', accepted: true },
     };
+    if (hasBlood(all.batch.rows)) batch.bloodConsent = { v: bloodConsentCfg().v || '', accepted: true };
     if (!cfg.rest || !cfg.rest.root) {
       store.set({ devPayload: batch });
       root.dispatchEvent(new CustomEvent('bps:nametape-payload', { bubbles: true, detail: { batch } }));
@@ -1016,7 +1029,7 @@ export function createApp(root, cfg) {
       if (res.status === 403) res = await send(await tok());
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.ok) {
-        store.set({ status: 'error', message: (data && data.message) || t('nt.error.generic') });
+        store.set({ status: 'error', message: (data && data.message) || genericError() });
         renderMain();
         return;
       }
@@ -1122,6 +1135,7 @@ export function createApp(root, cfg) {
       case 'loop': setStyle({ loop: n.checked }); renderMain(); break;
       case 'bloodmode': setStyle({ bloodMode: n.value }); renderMain(); break;
       case 'rights': store.set({ rights: n.checked }); renderBar(computeAll()); { const w = el.main.querySelector('.bps-nt__why'); if (w) w.textContent = blockers(store.get(), computeAll()).join(' '); } break;
+      case 'bloodConsent': store.set({ bloodConsent: n.checked }); renderBar(computeAll()); { const w = el.main.querySelector('.bps-nt__why'); if (w) w.textContent = blockers(store.get(), computeAll()).join(' '); } break;
       default: break;
     }
   });

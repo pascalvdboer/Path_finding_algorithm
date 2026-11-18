@@ -12,7 +12,7 @@
 export const VIEWS = ['idle', 'describing', 'submitting', 'waiting', 'proposals', 'chosen', 'blocked', 'failed', 'needRounds', 'paused', 'budget'];
 export const SHEETS = ['email', 'pack', 'consent', 'history'];
 
-const EMPTY_BAL = { free: 0, paid: 0, paidLocked: 0, total: 0, nextExpiry: null, lockedUntil: null };
+const EMPTY_BAL = { free: 0, paid: 0, paidLocked: 0, total: 0, nextExpiry: null, lockedUntil: null, expiring: null };
 
 export function initialState(extra) {
   return Object.assign(
@@ -50,6 +50,8 @@ function bal(b) {
     total: b.total != null ? n(b.total) : n(b.free) + n(b.paid),
     nextExpiry: b.nextExpiry || null,
     lockedUntil: b.lockedUntil || null,
+    // Betaalde rondes die binnen 30 dagen vervallen (legal.ai.expiry_notice, 04-juridisch §8).
+    expiring: b.expiring && b.expiring.rounds > 0 ? b.expiring : null,
   };
 }
 

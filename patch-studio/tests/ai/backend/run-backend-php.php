@@ -30,9 +30,11 @@ use BorduurPatchStudio\AI\Identity;
 use BorduurPatchStudio\AI\Image_Store;
 use BorduurPatchStudio\AI\Job_Runner;
 use BorduurPatchStudio\AI\Jobs;
+use BorduurPatchStudio\AI\Legal_Display;
 use BorduurPatchStudio\AI\Limits;
 use BorduurPatchStudio\AI\Messages;
 use BorduurPatchStudio\AI\Moderation;
+use BorduurPatchStudio\AI\Order_Review;
 use BorduurPatchStudio\AI\Module;
 use BorduurPatchStudio\AI\Privacy;
 use BorduurPatchStudio\AI\Rest;
@@ -811,7 +813,8 @@ t( 'markering: PNG krijgt iTXt (geldige CRC) met IPTC-bron; SVG met script gewei
 		$types[] = $type;
 		$pos    += 12 + $len;
 	}
-	eq( array_slice( $types, 0, 3 ), array( 'IHDR', 'iTXt', 'iTXt' ) );
+	eq( array_slice( $types, 0, 4 ), array( 'IHDR', 'tEXt', 'iTXt', 'iTXt' ) );
+	ok( false !== strpos( $png, "tEXtComment\0AI-generated (Patch Studio, openai/gpt-image-2)" ), 'tEXt Comment (04 §1.2)' );
 	ok( false !== strpos( $png, 'AI-generated (Patch Studio, openai/gpt-image-2)' ) );
 	foreach ( array( '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>', '<svg xmlns="http://www.w3.org/2000/svg" onload="x()"><a href="javascript:x()"/></svg>' ) as $bad ) {
 		$clean = Image_Store::sanitize_svg( $bad );
@@ -819,6 +822,52 @@ t( 'markering: PNG krijgt iTXt (geldige CRC) met IPTC-bron; SVG met script gewei
 	}
 	ok( null === Image_Store::save( 'NOTANID', 0, bps_png(), 'mock', 'm' ), 'ongeldige id' );
 	ok( null === Image_Store::save( Jobs::new_id(), 0, "\xFF\xD8\xFFjpeg", 'mock', 'm' ), 'enkel PNG/SVG' );
+} );
+
+/* -------------------------------------------------------------- legal display (04 §1.3) */
+
+t( 'juridisch: AI-regel in winkelmand en op orderitem enkel bij geverifieerd AI-ontwerp', function () {
+	fresh();
+	update_post_meta( 501, Design_Link::META, array( 'jobId' => 'J1', 'index' => 0 ) );
+	update_post_meta( 502, Design_Link::META, array( 'jobId' => '' ) );
+	$rows = Legal_Display::cart_item_data( array(), array( 'bps' => array( 'design_id' => 501 ) ) );
+	eq( count( $rows ), 1, 'één regel voor AI-ontwerp' );
+	eq( $rows[0]['key'], 'Ontwerp' );
+	ok( false !== strpos( $rows[0]['value'], 'AI-voorstel' ), 'cart_line: ' . $rows[0]['value'] );
+	eq( Legal_Display::cart_item_data( array(), array( 'bps' => array( 'design_id' => 502 ) ) ), array(), 'geen label zonder jobId' );
+	eq( Legal_Display::cart_item_data( array(), array( 'product_id' => 9 ) ), array(), 'geen label zonder ontwerp' );
+	$item = new class() {
+		public $m = array();
+		public function get_meta( $k ) { return $this->m[ $k ] ?? ''; }
+		public function get_id() { return 77; }
+		public function get_order() { return null; }
+	};
+	eq( Legal_Display::order_item_meta( array(), $item ), array(), 'gewoon orderitem: niets' );
+	$item->m[ Design_Link::META ] = array( 'jobId' => 'J1' );
+	$out = Legal_Display::order_item_meta( array(), $item );
+	eq( count( $out ), 1 );
+	$row = array_values( $out )[0];
+	ok( false !== strpos( $row->value, 'AI-voorstel' ) && false !== strpos( $row->value, 'atelier' ), 'proof_line: ' . $row->value );
+	eq( Legal_Display::lang( 'fr_BE' ), 'fr' );
+	list( $l, $v ) = Legal_Display::split( Legal_Display::text( 'legal.ai.cart_line', 'fr' ) );
+	eq( $l, 'Design' );
+	ok( false !== strpos( $v, 'proposition IA' ) );
+} );
+
+t( 'juridisch: privacytekst volgt 04 §6.7 (verwerker, doorgifte, geen training, termijnen, markering) in NL en FR', function () {
+	fresh();
+	foreach ( array( 'nl', 'fr' ) as $lang ) {
+		$txt = Privacy::policy_paragraphs( $lang );
+		$all = implode( ' ', $txt );
+		ok( count( $txt ) >= 4, $lang . ' alinea\'s' );
+		$must = 'nl' === $lang
+			? array( 'verwerker', 'Verenigde Staten', 'trainen', '30 dagen', '12 maanden', '3 jaar', '10 jaar', 'markering', 'gerechtvaardigd belang' )
+			: array( 'sous-traitant', 'États-Unis', 'entraîner', '30 jours', '12 mois', '3 ans', '10 ans', 'marquage', 'intérêt légitime' );
+		foreach ( $must as $w ) {
+			ok( false !== strpos( $all, $w ), $lang . ' mist: ' . $w );
+		}
+		ok( false === strpos( $all, '{' ), $lang . ' geen open placeholders' );
+	}
 } );
 
 /* -------------------------------------------------------------- cleanup */
@@ -948,6 +997,124 @@ t( 'FR-meldingen in "vous"', function () use ( $ctx ) {
 		ok( ! preg_match( '/\b(tu|ton|ta|tes)\b/iu', $m['fr'] ), "tu-vorm in {$k}" );
 		ok( false === stripos( $m['nl'], 'credits' ) && false === stripos( $m['nl'], 'tokens' ), "credits/tokens in {$k}" );
 	}
+} );
+
+/* ---------------------------------------------------------------------
+ * Security & kosten (review "security-kosten", 18-11)
+ * ------------------------------------------------------------------- */
+
+t( 'IPv6: één /64 is één emmer (geen gratis ronde per adres); IPv4 en IPv4-mapped ongewijzigd', function () {
+	fresh();
+	eq( Identity::ip_bucket( '2001:db8:1:2:aaaa::1' ), Identity::ip_bucket( '2001:db8:1:2:ffff:ffff:ffff:fffe' ) );
+	ok( Identity::ip_bucket( '2001:db8:1:2::1' ) !== Identity::ip_bucket( '2001:db8:1:3::1' ), 'ander /64 = andere emmer' );
+	eq( Identity::ip_bucket( '203.0.113.7' ), '203.0.113.7' );
+	eq( Identity::ip_bucket( '::ffff:203.0.113.7' ), '203.0.113.7' );
+	Identity::$ip_override = '2001:db8:1:2::10';
+	$a = Identity::ip_hash();
+	Identity::$ip_override = '2001:db8:1:2:9::99';
+	eq( Identity::ip_hash(), $a, 'zelfde lijn = zelfde ip_hash' );
+} );
+
+t( 'annuleren tijdens het werk: ronde terug, maar na runningCancelsPerDay pauzeert de studio (geen gratis kostenkraan)', function () use ( $ctx ) {
+	list( $store, $c ) = fresh( 'test', array( 'limits' => array( 'runningCancelsPerDay' => 2 ) ) );
+	Job_Runner::$force_inline = false;
+	$o = owner( $c, 1 );
+	for ( $i = 0; $i < 2; $i++ ) {
+		$r  = Jobs::generate( $o, body(), $ctx );
+		$id = $r['body']['jobId'];
+		$store->jobs[ $id ]['status'] = 'running';
+		$x = Jobs::cancel( $o, $id, $ctx );
+		eq( $x['body']['status'], 'cancelled' );
+		eq( $c->free[ $o ], 1, 'ronde telkens terug' );
+	}
+	ok( Limits::paused_until( $o, $ctx['ip_hash'] ) > time(), 'gepauzeerd na 2 annulaties tijdens het werk' );
+	$e = Jobs::generate( $o, body(), $ctx );
+	ok( is_wp_error( $e ) && 'bps_ai_paused' === $e->get_error_code() );
+} );
+
+t( 'annuleren in de wachtrij (nog geen AI-kost) telt niet mee voor de pauze', function () use ( $ctx ) {
+	list( $store, $c ) = fresh( 'test', array( 'limits' => array( 'runningCancelsPerDay' => 1 ) ) );
+	Job_Runner::$force_inline = false;
+	$o = owner( $c, 1 );
+	$r = Jobs::generate( $o, body(), $ctx );
+	Jobs::cancel( $o, $r['body']['jobId'], $ctx );
+	eq( Limits::paused_until( $o, $ctx['ip_hash'] ), 0 );
+} );
+
+t( 'kiezen: betaalde vectorisatie hoogstens één keer per voorstel, ook als ze mislukt', function () use ( $ctx ) {
+	list( $store, $c ) = fresh( 'live', array( 'vectorizer' => 'recraft' ) );
+	$calls = new ArrayObject();
+	$vec   = new class( $calls ) implements \BorduurPatchStudio\AI\Providers\Provider {
+		private $calls;
+		public function __construct( $calls ) { $this->calls = $calls; }
+		public function id(): string { return 'recraft'; }
+		public function label(): string { return 'Vec'; }
+		public function is_configured(): bool { return true; }
+		public function capabilities(): array { return array( 'transparent_bg' => true, 'vector_output' => true, 'edit' => false, 'edit_mask' => false, 'text_quality' => 1, 'max_n' => 1 ); }
+		public function generate( array $req ): Provider_Result { throw new Provider_Error( 'unsupported' ); }
+		public function edit( array $req ): Provider_Result { throw new Provider_Error( 'unsupported' ); }
+		public function vectorize( string $image_path ): Provider_Result { $this->calls->append( 1 ); throw new Provider_Error( 'unavailable', 'down' ); }
+		public function estimate_usd( string $op, array $params ): float { return 0.01; }
+	};
+	Provider_Registry::override( 'recraft', $vec );
+	$o   = owner( $c, 1 );
+	$r   = Jobs::generate( $o, body(), $ctx );
+	ok( ! is_wp_error( $r ), 'job aangemaakt' );
+	$id  = $r['body']['jobId'];
+	$png = base64_decode( 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==' );
+	$row = Image_Store::save( $id, 0, $png, 'openai', 'x' );
+	ok( is_array( $row ), 'png bewaard' );
+	$store->jobs[ $id ]['result'] = json_encode( array( $row ) );
+	$store->jobs[ $id ]['status'] = 'done';
+	for ( $i = 0; $i < 3; $i++ ) {
+		$x = Jobs::choose( $o, $id, array( 'proposalIndex' => 0 ) );
+		ok( ! is_wp_error( $x ), 'kiezen lukt' );
+		eq( $x['status'], 200 );
+		eq( $x['body']['svgUrl'], null );
+	}
+	eq( count( $calls ), 1, 'één vectorisatiepoging, niet drie' );
+} );
+
+t( 'orderkant: source.ai blijft in het payload (gevalideerd), fiche-sectie en nakijkvinkje', function () {
+	fresh();
+	$id    = '01JD3ZQ8X5V0M4N7P2R6S9T1WA';
+	$clean = array( 'source' => array( 'fileName' => 'x.png', 'fileType' => 'image/png' ) );
+	$out   = Order_Review::payload_clean( $clean, array( 'source' => array( 'ai' => array( 'jobId' => strtolower( $id ), 'index' => '2', 'prompt' => 'hack' ) ) ) );
+	eq( $out['source']['ai'], array( 'jobId' => $id, 'index' => 2 ), 'enkel jobId + index, hoofdletters' );
+	eq( $out['source']['fileName'], 'x.png', 'bestaande velden blijven' );
+	foreach ( array( array( 'jobId' => 'kort', 'index' => 0 ), array( 'jobId' => $id, 'index' => 4 ), array( 'jobId' => $id, 'index' => -1 ), array( 'jobId' => $id ), 'tekst', array( 'jobId' => array( $id ), 'index' => 0 ) ) as $bad ) {
+		$o = Order_Review::payload_clean( $clean, array( 'source' => array( 'ai' => $bad ) ) );
+		ok( ! isset( $o['source']['ai'] ), 'ongeldige claim weg: ' . json_encode( $bad ) );
+	}
+	$o = Order_Review::payload_clean( array( 'source' => array( 'ai' => array( 'jobId' => $id, 'index' => 0 ) ) ), array() );
+	ok( ! isset( $o['source']['ai'] ), 'claim zonder ruwe invoer kan niet blijven staan' );
+	eq( Order_Review::payload_clean( 'x', array() ), 'x', 'geen array: onveranderd' );
+
+	$item = new class() {
+		public $m = array();
+		public $saved = 0;
+		public function get_meta( $k ) { return $this->m[ $k ] ?? ''; }
+		public function update_meta_data( $k, $v ) { $this->m[ $k ] = $v; }
+		public function save() { $this->saved++; }
+		public function get_name() { return 'Patch'; }
+	};
+	eq( Order_Review::fiche_sections( array( 'a' => 1 ), array(), $item ), array( 'a' => 1 ), 'gewone regel: geen AI-sectie' );
+	$item->m[ Design_Link::META ] = array( 'jobId' => $id, 'index' => 1, 'provider' => 'openai', 'model' => 'gpt-image-1-mini', 'humanFinish' => false, 'review' => null );
+	$s = Order_Review::fiche_sections( array(), array(), $item );
+	eq( $s['ai']['title'], 'AI-ontwerp' );
+	eq( $s['ai']['rows'][2]['level'], 'warn', 'nog niet nagekeken = waarschuwing' );
+	ok( false !== strpos( $s['ai']['rows'][1]['value'], '#2' ), 'voorstel 2 (1-gebaseerd)' );
+	ok( Order_Review::set_review( $item, true, 7, 1763460000 ), 'vinkje aan' );
+	eq( $item->m[ Design_Link::META ]['review'], array( 'user_id' => 7, 'at' => gmdate( 'Y-m-d H:i:s', 1763460000 ) ) );
+	ok( ! Order_Review::set_review( $item, true, 8 ), 'nogmaals aan: geen wijziging (eerste nakijker blijft)' );
+	$s = Order_Review::fiche_sections( array(), array(), $item );
+	eq( $s['ai']['rows'][2]['level'], 'ok' );
+	ok( 0 === strpos( $s['ai']['rows'][2]['value'], 'Ja, door' ), $s['ai']['rows'][2]['value'] );
+	ok( Order_Review::set_review( $item, false, 7 ), 'vinkje uit' );
+	eq( $item->m[ Design_Link::META ]['review'], null );
+	eq( $item->saved, 2 );
+	$plain = new class() { public function get_meta( $k ) { return ''; } };
+	ok( ! Order_Review::set_review( $plain, true, 7 ), 'gewone regel: niets' );
 } );
 
 // Cleanup temp files.

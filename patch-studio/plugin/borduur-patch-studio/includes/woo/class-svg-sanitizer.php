@@ -32,6 +32,12 @@ final class Svg_Sanitizer {
 		'switch',
 	);
 
+	/**
+	 * CSS functions that take a URL or string argument and can load a resource (besides url()).
+	 * Matched on lowercase, whitespace-free text; the look-behind keeps e.g. "-webkit-image-set(" in scope.
+	 */
+	const RESOURCE_FUNCTIONS = '/(?<![a-z0-9_])(?:-webkit-|-moz-|-o-|-ms-)?(?:image-set|image|cross-fade|src|element)\\(/';
+
 	/** Elements whose children are kept but the element itself is unwrapped (links). */
 	const UNWRAP = array( 'a' );
 
@@ -171,7 +177,7 @@ final class Svg_Sanitizer {
 			$name  = strtolower( (string) $attr->nodeName ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName
 			$local = strtolower( (string) $attr->localName ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName
 			$value = (string) $attr->value;
-			$flat  = strtolower( preg_replace( '/[\s\x00-\x1f]+/', '', html_entity_decode( $value, ENT_QUOTES | ENT_HTML5, 'UTF-8' ) ) );
+			$flat  = self::flatten( $value );
 
 			if ( 0 === strpos( $local, 'on' ) || ! preg_match( '/^[a-z_:][-a-z0-9_:.]*$/', $name ) ) {
 				$remove[] = $attr;
@@ -190,16 +196,23 @@ final class Svg_Sanitizer {
 				$attr->value = self::clean_css( $value );
 				continue;
 			}
-			// Presentation attributes may only reference local fragments: url(#id).
-			if ( false !== strpos( $flat, 'javascript:' ) || false !== strpos( $flat, 'vbscript:' ) || false !== strpos( $flat, 'data:' ) || false !== strpos( $flat, 'expression(' ) ) {
+			// Presentation attributes: a valid logo never needs CSS escapes, so every backslash goes first
+			// (u\rl(…) would otherwise slip past the url() check below).
+			if ( false !== strpos( $value, '\\' ) ) {
+				$value       = str_replace( '\\', '', $value );
+				$attr->value = $value;
+				$flat        = self::flatten( $value );
+			}
+			if ( false !== strpos( $flat, 'javascript:' ) || false !== strpos( $flat, 'vbscript:' ) || false !== strpos( $flat, 'data:' ) || false !== strpos( $flat, 'expression(' ) || preg_match( self::RESOURCE_FUNCTIONS, $flat ) ) {
 				$remove[] = $attr;
 				continue;
 			}
+			// Presentation attributes may only reference local fragments: url(#id).
 			if ( false !== strpos( $flat, 'url(' ) ) {
 				preg_match_all( '/url\(([^)]*)\)/', $flat, $mm );
 				$unclosed = substr_count( $flat, 'url(' ) !== count( $mm[1] );
 				foreach ( $mm[1] as $u ) {
-					if ( ! preg_match( '/^#[-\w.:]+$/', trim( $u, '\'"' ) ) ) {
+					if ( ! preg_match( '/^#[-\w.:]+$/', $u ) ) {
 						$unclosed = true;
 					}
 				}
@@ -214,13 +227,33 @@ final class Svg_Sanitizer {
 	}
 
 	/**
+	 * Lowercase, entity-decoded value without whitespace/control characters (for pattern checks only).
+	 *
+	 * @param string $value Attribute value.
+	 */
+	private static function flatten( string $value ): string {
+		return strtolower( (string) preg_replace( '/[\s\x00-\x1f]+/', '', html_entity_decode( $value, ENT_QUOTES | ENT_HTML5, 'UTF-8' ) ) );
+	}
+
+	/**
 	 * Clean CSS (style element or attribute): drop @import, external url(), expression(), behaviours.
 	 *
 	 * @param string $css CSS.
 	 */
 	public static function clean_css( string $css ): string {
 		$css = preg_replace( '#/\*.*?\*/#s', '', $css );
-		$css = preg_replace( '/\\\\[0-9a-f]{1,6}\s?/i', '', (string) $css ); // CSS escapes are a classic bypass.
+		// CSS escapes are a classic bypass (@imp\ort, u\rl(, \75 rl(). Normalise them the way a browser reads
+		// them BEFORE any other filter runs: hex escapes become their character, then every remaining backslash
+		// goes (a valid logo never needs escapes, so nothing legitimate is lost).
+		$css = preg_replace_callback(
+			'/\\\\([0-9a-f]{1,6})\s?/i',
+			static function ( $m ) {
+				$cp = hexdec( $m[1] );
+				return ( $cp < 0x20 || ( $cp >= 0xD800 && $cp <= 0xDFFF ) || $cp > 0x10FFFF ) ? '' : (string) mb_chr( (int) $cp, 'UTF-8' );
+			},
+			(string) $css
+		);
+		$css = str_replace( '\\', '', (string) $css );
 		$css = preg_replace( '/@import[^;]*;?/i', '', (string) $css );
 		$css = preg_replace( '/@font-face\s*\{[^}]*\}/i', '', (string) $css );
 		$css = preg_replace_callback(
@@ -230,11 +263,44 @@ final class Svg_Sanitizer {
 			},
 			(string) $css
 		);
-		// Leftover url( (unclosed at end of input, which CSS auto-closes) and image-set() with bare strings
-		// could still load remote resources: neutralise anything that is not a local url(#id).
-		$css = preg_replace( '/url\s*\((?!#[-\w.:]+\))/i', 'none(', (string) $css );
-		$css = preg_replace( '/(-webkit-)?image-set\s*\(/i', 'none(', (string) $css );
+		// Leftover url( (unclosed at end of input, which CSS auto-closes) and other functions with a string or
+		// URL argument (image(), image-set(), cross-fade(), src(), element()) could still load remote resources:
+		// replace the whole call, argument included, by "none".
+		$css = self::drop_calls( (string) $css, '/url\s*\((?!#[-\w.:]+\))/i' );
+		$css = self::drop_calls( (string) $css, '/(?<![a-z0-9_-])(?:-webkit-|-moz-|-o-|-ms-)?(?:image-set|image|cross-fade|src|element)\s*\(/i' );
 		$css = preg_replace( '/(expression|behavior|-moz-binding|javascript:|vbscript:)/i', '', (string) $css );
 		return str_replace( array( '<', '>' ), '', (string) $css );
+	}
+
+	/**
+	 * Replace every call matched by $open (a pattern ending in "(") by "none", including its argument up to the
+	 * balanced closing parenthesis (quotes respected). An unclosed call runs to the end of the input, like CSS.
+	 *
+	 * @param string $css  CSS.
+	 * @param string $open Pattern for the function name plus "(".
+	 */
+	private static function drop_calls( string $css, string $open ): string {
+		$guard = 0;
+		while ( $guard++ < 1000 && preg_match( $open, $css, $m, PREG_OFFSET_CAPTURE ) ) {
+			$start = (int) $m[0][1];
+			$i     = $start + strlen( $m[0][0] );
+			$depth = 1;
+			$quote = '';
+			$len   = strlen( $css );
+			for ( ; $i < $len && $depth > 0; $i++ ) {
+				$ch = $css[ $i ];
+				if ( '' !== $quote ) {
+					$quote = $ch === $quote ? '' : $quote;
+				} elseif ( '"' === $ch || "'" === $ch ) {
+					$quote = $ch;
+				} elseif ( '(' === $ch ) {
+					++$depth;
+				} elseif ( ')' === $ch ) {
+					--$depth;
+				}
+			}
+			$css = substr( $css, 0, $start ) . 'none' . substr( $css, $i );
+		}
+		return $css;
 	}
 }

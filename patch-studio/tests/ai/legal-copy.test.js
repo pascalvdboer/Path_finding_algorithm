@@ -57,3 +57,31 @@ test('AI label present and safe defaults', () => {
 test('config strings stay in sync with the doc table', () => {
   for (const k of Object.keys(S)) assert.ok(doc.includes(`| ${k} |`), `${k} missing in doc`);
 });
+
+// Review juridisch-check (18-11): elke juridische tekst moet ook echt ergens in de code gebruikt worden, anders staat
+// een verplichting (label, toestemming, herroeping, vervaldatum, proefregel) enkel op papier.
+test('every legal string is used somewhere in the AI/services code', async () => {
+  const { readdirSync, statSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  const root = new URL('../../plugin/borduur-patch-studio/', import.meta.url).pathname;
+  const dirs = ['includes/ai', 'includes/services', 'assets/src/ai', 'assets/src/services'];
+  let code = '';
+  const walk = (d) => {
+    for (const f of readdirSync(d)) {
+      const p = join(d, f);
+      if (statSync(p).isDirectory()) walk(p);
+      else if (/\.(php|js)$/.test(f)) code += readFileSync(p, 'utf8') + '\n';
+    }
+  };
+  for (const d of dirs) walk(join(root, d));
+  for (const k of Object.keys(S)) assert.ok(code.includes(`'${k}'`), `${k} wordt nergens gebruikt`);
+});
+
+test('service withdrawal texts: summary/e-mail placeholders and honest wording', () => {
+  for (const k of ['legal.svc.withdraw_summary', 'legal.svc.withdraw_email']) {
+    assert.match(S[k].nl, /\{bedrag\}/, k);
+    assert.match(S[k].nl, /14 dagen/, k);
+  }
+  assert.match(S['legal.svc.withdraw_summary_started'].nl, /werk dat al gedaan is/);
+  assert.match(S['legal.svc.withdraw_email_started'].fr, /déjà effectuée/);
+});

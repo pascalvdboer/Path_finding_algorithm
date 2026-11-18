@@ -268,6 +268,23 @@ final class Rest {
 			);
 		}
 
+		// Blood group = health data (art. 9 GDPR): only with the separate, explicit consent of the customer.
+		$b = $check['batch'];
+		if ( Privacy::has_blood( $b ) ) {
+			if ( ! Privacy::consent_given( $raw['bloodConsent'] ?? null ) ) {
+				return self::error(
+					'bps_blood_consent_required',
+					__( 'Vink aan dat je de toestemming hebt van de mensen op de lijst om hun bloedgroep te borduren, of haal de bloedgroepen weg.', 'borduur-patch-studio' ),
+					400,
+					array( 'field' => 'bloodConsent' )
+				);
+			}
+			// Stored by Cart::data_from_batch (P04) under the same key; version and hash are set here, never by the client.
+			$check['batch']['bloodConsent'] = Privacy::consent_record( (string) ( $b['locale'] ?? 'nl-BE' ) );
+		} else {
+			unset( $check['batch']['bloodConsent'] );
+		}
+
 		$files   = $r->get_file_params();
 		$preview = array();
 		if ( ! empty( $files['preview'] ) && is_array( $files['preview'] ) ) {
@@ -317,7 +334,7 @@ final class Rest {
 	}
 
 	/**
-	 * Uploads dir for previews (created with an index.php).
+	 * Uploads dir for previews (created with protection files).
 	 *
 	 * @return array{dir:string,url:string}|null
 	 */
@@ -330,9 +347,8 @@ final class Rest {
 		if ( ! is_dir( $dir ) && ! wp_mkdir_p( $dir ) ) {
 			return null;
 		}
-		if ( ! file_exists( $dir . '/index.php' ) ) {
-			file_put_contents( $dir . '/index.php', "<?php\n// Silence is golden.\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
-		}
+		// index.php + .htaccess (no listing, PNG only, noindex), like uploads/patch-studio/previews/.
+		Privacy::protect_dir( $dir );
 		return array(
 			'dir' => $dir,
 			'url' => trailingslashit( $up['baseurl'] ) . self::PREVIEW_DIR,

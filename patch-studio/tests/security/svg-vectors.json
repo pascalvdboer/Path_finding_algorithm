@@ -1,0 +1,644 @@
+{
+ "_doc": "SVG XSS / remote-resource vectors for Svg_Sanitizer::sanitize(). Each output must be false (refused) or contain none of mustNotContain (case-insensitive) and all of mustContain. Run by tests/security/run-security-php.php.",
+ "vectors": [
+  {
+   "name": "script element",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><script>alert(1)</script><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "<script",
+    "alert("
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "script with external href",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><script xlink:href=\"https://evil.example/x.js\"/><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "<script",
+    "evil.example"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "script in CDATA",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><script><![CDATA[alert(document.cookie)]]></script><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "<script",
+    "cookie"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "onload on root",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" onload=\"alert(1)\"><rect id=\"keep\" width=\"1\" height=\"1\"/></svg>",
+   "mustNotContain": [
+    "onload",
+    "alert("
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "onclick on child",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><circle r=\"5\" onclick=\"alert(1)\"/><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "onclick",
+    "alert("
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "uppercase ONMOUSEOVER",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><circle r=\"5\" ONMOUSEOVER=\"alert(1)\"/><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "onmouseover",
+    "alert("
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "onfocusin on text",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><text onfocusin=\"alert(1)\">x</text><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "onfocusin"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "javascript href on a (unwrapped)",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><a href=\"javascript:alert(1)\"><circle r=\"3\"/></a><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "javascript:",
+    "<a "
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "xlink:href javascript on use",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><use xlink:href=\"javascript:alert(1)\"/><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "javascript:"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "entity-encoded javascript href",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><use href=\"&#106;avascript:alert(1)\"/><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "javascript:",
+    "avascript"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "tab inside javascript scheme",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><use href=\"java&#x09;script:alert(1)\"/><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "script:",
+    "alert("
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "leading whitespace javascript href",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><use href=\"  javascript:alert(1)\"/><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "javascript:"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "data:text/html href on image",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><image href=\"data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==\"/><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "data:text",
+    "base64,PHN"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "data:image/svg+xml href on image",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><image href=\"data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=\"/><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "svg+xml"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "data: url in use",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><use href=\"data:image/svg+xml,&lt;svg onload=alert(1)&gt;\"/><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "data:",
+    "onload"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "foreignObject with html",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><foreignObject width=\"100\" height=\"100\"><body xmlns=\"http://www.w3.org/1999/xhtml\"><iframe src=\"https://evil.example\"/></body></foreignObject><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "foreignobject",
+    "iframe",
+    "evil.example"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "use with external file href",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><use href=\"https://evil.example/sprite.svg#a\"/><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "evil.example"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "image with external href",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><image width=\"5\" height=\"5\" xlink:href=\"https://evil.example/a.png\"/><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "evil.example"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "feImage with external href",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><filter id=\"f\"><feImage href=\"https://evil.example/a.png\"/></filter><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "evil.example"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "style @import url()",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><style>@import url('https://evil.example/a.css'); .a{fill:red}</style><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "@import",
+    "evil.example"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "style @import double quotes",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><style>@import \"https://evil.example/a.css\";</style><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "@import",
+    "evil.example"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "style @import single quotes",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><style>@import 'https://evil.example/a.css';</style><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "@import",
+    "evil.example"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "finding": "security-6",
+   "rejectOk": true
+  },
+  {
+   "name": "style @imp\\ort escape",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><style>@imp\\ort url(https://evil.example/a.css); .a{fill:red}</style><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "@import",
+    "evil.example",
+    "\\"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "finding": "security-6",
+   "rejectOk": true
+  },
+  {
+   "name": "style attribute u\\rl()",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><rect width=\"1\" height=\"1\" style=\"fill:u\\rl(https://evil.example/x)\"/><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "evil.example",
+    "\\"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "finding": "security-6",
+   "rejectOk": true
+  },
+  {
+   "name": "presentation attribute u\\rl()",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><rect width=\"1\" height=\"1\" fill=\"u\\rl(https://evil.example/x)\"/><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "evil.example",
+    "\\"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "finding": "security-6",
+   "rejectOk": true
+  },
+  {
+   "name": "cross-fade() with string url",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><style>.a{background:cross-fade('https://evil.example/a.png', 'b.png', 50%)}</style><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "evil.example",
+    "cross-fade("
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "finding": "security-6",
+   "rejectOk": true
+  },
+  {
+   "name": "image() with string url",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><style>.b{background:image(\"https://evil.example/a.png\")}</style><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "evil.example",
+    "image("
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "finding": "security-6",
+   "rejectOk": true
+  },
+  {
+   "name": "image-set() with strings",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><style>.c{background:-webkit-image-set(\"https://evil.example/a.png\" 1x)}</style><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "evil.example",
+    "image-set("
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "src() function",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><rect width=\"1\" height=\"1\" style=\"fill:src(&quot;https://evil.example/x&quot;)\"/><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "evil.example",
+    "src("
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "element() function",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><style>.d{background:element(#keep)}</style><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "element("
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "plain css url() remote",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><style>.e{fill:url(https://evil.example/x.svg#g)}</style><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "evil.example"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "unclosed css url( at end",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><style>.f{fill:url(https://evil.example/x</style><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "evil.example"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "css hex escape \\75rl",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><style>.g{fill:\\75 rl(https://evil.example/x)}</style><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "evil.example",
+    "\\"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "css comment split ur/**/l",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><style>.h{fill:ur/**/l(https://evil.example/x)}</style><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "evil.example"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "style attribute entity-encoded url",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><rect width=\"1\" height=\"1\" style=\"fill:&#117;rl(https://evil.example/x)\"/><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "evil.example"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "fill attribute quoted remote url",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><rect width=\"1\" height=\"1\" fill=\"url('https://evil.example/#a')\"/><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "evil.example"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "mask attribute remote url",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><rect width=\"1\" height=\"1\" mask=\"url(https://evil.example/m.svg#m)\"/><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "evil.example"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "filter attribute url with newline",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><rect width=\"1\" height=\"1\" filter=\"url&#10;(https://evil.example/f.svg#f)\"/><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "evil.example"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "cross-fade in presentation attribute",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><rect width=\"1\" height=\"1\" fill=\"cross-fade('https://evil.example/a.png')\"/><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "evil.example"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "expression() in style",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><rect width=\"1\" height=\"1\" style=\"width:expression(alert(1))\"/><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "expression"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "-moz-binding in style",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><style>.i{-moz-binding:url(https://evil.example/x.xml#b)}</style><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "-moz-binding",
+    "evil.example"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "behavior in style",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><style>.j{behavior:url(https://evil.example/x.htc)}</style><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "behavior",
+    "evil.example"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "vbscript scheme",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><rect width=\"1\" height=\"1\" fill=\"vbscript:msgbox(1)\"/><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "vbscript"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "xml:base javascript",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><g xml:base=\"javascript:alert(1)//\"><circle r=\"1\"/></g><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "javascript:"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "animate to javascript href",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><a><animate attributeName=\"href\" to=\"javascript:alert(1)\"/><circle r=\"1\"/></a><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "<animate",
+    "javascript:"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "set onbegin",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><set attributeName=\"fill\" to=\"red\" onbegin=\"alert(1)\"/><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "<set",
+    "onbegin"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "XHTML namespaced script",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><html:script xmlns:html=\"http://www.w3.org/1999/xhtml\">alert(1)</html:script><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "script",
+    "alert("
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "uppercase SCRIPT element",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><SCRIPT>alert(1)</SCRIPT><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "script",
+    "alert("
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "xml-stylesheet processing instruction",
+   "svg": "<?xml version=\"1.0\"?><?xml-stylesheet href=\"https://evil.example/a.css\"?><svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "evil.example",
+    "xml-stylesheet"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "XXE external entity",
+   "svg": "<?xml version=\"1.0\"?><!DOCTYPE svg [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><svg xmlns=\"http://www.w3.org/2000/svg\"><text>&xxe;</text><rect id=\"keep\"/></svg>",
+   "mustNotContain": [
+    "root:",
+    "passwd",
+    "&xxe"
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "billion laughs",
+   "svg": "<?xml version=\"1.0\"?><!DOCTYPE lolz [<!ENTITY lol \"lol\"><!ENTITY lol2 \"&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;\">]><svg xmlns=\"http://www.w3.org/2000/svg\"><text>&lol2;</text></svg>",
+   "mustNotContain": [
+    "lollollol"
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "XHTML document named svg",
+   "svg": "<svg xmlns=\"http://www.w3.org/1999/xhtml\"><script>alert(1)</script></svg>",
+   "mustNotContain": [
+    "script"
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "a with xlink:href javascript and text",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><a xlink:href=\"javascript:alert(document.domain)\"><text>klik</text></a><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "javascript:",
+    "<a"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "iframe element",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><iframe src=\"https://evil.example\"/><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "iframe",
+    "evil.example"
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  },
+  {
+   "name": "handler element",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><handler type=\"application/ecmascript\">alert(1)</handler><rect id=\"keep\" width=\"10\" height=\"10\" fill=\"#21a9e2\"/></svg>",
+   "mustNotContain": [
+    "handler",
+    "alert("
+   ],
+   "mustContain": [
+    "id=\"keep\""
+   ],
+   "rejectOk": true
+  }
+ ]
+}

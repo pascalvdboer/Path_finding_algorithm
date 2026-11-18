@@ -26,7 +26,7 @@ export const TEMPLATES = [
   { id: 'vintage', use: ['motor', 'event'], shape: 'oval', aspect: 1.45, sizeCm: 10, technique: 'chenille', fabric: 'red', edge: '1803',
     texts: [T('ROAD CREW', { font: 'Cinzel', path: 'arc_top', heightMm: 7, threadCode: '1803', letterSpacing: 0.1 }), T('MC', { font: 'Pacifico', heightMm: 17, threadCode: '1803', offsetMm: { x: 0, y: 3 } })] },
   { id: 'leather', use: ['gift', 'company'], shape: 'rounded', aspect: 1.5, sizeCm: 8, technique: 'leather', fabric: 'leather_cognac', edge: 'auto',
-    texts: [T('HANDMADE', { font: 'Cinzel', heightMm: 8, threadCode: '1800', offsetMm: { x: 0, y: -4 }, letterSpacing: 0.14 }), T('ATELIER · 2026', { heightMm: 4, threadCode: '1800', offsetMm: { x: 0, y: 8 }, letterSpacing: 0.14 })] },
+    texts: [T('HANDMADE', { font: 'Cinzel', heightMm: 6.5, threadCode: '1800', offsetMm: { x: 0, y: -4 }, letterSpacing: 0.14 }), T('ATELIER · 2026', { heightMm: 4, threadCode: '1800', offsetMm: { x: 0, y: 8 }, letterSpacing: 0.14 })] },
   { id: 'event', use: ['event', 'gift'], shape: 'circle', sizeCm: 7, technique: 'printed', fabric: 'white', edge: '1934',
     texts: [T('FUN RUN', { font: 'Oswald', path: 'arc_top', heightMm: 8, threadCode: '1934', letterSpacing: 0.08 }), T('2026', { font: 'Graduate', heightMm: 13, threadCode: '1965', offsetMm: { x: 0, y: 2 } }), T('10 KM', { path: 'arc_bottom', heightMm: 5.5, threadCode: '1934', letterSpacing: 0.15 })] },
   { id: 'opa', use: ['gift'], shape: 'shield', aspect: 0.9, sizeCm: 7, technique: 'embroidered', fabric: 'bottle', edge: '1724',
@@ -88,7 +88,15 @@ function renderTemplate(config, st, px) {
   const id = x.getImageData(0, 0, cv.width, cv.height), dd = id.data;
   for (let i = 3; i < dd.length; i += 4) if (dd[i] < 150) dd[i] = dd[i] < 90 ? 0 : (dd[i] - 90) * 4;
   x.putImageData(id, 0, 0);
-  return cv;
+  // soft contact + cast shadow baked into the image (a CSS drop-shadow on a scaled image shows a square halo)
+  const out = h('canvas', { width: cv.width, height: cv.height });
+  const o2 = out.getContext('2d');
+  const k = cv.width / 360;
+  o2.shadowColor = 'rgba(10,31,68,0.30)'; o2.shadowBlur = 16 * k; o2.shadowOffsetY = 9 * k;
+  o2.drawImage(cv, cv.width * 0.04, cv.height * 0.03, cv.width * 0.92, cv.height * 0.92);
+  o2.shadowColor = 'rgba(10,31,68,0.25)'; o2.shadowBlur = 3 * k; o2.shadowOffsetY = 2 * k;
+  o2.drawImage(cv, cv.width * 0.04, cv.height * 0.03, cv.width * 0.92, cv.height * 0.92);
+  return out;
 }
 
 /**

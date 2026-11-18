@@ -31,7 +31,8 @@ final class Payload {
 			if ( strlen( $raw ) > 200000 ) {
 				return self::err( __( 'Je ontwerp bevat te veel gegevens.', 'borduur-patch-studio' ) );
 			}
-			$raw = json_decode( $raw, true );
+			// A DesignPayload is at most 4 levels deep; a low depth limit stops nesting bombs early.
+			$raw = json_decode( $raw, true, 16 );
 		}
 		if ( ! is_array( $raw ) ) {
 			return self::err();
@@ -123,6 +124,30 @@ final class Payload {
 				'v'        => self::str( $raw['rightsConsent']['v'] ?? '', 20 ),
 				'accepted' => true === ( $raw['rightsConsent']['accepted'] ?? false ),
 			);
+		}
+
+		/**
+		 * Extend the clean payload with module data (e.g. name variants). Runs on server-side code only;
+		 * whatever a callback adds must be validated by that callback.
+		 *
+		 * @param array $out Clean payload.
+		 * @param array $raw Untrusted decoded input.
+		 */
+		$filtered = apply_filters( 'bps_payload_clean', $out, $raw );
+		if ( is_array( $filtered ) ) {
+			$out = $filtered;
+		}
+
+		/**
+		 * Extra validation by modules (contract C4). Return a WP_Error to refuse the design, null to accept.
+		 *
+		 * @param null|WP_Error $err     Null.
+		 * @param array         $payload Clean payload.
+		 * @param array         $raw     Untrusted decoded input.
+		 */
+		$err = apply_filters( 'bps_payload_validate', null, $out, $raw );
+		if ( is_wp_error( $err ) ) {
+			return $err;
 		}
 		return $out;
 	}

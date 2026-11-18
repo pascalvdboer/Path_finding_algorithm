@@ -10,9 +10,9 @@ namespace BorduurPatchStudio\Services;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Loaded through Plugin::COMPONENTS (handoff: docs/handoff/ai-services-needs.md). Registers itself with hooks only;
- * no existing file changes. Works without the AI module (services, packs bought in advance) and without WooCommerce
- * (REST catalogue only).
+ * Module `services` of the registry in Plugin::modules() (switch `modules.services.enabled`; requires the AI module
+ * for the design rounds). register_always() keeps the personal-data exporter available when the module is off;
+ * register() runs only when it is on. Works without WooCommerce (REST catalogue only).
  */
 final class Module {
 
@@ -23,6 +23,20 @@ final class Module {
 	/** @var bool */
 	private static $registered = false;
 
+	/** @var bool */
+	private static $registered_always = false;
+
+	/**
+	 * Hooks that stay when the module is off: customers can still export their design rounds.
+	 */
+	public static function register_always(): void {
+		if ( self::$registered_always ) {
+			return;
+		}
+		self::$registered_always = true;
+		add_filter( 'wp_privacy_personal_data_exporters', array( __CLASS__, 'exporters' ) );
+	}
+
 	/**
 	 * Hooks.
 	 */
@@ -31,17 +45,15 @@ final class Module {
 			return;
 		}
 		self::$registered = true;
+		self::register_always();
 
 		Rest::register();
 		Admin_Sections::register();
 		add_filter( 'bps_public_config', array( __CLASS__, 'public_config' ), 20, 2 );
 		add_filter( 'bps_ai_credits', array( __CLASS__, 'credits_backend' ) );
 		add_action( 'admin_init', array( __CLASS__, 'maybe_install' ) );
-		add_action( 'bps_activate', array( __CLASS__, 'install' ) );
-		add_action( 'bps_deactivate', array( __CLASS__, 'deactivate' ) );
 		add_action( 'init', array( __CLASS__, 'schedule' ) );
 		add_action( self::CRON, array( __CLASS__, 'daily' ) );
-		add_filter( 'wp_privacy_personal_data_exporters', array( __CLASS__, 'exporters' ) );
 
 		if ( self::woo() ) {
 			Products::register();
@@ -51,6 +63,7 @@ final class Module {
 			Fulfilment::register();
 			Service_Status::register();
 			Withdrawal::register();
+			Service_Withdrawal::register();
 			add_action( 'before_woocommerce_init', array( __CLASS__, 'declare_compat' ) );
 		}
 	}
@@ -109,6 +122,13 @@ final class Module {
 	}
 
 	/**
+	 * Module activation (plugin activation with the module on, or switching it on): tables, cron.
+	 */
+	public static function activate(): void {
+		self::install();
+	}
+
+	/**
 	 * Daily cron event.
 	 */
 	public static function schedule(): void {
@@ -121,9 +141,13 @@ final class Module {
 	 * Daily: expire lots, start waiting services. Both idempotent.
 	 */
 	public static function daily(): void {
-		Credits::instance()->expire();
-		if ( self::woo() ) {
-			Service_Status::release_waiting();
+		try {
+			Credits::instance()->expire();
+			if ( self::woo() ) {
+				Service_Status::release_waiting();
+			}
+		} catch ( \Throwable $e ) {
+			\BorduurPatchStudio\Logger::error( 'services_daily_failed', array( 'exception' => $e ) );
 		}
 	}
 
@@ -137,17 +161,30 @@ final class Module {
 	}
 
 	/**
-	 * Uninstall (called from uninstall.php when "delete data" is on, handoff): our options; tables only when the AI
-	 * module does not drop them itself. Woo products and coupons stay (orders refer to them).
+	 * Full removal of the module's options and tables (uninstall.php with "Alles verwijderen" calls this and also
+	 * works from Plugin::owned_data()). Woo coupons stay (orders refer to them).
 	 */
 	public static function uninstall(): void {
 		self::deactivate();
 		foreach ( array( self::VERSION_OPT, Products::OPTION, Withdrawal::REWRITE_OPT, 'bps_svc_products_lock' ) as $opt ) {
 			delete_option( $opt );
 		}
-		if ( ! class_exists( '\BorduurPatchStudio\AI\Schema' ) ) {
-			Credits_Store_Wpdb::uninstall();
-		}
+		Credits_Store_Wpdb::uninstall();
+	}
+
+	/**
+	 * Data owned by the module (merged into Plugin::owned_data(), also during uninstall).
+	 *
+	 * @return array<string, string[]>
+	 */
+	public static function owned_data(): array {
+		return array(
+			'options'        => array( self::VERSION_OPT, Products::OPTION, Withdrawal::REWRITE_OPT ),
+			'always_options' => array( 'bps_svc_products_lock' ),
+			'tables'         => array( 'bps_ai_lots', 'bps_ai_ledger' ),
+			'cron_hooks'     => array( self::CRON ),
+			'product_meta'   => array( Products::PACK_META, Products::SERVICE_META ),
+		);
 	}
 
 	/* ---------------------------------------------------------------------
@@ -168,6 +205,8 @@ final class Module {
 			$config['services'] = array(
 				'catalog'    => $cat,
 				'offerRules' => Config::offer_rules(),
+				// "Goed om te weten" bij menselijk werk (legal.svc.info, 04-juridisch §8); card() toont het via ctx.info.
+				'info'       => Text::legal( 'legal.svc.info', $lang ),
 				'routes'     => array(
 					'cart'    => 'services/cart',
 					'dismiss' => 'services/dismiss',

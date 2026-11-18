@@ -49,6 +49,7 @@ export function initialState(cfg) {
     selected: 0,
     style: defaultStyle(cfg),
     rights: false,
+    bloodConsent: false,     // aparte toestemming voor bloedgroepen (nooit bewaard, nooit vooraf aangevinkt)
     orgNote: '',
     editKey: (cfg.page && cfg.page.editKey) || '',
     moreOpen: null,          // null = standaard (dicht op gsm, open op desktop)

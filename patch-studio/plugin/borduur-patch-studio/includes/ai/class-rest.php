@@ -147,9 +147,36 @@ final class Rest {
 	 * @param WP_REST_Request $r Request.
 	 */
 	public static function status( WP_REST_Request $r ) {
-		$owner = Identity::current( true );
-		Identity::touch( $owner );
-		return self::reply( 200, Jobs::status( $owner, self::ctx() ) );
+		// A read never sets the bps_ai_sid cookie nor creates an owner row (gdpr-juridisch-11): the cookie is only set
+		// on the first AI action (generate, e-mail verification, adding a pack).
+		$owner = Identity::current( false );
+		if ( '' !== $owner ) {
+			Identity::touch( $owner );
+		}
+		$status = Jobs::status( $owner, self::ctx() );
+		if ( '' === $owner ) {
+			$status = self::with_first_use_rounds( $status );
+		}
+		return self::reply( 200, $status );
+	}
+
+	/**
+	 * A visitor without cookie sees the free anonymous round(s) he would get on his first action (the round itself is
+	 * granted in generate(), once per owner and within the per-IP limit of commerce).
+	 *
+	 * @param array $status Status from Jobs::status('').
+	 */
+	private static function with_first_use_rounds( array $status ): array {
+		if ( 'commerce' !== Credits_Gateway::instance()->kind() || ! empty( $status['freePaused'] ) ) {
+			return $status;
+		}
+		$free = max( 0, (int) AI_Settings::path( 'free.anonymous', 1 ) );
+		if ( $free > 0 && isset( $status['balance'] ) && is_array( $status['balance'] ) && 0 === (int) ( $status['balance']['total'] ?? 0 ) ) {
+			$status['balance']['free']  = $free;
+			$status['balance']['total'] = $free;
+		}
+		$status['firstUse'] = true;
+		return $status;
 	}
 
 	/**
@@ -160,7 +187,12 @@ final class Rest {
 	public static function generate( WP_REST_Request $r ) {
 		$owner = Identity::current( true );
 		Identity::touch( $owner );
-		return self::wrap( Jobs::generate( $owner, self::body( $r ), self::ctx() ) );
+		$ctx = self::ctx();
+		if ( 'anon' === Identity::kind( $owner ) ) {
+			// First AI action of this browser: grant the free anonymous round now (status() no longer creates owners).
+			Credits_Gateway::instance()->grant_free_anon( $owner, (string) ( $ctx['ip_hash'] ?? '' ) );
+		}
+		return self::wrap( Jobs::generate( $owner, self::body( $r ), $ctx ) );
 	}
 
 	/**
@@ -178,7 +210,7 @@ final class Rest {
 	 * @param WP_REST_Request $r Request.
 	 */
 	public static function cancel( WP_REST_Request $r ) {
-		return self::wrap( Jobs::cancel( Identity::current( false ), (string) $r['id'] ) );
+		return self::wrap( Jobs::cancel( Identity::current( false ), (string) $r['id'], self::ctx() ) );
 	}
 
 	/**

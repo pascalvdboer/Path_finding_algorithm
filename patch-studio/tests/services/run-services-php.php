@@ -14,7 +14,7 @@ require __DIR__ . '/php/wp-stubs.php';
 require __DIR__ . '/php/wc-fakes.php';
 
 $base = dirname( __DIR__, 2 ) . '/plugin/borduur-patch-studio/includes/services/';
-foreach ( array( 'config', 'text', 'owner', 'credits-store', 'credits-store-memory', 'credits', 'email-gate', 'products', 'order-credit', 'services', 'service-status', 'checkout', 'fulfilment', 'withdrawal', 'admin-sections', 'rest', 'module' ) as $f ) {
+foreach ( array( 'config', 'text', 'owner', 'credits-store', 'credits-store-memory', 'credits', 'email-gate', 'products', 'order-credit', 'services', 'service-status', 'checkout', 'fulfilment', 'withdrawal', 'service-withdrawal', 'admin-sections', 'rest', 'module' ) as $f ) {
 	require_once $base . 'class-' . $f . '.php';
 }
 
@@ -31,6 +31,7 @@ use BorduurPatchStudio\Services\Owner;
 use BorduurPatchStudio\Services\Products;
 use BorduurPatchStudio\Services\Rest;
 use BorduurPatchStudio\Services\Service_Status;
+use BorduurPatchStudio\Services\Service_Withdrawal;
 use BorduurPatchStudio\Services\Services;
 use BorduurPatchStudio\Services\Text;
 use BorduurPatchStudio\Services\Withdrawal;
@@ -194,6 +195,17 @@ for ( $j = 0; $j < 3; $j++ ) {
 }
 eq( Email_Gate::request( 'x@club.be', 'ipy', 'fr', $c4 )->get_error_code(), 'bps_ai_slow_down', 'max 3 codes per adres per uur' );
 ok( false !== strpos( $sent[ count( $sent ) - 1 ]['body'], '123456' ) && $sent[ count( $sent ) - 1 ]['s'] !== $sent[0]['s'], 'FR-mail met eigen onderwerp' );
+// Aliassen van één mailbox (security-kosten): geen tweede +2 via naam+1@ of puntjes in Gmail.
+eq( Owner::canonical_email( 'Jo.Hn.Doe+club@GoogleMail.com ' ), 'johndoe@gmail.com', 'canoniek: gmail zonder punten/+tag' );
+eq( Owner::canonical_email( 'jan+1@club.be' ), 'jan@club.be', 'canoniek: +tag weg op elk domein' );
+eq( Owner::canonical_email( 'j.an@club.be' ), 'j.an@club.be', 'canoniek: punten blijven buiten Gmail' );
+Email_Gate::request( 'jan+2@club.be', 'ipz', 'nl', $c4 );
+eq( Email_Gate::verify( 'jan+2@club.be', '123456', '', 'nl', $c4 )['granted'], 0, 'alias jan+2@ krijgt geen tweede +2' );
+Email_Gate::request( 'piet.peeters@gmail.com', 'ipz', 'nl', $c4 );
+eq( Email_Gate::verify( 'piet.peeters@gmail.com', '123456', '', 'nl', $c4 )['granted'], 2, 'nieuw adres: +2' );
+Email_Gate::request( 'pietpeeters+x@gmail.com', 'ipz2', 'nl', $c4 );
+eq( Email_Gate::verify( 'pietpeeters+x@gmail.com', '123456', '', 'nl', $c4 )['granted'], 0, 'gmail-alias: geen tweede +2' );
+ok( 'pietpeeters+x@gmail.com' === $sent[ count( $sent ) - 1 ]['to'], 'de mail gaat naar het getypte adres' );
 
 /* ------------------------------------------------------------------ */
 section( 'Verrekening: couponbedrag en automatische keuze' );
@@ -360,6 +372,47 @@ eq( wc_get_coupon_id_by_code( $code ), 0, 'kortingscode uit gebruik' );
 ok( 1 === count( $wmails ) && false === strpos( $wmails[0]['b'], '{' ), 'bevestigingsmail zonder plaatshouders' );
 ok( is_wp_error( Withdrawal::perform( $o, (int) $lotmeta['lotId'], $c5, 'nl' ) ), 'niet twee keer' );
 
+section( 'Pakketinfo (04 §4.5)' );
+$pi = Products::pack_info( 'ai_pack_10', 'nl' );
+ok( false === strpos( $pi, '{' ), 'pakketinfo zonder plaatshouders: ' . $pi );
+ok( false !== strpos( $pi, '10 rondes' ) && false !== strpos( $pi, '4,95' ) && false !== strpos( $pi, '0,50 per ronde' ) && false !== strpos( $pi, '24 maanden geldig' ), 'rondes, prijs, prijs per ronde, geldigheid' );
+ok( false !== strpos( Products::pack_info( 'ai_pack_10', 'fr' ), 'valables 24 mois' ), 'FR' );
+eq( Products::pack_info( 'bestaat_niet', 'nl' ), '', 'onbekend pakket' );
+
+/* ------------------------------------------------------------------ */
+section( 'Herroeping diensten (04 §4.4, §5)' );
+$need = array( 'svc' => array( 'needsConsent' => true ), 'status' => 'in_progress' );
+eq( Service_Withdrawal::eligibility( $need, '2026-11-01 10:00:00', '2026-11-10 10:00:00' ), 'partial', 'gestart → evenredig' );
+eq( Service_Withdrawal::eligibility( array_merge( $need, array( 'status' => 'waiting' ) ), '2026-11-01 10:00:00', '2026-11-10 10:00:00' ), 'full', 'wacht → volledig' );
+eq( Service_Withdrawal::eligibility( $need, '2026-11-01 10:00:00', '2026-11-15 10:00:01' ), null, 'na 14 dagen niet meer' );
+eq( Service_Withdrawal::eligibility( array_merge( $need, array( 'status' => 'delivered' ) ), '2026-11-01 10:00:00', '2026-11-02 10:00:00' ), null, 'volledig uitgevoerd: geen herroeping' );
+eq( Service_Withdrawal::eligibility( array( 'svc' => array( 'needsConsent' => false ), 'status' => 'queued' ), '2026-11-01 10:00:00', '2026-11-02 10:00:00' ), null, 'staal/spoed: maatwerk' );
+$srows = Service_Withdrawal::items( $o );
+eq( array_keys( $srows ), array( 3 ), 'enkel hertekenen herroepbaar (staal = maatwerk)' );
+eq( array( $srows[3]['mode'], $srows[3]['amount'] ), array( 'full', 24.95 ), 'nog niet gestart: volle regel incl. btw' );
+ok( false === strpos( Service_Withdrawal::summary( $o, $srows[3], 'nl' ), '{' ) && false === strpos( Service_Withdrawal::summary( $o, $srows[3], 'fr' ), '{' ), 'samenvatting zonder plaatshouders' );
+ok( false !== strpos( Service_Withdrawal::email_text( $o ), 'bps_wd=' ), 'bestelmail: gastlink naar de herroepfunctie' );
+$refunds = array();
+$wmails  = array();
+$sr      = Service_Withdrawal::perform( $o, 3, 'nl' );
+eq( array( $sr['mode'], $sr['amount'], $sr['refunded'] ), array( 'full', 24.95, true ), 'dienst herroepen, terugbetaald' );
+eq( $refunds, array( 24.95 ), 'Woo-refund aangevraagd' );
+eq( (string) $svc->get_meta( Service_Status::STATUS_META ), 'cancelled', 'dienst geannuleerd' );
+ok( 1 === count( $wmails ) && false === strpos( $wmails[0]['b'], '{' ) && false !== strpos( $wmails[0]['b'], 'herroeping' ), 'bevestigingsmail klant' );
+ok( is_wp_error( Service_Withdrawal::perform( $o, 3, 'nl' ) ), 'niet twee keer' );
+ok( is_wp_error( Service_Withdrawal::perform( $o, 4, 'nl' ) ), 'staal kan niet' );
+eq( Service_Withdrawal::email_text( $o ), '', 'geen herroepbare dienst meer → geen mailregel' );
+$svc2 = $o->add_item( new WC_Order_Item_Product( 7, 201, 1, 40.0, 8.4, 'Afwerken' ) );
+$svc2->update_meta_data( '_bps_service', array( 'id' => 'd1_finish', 'designRef' => 'PS-1', 'leadDays' => 2 ) );
+$svc2->update_meta_data( Service_Status::STATUS_META, 'in_progress' );
+$refunds = array();
+$wmails  = array();
+$sr2     = Service_Withdrawal::perform( $o, 7, 'fr' );
+eq( array( $sr2['mode'], $sr2['refunded'] ), array( 'partial', false ), 'gestart: geen automatische refund' );
+eq( $refunds, array(), 'niets automatisch terugbetaald' );
+eq( count( $wmails ), 2, 'mail klant (FR) + taakmail atelier' );
+ok( false !== strpos( $wmails[0]['b'], 'travail déjà effectué' ) || false !== strpos( $wmails[0]['b'], 'partie déjà effectuée' ), 'eerlijke uitleg evenredig deel' );
+
 // Coupon already used → not withdrawable; failing gateway → admin mail.
 reset_all( $map );
 $c6           = fresh( $clock );
@@ -417,6 +470,21 @@ $o6->paid = false;
 $o6->email = 'f@example.be';
 $o6->add_item( new WC_Order_Item_Product( 1, 101, 1, 4.09, 0.86 ) );
 eq( Fulfilment::fulfil( $o6 )['packs'], 0, 'onbetaald: geen rondes' );
+
+// Gratis rondes per patchbestelling (security-kosten): enkel voor een betaalde patchlijn, weg bij annulering.
+$o7        = new WC_Order( 906 );
+$o7->email = 'g@example.be';
+$p7        = $o7->add_item( new WC_Order_Item_Product( 1, 500, 50, 200, 42, 'Patch' ) );
+$p7->update_meta_data( '_bps_design_id', 77 );
+eq( Fulfilment::fulfil( $o7 )['freeOrder'], true, 'betaalde patchbestelling: gratis rondes' );
+eq( $c7->balance( Owner::for_email( 'g@example.be' ) )['free'], 5, '5 gratis rondes' );
+Fulfilment::cancel_all( $o7 );
+eq( $c7->balance( Owner::for_email( 'g@example.be' ) )['free'], 0, 'annulering: gratis rondes van die bestelling weg' );
+$o8        = new WC_Order( 907 );
+$o8->email = 'h@example.be';
+$p8        = $o8->add_item( new WC_Order_Item_Product( 1, 500, 50, 0, 0, 'Patch (100 % korting)' ) );
+$p8->update_meta_data( '_bps_design_id', 78 );
+eq( Fulfilment::fulfil( $o8 )['freeOrder'], false, 'patchbestelling van € 0: geen gratis rondes' );
 
 /* ------------------------------------------------------------------ */
 section( 'REST: origin, toestemming, catalogus' );

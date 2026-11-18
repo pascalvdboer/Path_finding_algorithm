@@ -89,6 +89,7 @@ final class Credits_Gateway {
 			'total'       => 0,
 			'nextExpiry'  => null,
 			'lockedUntil' => null,
+			'expiring'    => null,
 		);
 		if ( 'test' === $this->kind ) {
 			return array_merge( $empty, array( 'free' => 99, 'total' => 99 ) );
@@ -104,6 +105,8 @@ final class Credits_Gateway {
 		foreach ( array( 'free', 'paid', 'paidLocked', 'total' ) as $k ) {
 			$out[ $k ] = max( 0, (int) $out[ $k ] );
 		}
+		$e               = $out['expiring'];
+		$out['expiring'] = is_array( $e ) && (int) ( $e['rounds'] ?? 0 ) > 0 && ! empty( $e['at'] ) ? array( 'rounds' => (int) $e['rounds'], 'at' => (string) $e['at'] ) : null;
 		return $out;
 	}
 

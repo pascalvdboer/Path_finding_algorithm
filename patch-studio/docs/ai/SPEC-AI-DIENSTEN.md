@@ -853,7 +853,7 @@ overschrijfbaar via `config.strings`). Basisset (frontend mag aanvullen, niet af
 | Sleutel | NL | FR |
 |---|---|---|
 | `ai.entry.title` | Nog geen logo? Laat AI iets maken | Pas encore de logo ? Laissez l'IA en créer un |
-| `ai.entry.sub` | {free} gratis · meteen borduurbaar | {free} gratuit(s) · directement brodable |
+| `ai.entry.sub` | {free} gratis · gemaakt voor borduurwerk | {free} gratuit(s) · conçu pour broder |
 | `ai.title` | Ontwerp met AI | Créer avec l'IA |
 | `ai.prompt.label` | Wat wil je op je patch? | Que voulez-vous sur votre écusson ? |
 | `ai.prompt.placeholder` | Bv. een leeuw met een kroon voor onze voetbalclub, blauw-wit | P. ex. un lion couronné pour notre club de foot, bleu et blanc |

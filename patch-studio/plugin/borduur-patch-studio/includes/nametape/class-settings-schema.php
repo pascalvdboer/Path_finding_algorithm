@@ -20,6 +20,11 @@ final class Settings_Schema {
 	/** Lists with per-entry toggles that must keep at least one usable entry. */
 	const NEED_ONE = array( 'formats', 'fabrics', 'letterColors', 'fonts', 'borders', 'backings' );
 
+	/** Name-tape retention after completion (days): default, bounds. */
+	const RETENTION_DEFAULT = 180;
+	const RETENTION_MIN     = 30;
+	const RETENTION_MAX     = 3650;
+
 	/**
 	 * Bounded float with 2 decimals.
 	 *
@@ -205,6 +210,13 @@ final class Settings_Schema {
 			'nl' => $lead_nl,
 			'fr' => '' !== $lead_fr ? $lead_fr : $lead_nl,
 		);
+
+		// Privacy (gdpr-juridisch-1): days after completion before names and blood groups are anonymised.
+		// Only touched when the form sends the field, so older admin forms keep the stored value.
+		if ( isset( $post['retention'] ) && is_array( $post['retention'] ) && array_key_exists( 'daysAfterComplete', $post['retention'] ) ) {
+			$c['retention']                      = isset( $c['retention'] ) && is_array( $c['retention'] ) ? $c['retention'] : array();
+			$c['retention']['daysAfterComplete'] = self::int( $post['retention']['daysAfterComplete'], self::RETENTION_MIN, self::RETENTION_MAX, (int) ( $current['retention']['daysAfterComplete'] ?? self::RETENTION_DEFAULT ) );
+		}
 
 		$woo  = (array) ( $post['woo'] ?? array() );
 		$slug = strtolower( preg_replace( '/[^a-z0-9_\-]/i', '', (string) ( $woo['shippingClassSlug'] ?? '' ) ) ?? '' );

@@ -32,6 +32,82 @@ final class Products {
 		add_action( 'template_redirect', array( __CLASS__, 'hide_line_option_pages' ) );
 		add_filter( 'woocommerce_is_purchasable', array( __CLASS__, 'is_purchasable' ), 20, 2 );
 		add_action( 'admin_notices', array( __CLASS__, 'admin_notice' ) );
+		// Pack terms on the product page and in the cart (04-juridisch §4.5: price per round, validity, conditions).
+		add_action( 'woocommerce_single_product_summary', array( __CLASS__, 'render_pack_info' ), 25 );
+		add_filter( 'woocommerce_get_item_data', array( __CLASS__, 'pack_item_data' ), 25, 2 );
+	}
+
+	/**
+	 * legal.ai.pack_info for a pack: rounds, price incl. VAT, price per round, validity, failed rounds back and the
+	 * credit-back conditions (only when the full amount comes back; otherwise that sentence would mislead).
+	 *
+	 * @param string      $pack_id Pack id.
+	 * @param string|null $lang    Lang.
+	 */
+	public static function pack_info( string $pack_id, ?string $lang = null ): string {
+		$pack = Config::pack( $pack_id );
+		if ( ! $pack ) {
+			return '';
+		}
+		$fr   = 'fr' === Text::lang( $lang );
+		$num  = static function ( float $v ) use ( $fr ): string {
+			return number_format( $v, 2, ',', $fr ? ' ' : '.' );
+		};
+		$text = Text::legal(
+			'legal.ai.pack_info',
+			$lang,
+			array(
+				'n'     => $pack['rounds'],
+				'prijs' => $num( $pack['priceIncl'] ),
+				'per'   => $num( Config::round_half_up( $pack['priceIncl'] / max( 1, $pack['rounds'] ), 2 ) ),
+				'm'     => max( (int) Config::get( 'validityMinMonths', 12 ), (int) Config::get( 'validityMonths', 24 ) ),
+				'min'   => $num( (float) Config::get( 'orderCredit.minArticleIncl', 50 ) ),
+				'k'     => (int) Config::get( 'orderCredit.validMonths', 12 ),
+			)
+		);
+		if ( (float) Config::get( 'orderCredit.percent', 100 ) < 100 ) {
+			$cut  = strpos( $text, '. ' );
+			$text = false !== $cut ? substr( $text, 0, $cut + 1 ) : $text;
+		}
+		return $text;
+	}
+
+	/**
+	 * Product page of a pack.
+	 */
+	public static function render_pack_info(): void {
+		global $product;
+		$pid  = is_object( $product ) && method_exists( $product, 'get_id' ) ? (int) $product->get_id() : 0;
+		$what = $pid ? self::lookup( $pid ) : null;
+		if ( ! $what || 'pack' !== $what['type'] ) {
+			return;
+		}
+		$text = self::pack_info( $what['id'] );
+		if ( '' !== $text ) {
+			echo '<p class="bps-pack-info">' . esc_html( $text ) . '</p>';
+		}
+	}
+
+	/**
+	 * Cart line of a pack.
+	 *
+	 * @param mixed $data Item data.
+	 * @param mixed $item Cart item.
+	 */
+	public static function pack_item_data( $data, $item ) {
+		$data = is_array( $data ) ? $data : array();
+		$what = is_array( $item ) && ! empty( $item['product_id'] ) ? self::lookup( (int) $item['product_id'] ) : null;
+		if ( ! $what || 'pack' !== $what['type'] ) {
+			return $data;
+		}
+		$text = self::pack_info( $what['id'] );
+		if ( '' !== $text ) {
+			$data[] = array(
+				'key'   => Text::t( 'cart.pack_terms' ),
+				'value' => $text,
+			);
+		}
+		return $data;
 	}
 
 	/**

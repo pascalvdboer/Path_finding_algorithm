@@ -13,8 +13,10 @@ defined( 'ABSPATH' ) || exit;
  * SPEC-AI-DIENSTEN §3.1. Owner key = 2-char prefix + 64 hex:
  *   'u:' account, 'e:' verified e-mail, 'a:' anonymous (cookie bps_ai_sid), 'x:' anonymised (privacy eraser).
  *
- * The cookie is strictly necessary for a service the visitor asks for (it is only set on the first AI action), so
- * no consent banner is needed; it is listed in the privacy text (04 §6.7).
+ * The cookie is strictly necessary for a service the visitor asks for, so no consent banner is needed; it is listed
+ * in the privacy text (04 §6.7). It is only set on the first AI action (POST /ai/generate, e-mail verification,
+ * adding a pack). Reads such as GET /ai/status and dismissing a service offer never call current( true ).
+ * Owner rows expire after retentionDays.ownerRows / anonymousOwnerRows (Cleanup, gdpr-juridisch-7).
  */
 final class Identity {
 
@@ -168,7 +170,30 @@ final class Identity {
 	 */
 	public static function ip_hash(): string {
 		$ip = null !== self::$ip_override ? self::$ip_override : self::client_ip();
-		return hash_hmac( 'sha256', $ip, wp_salt( 'nonce' ) );
+		return hash_hmac( 'sha256', self::ip_bucket( $ip ), wp_salt( 'nonce' ) );
+	}
+
+	/**
+	 * Rate/abuse bucket of an IP: IPv4 as is, IPv6 reduced to its /64 prefix.
+	 *
+	 * One home or phone line gets a whole IPv6 /64 and can rotate through billions of addresses; hashing the full
+	 * address would let one visitor collect a free round (and fresh rate buckets) per address.
+	 *
+	 * @param string $ip Client IP.
+	 */
+	public static function ip_bucket( string $ip ): string {
+		$ip = trim( $ip );
+		if ( false === strpos( $ip, ':' ) ) {
+			return $ip;
+		}
+		$bin = @inet_pton( $ip ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+		if ( false === $bin || 16 !== strlen( $bin ) ) {
+			return $ip;
+		}
+		if ( 0 === strncmp( $bin, str_repeat( "\0", 10 ) . "\xff\xff", 12 ) ) {
+			return (string) inet_ntop( substr( $bin, 12 ) ); // IPv4-mapped IPv6.
+		}
+		return (string) inet_ntop( substr( $bin, 0, 8 ) . str_repeat( "\0", 8 ) ) . '/64';
 	}
 
 	/**

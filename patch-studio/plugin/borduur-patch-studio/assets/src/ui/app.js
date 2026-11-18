@@ -132,6 +132,9 @@ export function createApp(root, config) {
   ctx.toggleSide = (on) => { ctx.ui.sideMin = on == null ? !ctx.ui.sideMin : !on; ctx.refresh(); };
   const sideOpen = h('button.bps-sideopen', { type: 'button', hidden: true, 'aria-label': t('ui.side.open'), onclick: () => ctx.toggleSide(true) }, icon('spark'), h('span', t('ui.side.openShort')));
   const subnav = h('div.bps-subnav', { hidden: true });
+  // phone: toolbar + zoom of the stage live here, between canvas and panel, never over the patch (critique-2 #4)
+  const toolHost = h('div.bps-sheettools');
+  ctx.toolHost = toolHost;
   const grab = h('button.bps-grab', { type: 'button', 'aria-expanded': 'true', 'aria-label': t('ui.sheet.toggle'), onclick: () => { ctx.ui.sheetMin = !ctx.ui.sheetMin; ctx.refresh(); } }, h('span', { 'aria-hidden': 'true' }));
 
   /* phone tab bar */
@@ -139,7 +142,7 @@ export function createApp(root, config) {
     icon(ic), h('span', t('ui.tab.' + id))));
   const tabs = h('nav.bps-tabs', { 'aria-label': t('ui.rail.label') }, tabBtns);
 
-  const ws = h('div.bps-ws', { hidden: true }, top, rail, dock, h('div.bps-stagehost', stage.el, sideOpen), side, h('div.bps-sheetbar', grab, subnav), bar.el, tabs);
+  const ws = h('div.bps-ws', { hidden: true }, top, rail, dock, h('div.bps-stagehost', stage.el, sideOpen), side, h('div.bps-sheetbar', grab, toolHost, subnav), bar.el, tabs);
   const help = (() => {
     const c = config.contact || {};
     return h('p.bps-helpline', icon('chat'), ' ',
@@ -358,10 +361,27 @@ export function createApp(root, config) {
       title: t('ui.cp.designTitle'),
       sub: t('ui.cp.designSub', { code: th.code, name: ctx.L(th.name) }),
       current: th.code, returnFocus: back,
-      onPick: (x) => store.set({ threadOverrides: { ...store.get().threadOverrides, [pi]: x.code } }),
+      patchFor: (x) => ({ threadOverrides: { ...store.get().threadOverrides, [pi]: x.code } }),
       onClose: () => { ctx.ui.hiPi = null; ctx.refresh(); },
     });
     return true;
+  };
+  /**
+   * Show a choice on the canvas without committing it (hover/focus in the thread picker, the technique comparer):
+   * no history step, no price change. `null` restores the real state (critique-2 #1, #6).
+   */
+  let previewing = null;
+  ctx.previewPatch = (patch) => {
+    if (!ctx.preview || !ctx.derived) return;
+    if (!patch) {
+      if (!previewing) return;
+      previewing = null;
+      ctx.preview.update(store.get(), ctx.derived);
+      return;
+    }
+    const s = { ...store.get(), ...patch };
+    previewing = patch;
+    try { ctx.preview.update(s, derive(s, ctx.analysis, config, ctx.tweaks), { fast: true }); } catch (e) { previewing = null; }
   };
   ctx.setDragTarget = (id) => { if (ctx.dragTarget !== id) { ctx.dragTarget = id; ctx.refresh(); } };
 
@@ -438,7 +458,11 @@ export function createApp(root, config) {
       if (ctx.analysis || !arc) layer = { ...layer, ...placeText(s, d, config, layer) };
       else layer.heightMm = fitHeight(layer, d.layout, config, layer.heightMm);
     } catch (e) { /* keep the defaults */ }
-    store.set({ texts: [...s.texts, layer] });
+    // no free spot: placeText made the design a bit smaller (critique-2 #3); the text panel offers to undo that
+    const artPatch = layer._art;
+    delete layer._art;
+    if (artPatch) { ctx.ui.shrunk = { art: s.art, id: layer.id }; layer.autoPlace = false; }
+    store.set(artPatch ? { texts: [...s.texts, layer], art: artPatch } : { texts: [...s.texts, layer] });
     ctx.dragTarget = layer.id;
     ctx.openPanel('text');
     ctx.loadFont(font);
@@ -457,7 +481,7 @@ export function createApp(root, config) {
       let nl = { ...l, text: v };
       if (l.autoPlace && ctx.derived && v.trim()) {
         // not moved by hand yet: the best spot for these words (a long line may fit better elsewhere)
-        try { nl = { ...nl, ...placeText(s, ctx.derived, config, nl) }; return nl; } catch (e) { /* fall through */ }
+        try { const pl = placeText(s, ctx.derived, config, nl); if (!pl._art) { nl = { ...nl, ...pl }; return nl; } } catch (e) { /* fall through */ }
       }
       if (l.autoFit && ctx.derived) {
         const want = Math.max(l.heightMm, l.fitFrom || 0) || (config.text && config.text.defaultHeightMm) || 6;
@@ -470,6 +494,7 @@ export function createApp(root, config) {
   ctx.removeText = (id) => {
     const s = store.get();
     store.set({ texts: s.texts.filter((l) => l.id !== id) });
+    if (ctx.ui.shrunk && ctx.ui.shrunk.id === id) ctx.ui.shrunk = null;
     if (ctx.dragTarget === id) ctx.dragTarget = ctx.analysis ? 'art' : null;
     requestAnimationFrame(() => { const b = root.querySelector('.bps-texts .bps-btn'); if (b) b.focus(); });
   };

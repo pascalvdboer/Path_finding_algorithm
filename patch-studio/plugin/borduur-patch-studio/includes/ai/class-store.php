@@ -156,6 +156,21 @@ interface Store {
 	 */
 	public function owner_clear_ip( string $before ): int;
 
+	/**
+	 * Retention of owner rows (gdpr-juridisch-7). Only rows whose last_seen_at is older than the cut-off (known
+	 * owners: $known_before; anonymous 'a:' rows: $anon_before) and that have no open job (queued/running) and no lot
+	 * with rounds left (active, not expired at $now, rounds_used < rounds_total) are touched:
+	 * - still referenced by a job, a lot or a ledger row → the key stays, email and email_verified_at become NULL;
+	 * - otherwise the row is deleted.
+	 *
+	 * @param string $known_before Datetime UTC for account/e-mail/erased rows.
+	 * @param string $anon_before  Datetime UTC for anonymous rows.
+	 * @param string $now          Datetime UTC (lot expiry).
+	 * @param int    $limit        Max rows per call and action.
+	 * @return array{deleted:int, anonymised:int}
+	 */
+	public function owner_purge( string $known_before, string $anon_before, string $now, int $limit ): array;
+
 	/* Cost log --------------------------------------------------------- */
 
 	/**

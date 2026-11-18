@@ -5,7 +5,7 @@
  */
 import * as R from '../render/index.js';
 import { h, text, keyed, icon, uid } from './dom.js';
-import { renderArt, renderOptions, fabricList } from './derive.js';
+import { renderArt, renderOptions, fabricList, detailMm } from './derive.js';
 
 const RNS = R; // namespace object: optional render features are looked up at runtime
 const STATUS_ICON = { ok: 'ok', warn: 'warn', bad: 'bad' };
@@ -14,7 +14,7 @@ const THUMB_PX = 280;
 const idle = (fn) => (typeof requestIdleCallback === 'function' ? requestIdleCallback(fn, { timeout: 600 }) : setTimeout(fn, 30));
 
 /** Standalone render of the current design in technique `tech` (a canvas, or an empty placeholder). */
-export function thumb(ctx, s, d, tech, extra = {}, px = 192) {
+export function thumb(ctx, s, d, tech, extra = {}, px = 192, detail = null) {
   const { config } = ctx;
   let img = null;
   try { img = d.analysis ? R.artFromAnalysis(d.analysis) : null; } catch (e) { img = null; }
@@ -25,7 +25,7 @@ export function thumb(ctx, s, d, tech, extra = {}, px = 192) {
   try {
     // render v2: each technique with its own fitting border/material (feature-detected, older render: renderThumb).
     const RT = RNS['renderTechniques'];
-    const c = typeof RT === 'function' ? (RT(opts, { size: px, techniques: [tech], config }) [0] || {}).canvas : R.renderThumb(opts, px);
+    const c = typeof RT === 'function' ? (RT(opts, { size: px, techniques: [tech], config, ...(detail || {}) }) [0] || {}).canvas : R.renderThumb(opts, px);
     if (c && c.nodeType === 1) { c.setAttribute('aria-hidden', 'true'); c.classList.add('bps-thumb'); return c; }
     if (c && c.width) {
       const cv = h('canvas.bps-thumb', { width: c.width, height: c.height, 'aria-hidden': 'true' });
@@ -54,11 +54,13 @@ export function createAssistant(ctx) {
     h('p.bps-help.bps-compare__sub', t('ui.assist.compareSub')),
     cards, moreBtn, more);
   const tips = h('div.bps-tips');
+  const ideas = h('section.bps-ideas', { hidden: true });
+  const dismissed = new Set();
   const noAnalysis = h('p.bps-notice.bps-notice--info', { hidden: true }, icon('info'), h('span', t('ui.s2.noAnalysis')));
   const el = h('section.bps-panel.bps-step.bps-assist', { dataset: { panel: 'advice' }, 'aria-labelledby': ctx.uidBase + '-p-advice', hidden: true },
     h('header.bps-panel__head', h('h2.bps-panel__title', { id: ctx.uidBase + '-p-advice', tabindex: '-1' }, icon('spark'), t('ui.panel.advice')),
       h('button.bps-ibtn.bps-panel__fold', { type: 'button', 'aria-label': t('ui.side.fold'), title: t('ui.side.fold'), onclick: () => ctx.toggleSide(false) }, icon('chevron'))),
-    h('div.bps-panel__body', noAnalysis, adviceBox, compare, h('section.bps-seen', h('h3.bps-h3', t('ui.assist.seen')), notes), tips,
+    h('div.bps-panel__body', noAnalysis, adviceBox, compare, ideas, h('section.bps-seen', h('h3.bps-h3', t('ui.assist.seen')), notes), tips,
       h('p.bps-disclaimer', t('advice.disclaimer'), ' ', t('ui.s2.disclaimer')),
       h('p.bps-nextlink', h('button.bps-btn.bps-btn--link', { type: 'button', onclick: () => ctx.openPanel('size', { focus: true }) }, t('ui.s2.next'), icon('arrow')))));
 
@@ -72,7 +74,8 @@ export function createAssistant(ctx) {
       busy = false;
       const job = queue.shift();
       if (job && job.sig === sigNow) {
-        const cv = thumb(ctx, job.s, job.d, job.id, {}, THUMB_PX);
+        // a 2.5× detail of a characteristic spot: thread, weave and print look different at a glance (critique-2 #6)
+        const cv = thumb(ctx, job.s, job.d, job.id, {}, THUMB_PX, { zoom: 2.5, zoomCenterMm: detailMm(job.s, job.d) });
         thumbs.set(job.sig + job.id, cv);
         const slot = el.querySelector(`[data-thumb="${job.id}"]`);
         if (slot) { slot.replaceChildren(cv.cloneNode ? copy(cv) : cv); slot.classList.add('is-ready'); }
@@ -110,8 +113,12 @@ export function createAssistant(ctx) {
     const cached = thumbs.get(sig + id);
     const slot = h('span.bps-card__vis' + (cached ? '.is-ready' : ''), { dataset: { thumb: id } }, cached ? copy(cached) : h('span.bps-thumb.bps-thumb--empty', { 'aria-hidden': 'true' }));
     if (!cached && (ctx.analysis || s.texts.length)) queue.push({ sig, id, s, d });
+    // hover / focus shows this technique on the big canvas (nothing is chosen until you click)
+    const peek = () => { if (s.technique !== id && ctx.previewPatch) ctx.previewPatch({ technique: id }); };
+    const unpeek = () => { if (ctx.previewPatch) ctx.previewPatch(null); };
     return h('div.bps-card' + (s.technique === id ? '.is-selected' : '') + '.is-' + v.status,
-      h('input.bps-card__radio', { type: 'radio', id: inputId, name: ctx.uidBase + '-tech', value: id, checked: s.technique === id, 'data-fk': 'tech-' + id, onchange: () => ctx.applyPatch({ technique: id, techniquePicked: true }) }),
+      { onpointerenter: (e) => { if (e.pointerType !== 'touch') peek(); }, onpointerleave: unpeek, onfocusin: peek, onfocusout: unpeek },
+      h('input.bps-card__radio', { type: 'radio', id: inputId, name: ctx.uidBase + '-tech', value: id, checked: s.technique === id, 'data-fk': 'tech-' + id, onchange: () => { unpeek(); ctx.applyPatch({ technique: id, techniquePicked: true }); } }),
       h('label.bps-card__label', { for: inputId },
         slot,
         h('span.bps-card__txt',
@@ -163,6 +170,37 @@ export function createAssistant(ctx) {
     return out;
   }
 
+  /* ---------------- ideas: 1-2 proactive suggestions, only what is technically sound (critique-1 #11) ---------------- */
+  function ideaList(s, d) {
+    const out = [];
+    const has = !!ctx.analysis || (s.texts || []).some((l) => l.text && l.text.trim());
+    if (!has) return out;
+    const v = d.advice.verdicts || {};
+    const tech = config.techniques[s.technique] || {};
+    const edge = d.layout.edge || {};
+    const opt = (id) => (config.options || []).find((o) => o.id === id && o.enabled !== false && (o.techniques || []).includes(s.technique));
+    // another technique that suits this design well (status ok), the best ranked one we are not using
+    const alt = (d.advice.ranking || []).find((id) => id !== s.technique && v[id] && v[id].status === 'ok' && config.techniques[id] && config.techniques[id].enabled);
+    if (alt) out.push({ id: 'tech-' + alt, txt: t('ui.idea.tech', { tech: L(config.techniques[alt].label).toLowerCase() }), why: v[alt].headline && v[alt].headline.text,
+      vis: () => thumb(ctx, s, d, alt, {}, 160), apply: () => ctx.applyPatch({ technique: alt, techniquePicked: true }) });
+    // more relief for embroidery (3D look), when the atelier offers it
+    if (tech.threadBased && s.technique === 'embroidered' && opt('extra_thick') && !s.options.includes('extra_thick') && (!v.embroidered || v.embroidered.status !== 'bad')) {
+      const next = s.options.filter((x) => !['thickness_normal', 'thick'].includes(x)).concat('extra_thick');
+      out.push({ id: 'relief', txt: t('ui.idea.relief'), vis: () => thumb(ctx, { ...s, options: next }, d, s.technique, { design: { ...s, options: next } }, 160),
+        apply: () => ctx.applyPatch({ options: next }) });
+    }
+    // a gold border on a thread border (satin / merrow), if gold thread is in the palette
+    const gold = (config.threads || []).find((x) => x.code === '1724') || (config.threads || []).find((x) => x.family === 'yellow' && /goud|or\b/i.test(L(x.name)));
+    if (gold && (edge.style === 'satin' || edge.style === 'merrow') && d.edgeHex !== gold.hex && s.edgeColor !== gold.code) {
+      out.push({ id: 'gold', txt: t('ui.idea.gold', { code: gold.code }), vis: () => thumb(ctx, s, d, s.technique, { edgeHex: gold.hex }, 160), apply: () => ctx.store.set({ edgeColor: gold.code }) });
+    }
+    // see it on a cap (patches are often ordered for caps too)
+    if ((s.mockup || 'none') === 'none' && ctx.preview && config.features && config.features.garmentView !== false) {
+      out.push({ id: 'cap', txt: t('ui.idea.cap'), icon: 'image', apply: () => ctx.store.set({ mockup: 'cap_front' }) });
+    }
+    return out.filter((x) => !dismissed.has(x.id)).slice(0, 2);
+  }
+
   return {
     el,
     update(s, d) {
@@ -194,6 +232,18 @@ export function createAssistant(ctx) {
       moreBtn.hidden = !rest.length;
       moreBtn.setAttribute('aria-expanded', String(!!ctx.ui.showAllTech));
       text(moreBtn, ctx.ui.showAllTech ? t('ui.s2.showLess') : t('ui.s2.showAll', { n: ranking.length }));
+
+      const il = ideaList(s, d);
+      const ik = JSON.stringify([il.map((x) => x.id + x.txt), ctx.analysis ? ctx.analysis.job : 0, s.technique, s.options, d.edgeHex, d.fabric.id, s.shape, s.texts.length, ctx.ui.exclVat]);
+      keyed(ideas, ik, () => (il.length ? [
+        h('h3.bps-h3.bps-ideas__title', icon('spark'), t('ui.idea.title')),
+        h('ul.bps-ideas__list', il.map((x) => h('li.bps-idea',
+          (() => { const sp = h('span.bps-idea__vis', x.vis ? null : icon(x.icon || 'spark')); if (x.vis) idle(() => { try { sp.replaceChildren(x.vis()); } catch (e) { /* ignore */ } }); return sp; })(),
+          h('span.bps-idea__txt', h('strong', x.txt), x.why ? h('span.bps-idea__why', x.why) : null,
+            h('span.bps-idea__acts',
+              h('button.bps-btn.bps-btn--small.bps-btn--secondary', { type: 'button', 'data-idea': x.id, onclick: () => { x.apply(); ctx.announce(t('ui.idea.done')); } }, t('ui.idea.apply')),
+              h('button.bps-btn.bps-btn--small.bps-btn--link', { type: 'button', onclick: () => { dismissed.add(x.id); ctx.refresh(); } }, t('ui.idea.skip')))))))] : []));
+      ideas.hidden = !il.length;
 
       keyed(tips, JSON.stringify((adv.upsells || []).map((u) => u.msg.text)), () => ((adv.upsells || []).length
         ? [h('h3.bps-h3', t('ui.s2.upsells')), h('ul.bps-notes', adv.upsells.map((u) => h('li.bps-note.bps-note--tip', icon('spark'), h('span.bps-note__txt', u.msg.text,

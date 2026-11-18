@@ -90,13 +90,22 @@ final class Credits_Store_Wpdb implements Credits_Store {
 	}
 
 	/**
-	 * Drop the tables (uninstall only).
+	 * Drop the tables (uninstall with "Alles verwijderen" only; uninstall.php calls this directly, no module boot).
 	 */
 	public static function uninstall(): void {
 		global $wpdb;
 		foreach ( self::tables() as $t ) {
 			$wpdb->query( "DROP TABLE IF EXISTS {$t}" ); // phpcs:ignore WordPress.DB
 		}
+	}
+
+	/**
+	 * Tables of this store without the $wpdb prefix (for Plugin::owned_data()).
+	 *
+	 * @return string[]
+	 */
+	public static function table_names(): array {
+		return array( 'bps_ai_lots', 'bps_ai_ledger' );
 	}
 
 	/**
@@ -310,6 +319,8 @@ final class Credits_Store_Wpdb implements Credits_Store {
 			return $out;
 		} catch ( \Throwable $e ) {
 			$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB
+			// Not logged here on purpose: the exception is rethrown and logged once by the caller
+			// (AI\Credits_Gateway logs every failed Credits call).
 			throw $e;
 		}
 	}

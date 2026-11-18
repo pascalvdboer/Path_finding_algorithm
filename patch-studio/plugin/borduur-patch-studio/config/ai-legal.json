@@ -22,7 +22,10 @@
     "orderDesignsAfterLastOrder": 1095,
     "refusedPromptLog": 30,
     "ledgerAndInvoices": 3650,
-    "costLog": null
+    "costLog": null,
+    "ownerRows": 365,
+    "anonymousOwnerRows": 30,
+    "_ownerRows": "Eigenaarsrijen (bps_ai_owners): na zoveel dagen sinds het laatste bezoek verwijderd, of alleen het e-mailadres gewist als jobs, rondes of boekhouding er nog naar verwijzen. Rijen met open jobs of resterende rondes blijven. anonymousOwnerRows geldt voor anonieme rijen (cookie)."
   },
   "marking": {
     "iptcDigitalSourceType": "http://cv.iptc.org/newscodes/digitalsourcetype/trainedAlgorithmicMedia",
@@ -164,6 +167,26 @@
       "place": "Bij elke dienst (uitklapper \"Goed om te weten\")",
       "nl": "Dit is werk van een echte ontwerper in ons atelier. Je krijgt het resultaat eerst te zien bij je digitale proef.",
       "fr": "Ce travail est réalisé par un vrai graphiste de notre atelier. Vous voyez le résultat d'abord dans votre épreuve numérique."
+    },
+    "legal.svc.withdraw_summary": {
+      "place": "Bevestigingsscherm herroeping dienst (nog niet gestart)",
+      "nl": "Je herroept de dienst {dienst} van bestelling {nr}. We zijn er nog niet aan begonnen: we betalen € {bedrag} terug binnen 14 dagen, via je oorspronkelijke betaalmethode.",
+      "fr": "Vous vous rétractez du service {dienst} de la commande {nr}. Nous ne l'avons pas encore commencé : nous remboursons {bedrag} € dans les 14 jours, via votre moyen de paiement initial."
+    },
+    "legal.svc.withdraw_summary_started": {
+      "place": "Bevestigingsscherm herroeping dienst (al gestart)",
+      "nl": "Je herroept de dienst {dienst} van bestelling {nr}. Ons atelier is er al aan begonnen: je betaalt enkel het werk dat al gedaan is, de rest betalen we terug binnen 14 dagen. We mailen je het bedrag.",
+      "fr": "Vous vous rétractez du service {dienst} de la commande {nr}. Notre atelier l'a déjà commencé : vous payez uniquement le travail déjà effectué, nous remboursons le reste dans les 14 jours. Nous vous communiquons le montant par e-mail."
+    },
+    "legal.svc.withdraw_email": {
+      "place": "Mail na herroeping dienst (nog niet gestart)",
+      "nl": "We ontvingen je herroeping voor de dienst {dienst} van bestelling {nr} op {datum} om {uur}. Je krijgt € {bedrag} terug binnen 14 dagen.",
+      "fr": "Nous avons bien reçu votre rétractation pour le service {dienst} de la commande {nr} le {datum} à {uur}. Vous serez remboursé de {bedrag} € dans les 14 jours."
+    },
+    "legal.svc.withdraw_email_started": {
+      "place": "Mail na herroeping dienst (al gestart)",
+      "nl": "We ontvingen je herroeping voor de dienst {dienst} van bestelling {nr} op {datum} om {uur}. We stoppen het werk. Je betaalt enkel het deel dat al gedaan is; de rest betalen we terug binnen 14 dagen. Je krijgt nog een mail met het bedrag.",
+      "fr": "Nous avons bien reçu votre rétractation pour le service {dienst} de la commande {nr} le {datum} à {uur}. Nous arrêtons le travail. Vous payez uniquement la partie déjà effectuée ; nous remboursons le reste dans les 14 jours. Vous recevrez encore un e-mail avec le montant."
     }
   }
 }

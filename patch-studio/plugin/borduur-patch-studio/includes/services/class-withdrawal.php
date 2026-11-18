@@ -295,7 +295,7 @@ final class Withdrawal {
 	 * @param string    $reason Reason.
 	 * @return true|\WP_Error
 	 */
-	private static function create_refund( $order, float $amount, string $reason ) {
+	public static function create_refund( $order, float $amount, string $reason ) {
 		if ( ! function_exists( 'wc_create_refund' ) ) {
 			return new \WP_Error( 'bps_no_refund', 'WooCommerce refunds unavailable' );
 		}
@@ -318,7 +318,7 @@ final class Withdrawal {
 	 * @param string $subject Subject.
 	 * @param string $body    Body.
 	 */
-	private static function mail( string $to, string $subject, string $body ): void {
+	public static function mail( string $to, string $subject, string $body ): void {
 		if ( ! is_email( $to ) ) {
 			return;
 		}
@@ -337,7 +337,9 @@ final class Withdrawal {
 	 * Confirm a withdrawal (POST from the account page or the guest page).
 	 */
 	public static function handle_post(): void {
-		if ( 'POST' !== ( $_SERVER['REQUEST_METHOD'] ?? '' ) || empty( $_POST['bps_wd_confirm'] ) || empty( $_POST[ self::LOT_PARAM ] ) ) {
+		$method = isset( $_SERVER['REQUEST_METHOD'] ) ? strtoupper( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- presence check only; the nonce is verified below.
+		if ( 'POST' !== $method || empty( $_POST['bps_wd_confirm'] ) || empty( $_POST[ self::LOT_PARAM ] ) ) {
 			return;
 		}
 		$lot_id = absint( wp_unslash( $_POST[ self::LOT_PARAM ] ) );
@@ -418,6 +420,7 @@ final class Withdrawal {
 			echo '<p>' . esc_html( Text::t( 'account.link_invalid', $lang ) ) . '</p>';
 		} else {
 			self::render_withdraw_list( $order, $lang, $token );
+			Service_Withdrawal::render_for_order( $order, $lang, $token );
 		}
 		echo '</main>';
 		get_footer();
@@ -619,6 +622,8 @@ final class Withdrawal {
 				echo '</td></tr>';
 			}
 			echo '</tbody></table>';
+			// Herroepknop voor diensten die nog niet volledig uitgevoerd zijn (04-juridisch §4.4 en §5).
+			Service_Withdrawal::render_account( $uid, $lang );
 		}
 		echo '</div>';
 	}

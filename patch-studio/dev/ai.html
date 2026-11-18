@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AI-ontwerpstudio — dev (mock)</title>
+<style>
+  :root { --bps-cta: #0B74A6; }
+  html, body { margin: 0; background: #EEF2F7; color: #14192B; }
+  body { font-family: "Assistant", system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .dev-bar { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 8px 16px; font-size: 13px; color: #3A4256; background: #fff; border-bottom: 1px solid #E2E8F0; }
+  .dev-bar strong { color: #14192B; }
+  .studio > * { min-width: 0; }
+  select { max-width: 100%; }
+  .dev-bar select { font: inherit; min-height: 34px; padding: 0 8px; border: 1px solid #CBD5E1; border-radius: 6px; background: #fff; }
+  .dev-bar code { background: #FFF5E3; padding: 2px 6px; border-radius: 4px; }
+  .studio { display: grid; grid-template-columns: 1fr; gap: 16px; max-width: 1280px; margin: 0 auto; padding: 16px; box-sizing: border-box; }
+  @media (min-width: 1025px) { .studio { grid-template-columns: minmax(0, 1fr) 420px; } }
+  .stage { background: #fff; border: 1px solid #E2E8F0; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 16px; min-height: 420px; }
+  .patch { width: min(300px, 70vw); aspect-ratio: 1; border-radius: 50%; background: #1b1b1b; border: 10px solid #c9a227; box-shadow: 0 10px 30px rgba(10,31,68,.25), inset 0 0 0 3px rgba(255,255,255,.08); display: grid; place-items: center; overflow: hidden; position: relative; }
+  .patch img { width: 86%; height: 86%; object-fit: contain; }
+  .patch .ph { color: #8A93A6; font-size: 14px; text-align: center; padding: 20px; }
+  .badge { position: absolute; bottom: 14%; left: 50%; transform: translateX(-50%); background: #F1EDFF; color: #3F2A9C; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+  .entry { width: 100%; max-width: 460px; display: flex; flex-direction: column; gap: 10px; }
+  .entry button { font: inherit; display: flex; align-items: center; gap: 12px; width: 100%; min-height: 64px; padding: 10px 16px; border-radius: 14px; border: 1.5px solid #CBD5E1; background: #fff; cursor: pointer; text-align: left; }
+  .entry button:hover { border-color: #0B74A6; }
+  .entry button.ai { border-color: #5B3FD1; background: #F7F5FF; }
+  .entry b { display: block; font-size: 16px; }
+  .entry small { display: block; color: #5D6577; font-size: 13px; }
+  .entry .ico { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: #EEF2F7; font-size: 18px; flex: none; }
+  .entry .ai .ico { background: #E6E0FF; color: #5B3FD1; }
+  .column { min-height: 560px; }
+  .column-empty { background: #fff; border: 1px dashed #CBD5E1; border-radius: 20px; padding: 20px; color: #5D6577; font-size: 14px; }
+  .log { max-width: 1280px; margin: 0 auto 32px; padding: 0 16px; box-sizing: border-box; }
+  .log details { background: #fff; border: 1px solid #E2E8F0; border-radius: 12px; padding: 0 14px; }
+  .log summary { min-height: 44px; display: flex; align-items: center; font-weight: 600; cursor: pointer; }
+  .log pre { white-space: pre-wrap; font: 12px/1.45 ui-monospace, Menlo, monospace; max-height: 240px; overflow: auto; margin: 0 0 12px; }
+  .svc-demo { background: #fff; border: 1px solid #E2E8F0; border-radius: 12px; padding: 12px 14px; margin-top: 12px; }
+  .svc-demo label { font-size: 13px; }
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: #14192B; color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 14px; z-index: 200000; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+  @media (max-width: 640px) { .dev-bar .dev-hide-sm { display: none; } .studio { padding: 12px; } }
+</style>
+</head>
+<body>
+<div class="dev-bar">
+  <strong>Patch Studio · AI-ontwerpstudio (dev, mock, offline)</strong>
+  <label>Taal <select id="dev-lang"><option value="nl">NL</option><option value="fr">FR</option></select></label>
+  <label>Voorstellen <select id="dev-n"><option value="4">4</option><option value="3">3</option></select></label>
+  <label class="dev-hide-sm">Saldo <select id="dev-bal">
+    <option value="free1">1 gratis ronde</option>
+    <option value="empty">0 · e-mail nog niet gebruikt</option>
+    <option value="emptyMail">0 · e-mail al gebruikt</option>
+    <option value="paid7">7 betaalde rondes</option>
+    <option value="locked">0 · 10 gekocht, vergrendeld</option>
+  </select></label>
+  <label class="dev-hide-sm">Weergave <select id="dev-view"><option value="auto">Automatisch</option><option value="sheet">Sheet</option><option value="inline">Kolom</option></select></label>
+  <span class="dev-hide-sm">E-mailcode: <code>123456</code> · haken: <code>[[mock:fail]]</code> <code>[[mock:policy]]</code> <code>[[mock:slow]]</code></span>
+</div>
+
+<main class="studio bps-studio" id="studio">
+  <section class="stage" aria-label="Voorbeeld van je patch">
+    <div class="patch" id="patch"><span class="ph" id="patch-ph">Je patch</span></div>
+    <div class="entry" id="entry">
+      <button type="button" id="btn-upload"><span class="ico" aria-hidden="true">⬆</span><span><b>Ik heb een logo</b><small>JPG, PNG, SVG of PDF</small></span></button>
+      <button type="button" class="ai" id="btn-ai"><span class="ico" aria-hidden="true">✦</span><span><b id="entry-title">Nog geen logo? Laat AI iets maken</b><small id="entry-sub">1 gratis · meteen borduurbaar</small></span></button>
+    </div>
+  </section>
+  <aside class="column" id="column"><div class="column-empty" id="column-empty">Assistent-kolom van de studio. Op desktop opent het AI-paneel hier; op gsm als bottom sheet.</div>
+    <div class="svc-demo">
+      <label>Dienstkaart testen (gedeelde vectoren):
+        <select id="svc-scn"></select></label>
+      <div id="svc-out"></div>
+    </div>
+  </aside>
+</main>
+<div id="sheet-host"></div>
+<div class="log"><details><summary>Events naar de studio</summary><pre id="log"></pre></details></div>
+
+<script type="module">
+  const q = new URLSearchParams(location.search);
+  const base = '../plugin/borduur-patch-studio/';
+  const src = base + 'assets/src/';
+  const [legal, prompts, services, vectors] = await Promise.all(
+    ['config/ai-legal.json', 'config/ai-prompts.json', 'config/ai-services.json'].map((p) => fetch(base + p).then((r) => r.json()))
+      .concat(fetch('../tests/services/offer-vectors.json').then((r) => r.json()))
+  );
+  const { mount } = await import(src + 'ai/index.js');
+  const { createMockApi } = await import(src + 'ai/mock-api.js');
+  const { createT } = await import(src + 'shared/i18n.js');
+  const msgs = (await import(src + 'ai/messages.js')).default;
+  const svc = await import(src + 'services/index.js');
+
+  const sel = (id) => document.getElementById(id);
+  const lang = q.get('lang') === 'fr' ? 'fr' : 'nl';
+  const n = Number(q.get('n') || 4);
+  const balKey = q.get('bal') || 'free1';
+  const view = q.get('view') || 'auto';
+  sel('dev-lang').value = lang; sel('dev-n').value = String(n); sel('dev-bal').value = balKey; sel('dev-view').value = view;
+  document.documentElement.lang = lang;
+  ['dev-lang', 'dev-n', 'dev-bal', 'dev-view'].forEach((id) => sel(id).addEventListener('change', () => {
+    const p = new URLSearchParams({ lang: sel('dev-lang').value, n: sel('dev-n').value, bal: sel('dev-bal').value, view: sel('dev-view').value });
+    location.search = p.toString();
+  }));
+
+  // Publieke config zoals PHP ze via bps_public_config zou geven (config.ai), met de echte juridische teksten.
+  const legalStrings = {};
+  for (const [k, v] of Object.entries(legal.strings)) if (k.startsWith('legal.ai.') && v[lang]) legalStrings[k] = v[lang];
+  const styles = Object.entries(prompts.styles).filter(([id, s]) => !id.startsWith('_') && s && s.label).map(([id, s]) => ({ id, label: s.label[lang] || s.label.nl, hint: (s.hint || {})[lang] || '' }));
+  const config = {
+    ai: { mode: 'test', providerLabel: 'Voorbeeldontwerpen (test)', testMode: true, n, refineN: 2, styles, legal: legalStrings, legalVersion: legal.version, limits: { descriptionMaxChars: 400, refineMaxChars: 200, textMaxChars: 60 } },
+    services: { catalog: svc.catalogFromConfig(services, lang) },
+  };
+  const balances = {
+    free1: [{ free: 1 }, false], empty: [{ free: 0 }, false], emptyMail: [{ free: 0 }, true], paid7: [{ free: 0, paid: 7 }, true], locked: [{ free: 0, paidLocked: 10 }, true],
+  };
+  const [startBal, emailDone] = balances[balKey] || balances.free1;
+  const mockApi = createMockApi({ lang, n, refineN: 2, latencyMs: Number(q.get('latency') || 1400), balance: startBal, emailDone, netDelayMs: 120, paymentDelayMs: 2500 });
+  window.__mockApi = mockApi;
+
+  const t = createT([msgs], lang);
+  sel('entry-title').textContent = t('ai.entry.title');
+  const host = sel('studio');
+  const logEl = sel('log');
+  const log = (name, detail) => {
+    const d = Object.assign({}, detail);
+    if (d.file) d.file = { name: d.file.name, type: d.file.type, size: d.file.size };
+    if (d.url && d.url.length > 80) d.url = d.url.slice(0, 60) + '…';
+    logEl.textContent = `${new Date().toLocaleTimeString()}  ${name}  ${JSON.stringify(d)}\n` + logEl.textContent;
+  };
+  ['open', 'close', 'job:started', 'job:done', 'job:failed', 'blocked', 'preview', 'design:chosen', 'local:action', 'upload:requested', 'credits:changed', 'pack:checkout', 'service:suggested']
+    .forEach((e) => host.addEventListener('bps:ai:' + e, (ev) => log('bps:ai:' + e, ev.detail)));
+  ['offer:shown', 'added', 'dismissed'].forEach((e) => host.addEventListener('bps:svc:' + e, (ev) => log('bps:svc:' + e, ev.detail)));
+  host.addEventListener('bps:track', (ev) => log('bps:track', ev.detail));
+
+  const patchImg = () => {
+    let img = sel('patch').querySelector('img');
+    if (!img) { img = document.createElement('img'); img.alt = ''; sel('patch').appendChild(img); }
+    return img;
+  };
+  let chosenUrl = null;
+  function showOnPatch(url, badge) {
+    sel('patch-ph').hidden = !!url;
+    const img = patchImg();
+    img.hidden = !url;
+    if (url) img.src = url;
+    let b = sel('patch').querySelector('.badge');
+    if (badge && !b) { b = document.createElement('span'); b.className = 'badge'; sel('patch').appendChild(b); }
+    if (b) { b.hidden = !badge; b.textContent = badge || ''; }
+  }
+  function toast(text) {
+    const d = document.createElement('div'); d.className = 'toast'; d.setAttribute('role', 'status'); d.textContent = text;
+    document.body.appendChild(d); setTimeout(() => d.remove(), 3200);
+  }
+
+  const wide = view === 'inline' || (view === 'auto' && matchMedia('(min-width: 1025px)').matches);
+  const container = wide ? sel('column') : sel('sheet-host');
+  const ctx = {
+    host, config, locale: lang, mockApi,
+    presentation: wide ? 'inline' : 'sheet',
+    api: { base: '/wp-json/patch-studio/v1' },
+    getStudio: () => ({ technique: 'embroidered', sizeMm: 80, fabric: 'black', edge: 'merrow', hasDesign: !!chosenUrl }),
+    // Nep-borduurcheck: deterministisch op bestandsgrootte (in de studio: snelle analyse + borduurcheck).
+    quickCheck: async (file) => ({ status: file.size % 3 === 0 ? 'warn' : 'ok', reasons: [] }),
+    renderOnPatch: (url) => showOnPatch(url || chosenUrl, url ? null : chosenUrl ? t('legal.ai.label') : null),
+    openCheckout: (url) => toast(lang === 'fr' ? 'Caisse de test : paiement simulé (2,5 s).' : 'Testkassa: betaling wordt gesimuleerd (2,5 s).'),
+  };
+  if (q.get('nolegal')) delete config.ai.legal;
+  const panel = mount(container, ctx);
+  window.__panel = panel;
+  host.addEventListener('bps:ai:open', () => { sel('column-empty').hidden = wide; });
+  host.addEventListener('bps:ai:close', () => { sel('column-empty').hidden = false; });
+  host.addEventListener('bps:ai:design:chosen', (ev) => {
+    const d = ev.detail;
+    if (chosenUrl) URL.revokeObjectURL(chosenUrl);
+    chosenUrl = URL.createObjectURL(d.file);
+    showOnPatch(chosenUrl, d.ai.label);
+    toast((lang === 'fr' ? 'Dans le studio : ' : 'In de studio: ') + d.file.name);
+  });
+  host.addEventListener('bps:ai:service:suggested', (ev) => {
+    const offer = svc.evaluate({ stage: 'proposals', isAi: true, check: { status: 'warn', autoFixAvailable: false }, lang }, config.services.catalog, svc.dismissedFor('dev-ref'));
+    if (offer) { sel('svc-out').replaceChildren(); svc.card(sel('svc-out'), offer, { locale: lang, host, designRef: 'dev-ref', api: { cart: async () => ({ ok: true, cartUrl: '/winkelmand/', line: { key: 'x' } }), dismiss: async () => ({ ok: true }) } }); }
+  });
+  host.addEventListener('bps:ai:credits:changed', (ev) => {
+    const b = ev.detail.balance;
+    sel('entry-sub').textContent = b.total > 0 ? t('ai.entry.sub', { free: counter(b) }) : t('ai.none_left');
+  });
+  const counter = (b) => (b.paid > 0 ? t('ai.left', { n: b.total }) : lang === 'fr' ? b.free + ' ' + (b.free > 1 ? 'essais' : 'essai') : b.free + ' ' + (b.free === 1 ? 'ronde' : 'rondes'));
+  sel('entry-sub').textContent = t('ai.entry.sub', { free: counter({ free: startBal.free || 0, paid: startBal.paid || 0, total: (startBal.free || 0) + (startBal.paid || 0) }) });
+  sel('btn-ai').addEventListener('click', () => panel.open({ entry: 'empty-state' }));
+  sel('btn-upload').addEventListener('click', () => toast(lang === 'fr' ? 'Ici s’ouvre l’import normal.' : 'Hier opent de gewone upload.'));
+  host.addEventListener('bps:ai:upload:requested', () => toast(lang === 'fr' ? 'Import normal ouvert.' : 'Gewone upload geopend.'));
+
+  // Dienstkaarten: elke vector uit tests/services/offer-vectors.json.
+  const allVectors = vectors.vectors;
+  sel('svc-scn').append(new Option('—', ''), ...allVectors.map((v, i) => new Option(v.name, String(i))));
+  sel('svc-scn').addEventListener('change', () => {
+    sel('svc-out').replaceChildren();
+    const v = allVectors[Number(sel('svc-scn').value)];
+    if (!v) return;
+    const offer = svc.evaluate(Object.assign({ lang }, v.signals), config.services.catalog, v.dismissed || []);
+    if (!offer) { sel('svc-out').textContent = lang === 'fr' ? 'Aucune offre (correct).' : 'Geen aanbod (zo hoort het).'; return; }
+    svc.card(sel('svc-out'), offer, { locale: lang, host, designRef: 'dev-ref', api: { cart: async () => ({ ok: true, cartUrl: '/winkelmand/', line: { key: 'x' } }), dismiss: async () => ({ ok: true }) } });
+  });
+  if (q.get('open')) panel.open({ entry: 'empty-state', prefill: q.get('prefill') || '' });
+  document.documentElement.dataset.ready = '1';
+</script>
+</body>
+</html>

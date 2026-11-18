@@ -195,6 +195,39 @@ final class Store_Wpdb implements Store {
 		return false === $n ? 0 : (int) $n;
 	}
 
+	public function owner_purge( string $known_before, string $anon_before, string $now, int $limit ): array {
+		$o     = Schema::table( 'owners' );
+		$j     = Schema::table( 'jobs' );
+		$l     = Schema::table( 'lots' );
+		$g     = Schema::table( 'ledger' );
+		$limit = max( 1, $limit );
+		// Rows past their period, without open jobs and without lots that still have rounds.
+		$stale = "( ( o.owner_key LIKE 'a:%%' AND o.last_seen_at < %s ) OR ( o.owner_key NOT LIKE 'a:%%' AND o.last_seen_at < %s ) )
+			AND NOT EXISTS ( SELECT 1 FROM {$j} jo WHERE jo.owner_key = o.owner_key AND jo.status IN ('queued','running') )
+			AND NOT EXISTS ( SELECT 1 FROM {$l} lo WHERE lo.owner_key = o.owner_key AND lo.status = 'active' AND lo.expires_at > %s AND lo.rounds_used < lo.rounds_total )";
+		$refs  = "( EXISTS ( SELECT 1 FROM {$j} jr WHERE jr.owner_key = o.owner_key )
+			OR EXISTS ( SELECT 1 FROM {$l} lr WHERE lr.owner_key = o.owner_key )
+			OR EXISTS ( SELECT 1 FROM {$g} gr WHERE gr.owner_key = o.owner_key ) )";
+
+		$keys = $this->db()->get_col( $this->db()->prepare( "SELECT o.owner_key FROM {$o} o WHERE {$stale} AND NOT {$refs} ORDER BY o.last_seen_at ASC LIMIT %d", $anon_before, $known_before, $now, $limit ) );
+		$del  = 0;
+		foreach ( is_array( $keys ) ? $keys : array() as $key ) {
+			$n    = $this->db()->delete( $o, array( 'owner_key' => (string) $key ) );
+			$del += false === $n ? 0 : (int) $n;
+		}
+
+		$keys = $this->db()->get_col( $this->db()->prepare( "SELECT o.owner_key FROM {$o} o WHERE {$stale} AND {$refs} AND ( o.email IS NOT NULL OR o.email_verified_at IS NOT NULL ) ORDER BY o.last_seen_at ASC LIMIT %d", $anon_before, $known_before, $now, $limit ) );
+		$anon = 0;
+		foreach ( is_array( $keys ) ? $keys : array() as $key ) {
+			$n     = $this->db()->query( $this->db()->prepare( "UPDATE {$o} SET email = NULL, email_verified_at = NULL WHERE owner_key = %s", (string) $key ) );
+			$anon += false === $n ? 0 : (int) $n;
+		}
+		return array(
+			'deleted'    => $del,
+			'anonymised' => $anon,
+		);
+	}
+
 	/* Costs ------------------------------------------------------------ */
 
 	public function cost_insert( array $row ): bool {

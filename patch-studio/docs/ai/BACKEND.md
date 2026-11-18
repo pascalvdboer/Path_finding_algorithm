@@ -97,3 +97,17 @@ jobs op `failed/timeout` met terugboeking. Elke mislukking, weigering door de pr
 - Integratie: zie `docs/handoff/ai-services-needs.md` §"ai-backend" (component, `source.ai` in de payload, test-script).
 - `Prompt_Adapter` (prompt-team) wordt automatisch gebruikt zodra `includes/ai/class-prompt-adapter.php` bestaat;
   tot dan maakt `Jobs::understood()` een eenvoudige samenvatting.
+
+## Review security & kosten (18-11)
+
+Gerepareerd:
+
+- **IPv6-rotatie**: `Identity::ip_bucket()` (en `Services\Owner::ip_hash()`) hasht IPv6 per /64. Eén lijn kon anders per adres een gratis anonieme ronde en verse rate-emmers halen.
+- **Gratis e-mailrondes via aliassen**: `Owner::canonical_email()` (+tag weg, Gmail-punten weg, googlemail→gmail) wordt alleen voor misbruikchecks gebruikt: één +2 per mailbox (teller `free_email_canon|…`, 400 dagen, HMAC) en de limiet van 3 codes per uur geldt per mailbox. De mail gaat naar het getypte adres; de eigenaarssleutel verandert niet.
+- **Genereren → annuleren**: een job annuleren terwijl de AI al werkt geeft de ronde terug (belofte blijft), maar na `limits.runningCancelsPerDay` (standaard 4) zulke annulaties per eigenaar of IP-lijn per dag volgt de bestaande eerlijke pauze (423, 12 u). Annuleren in de wachtrij (nog geen kost) telt niet.
+- **Kiezen = gratis vectorisatie-kraan**: `choose` zit in de poll-emmer (120/min). De betaalde vectorisatie loopt nu hoogstens één keer per voorstel (vlag `vectorTried`, ook bij mislukken) en nooit boven het harde plafond. Ook de cache-check zocht op arraypositie i.p.v. `index`.
+- **Gratis rondes per patchbestelling**: enkel als de patchlijn echt betaald is (> € 0), en ze worden ingetrokken bij annulering/terugbetaling van de bestelling (`cancel_all`).
+
+Bekeken en in orde: sleutels (versleuteld, nooit naar browser/log, `redact()`), beelden enkel via HMAC-URL (1 u) en `get_for_owner` (404 voor anderen), SVG gesaneerd + CSP, prompt-injectie (sandwich + lokale filter + moderatie), persoonsgegevens weg vóór de provider, `try_consume` atomair, prijzen en pakketten server-side.
+
+Open: live-modus met `default = mock` laat klanten (ook betaalde) rondes gebruiken voor voorbeeldontwerpen (wel met testmelding) — beter blokkeren in de admin; transient-tellers (dag, alias) zijn niet atomair en kunnen door een objectcache vroeg verdwijnen; de gasttoken is voor alle gasten gelijk (WordPress-nonce voor uid 0), dus de IP-limieten blijven de echte rem.

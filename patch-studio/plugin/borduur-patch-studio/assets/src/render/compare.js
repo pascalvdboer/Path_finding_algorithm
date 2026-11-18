@@ -23,7 +23,8 @@ function edgeFor(config, tech, current) {
 /**
  * Render one design in several techniques.
  * @param {Object} opts   RenderOptions as for draw() (design, layout, art, fabricHex, ...); view is forced to 'patch'
- * @param {{size?:number, techniques?:string[], config?:Object, supersample?:number, transparent?:boolean, light?:Object, scene?:string}} [o]
+ * @param {{size?:number, techniques?:string[], config?:Object, supersample?:number, transparent?:boolean, light?:Object, scene?:string,
+ *          zoom?:number, zoomCenterMm?:{x:number,y:number}}} [o]
  * @returns {{technique:string, canvas:HTMLCanvasElement|OffscreenCanvas, edge:string|null, ms:number}[]}
  */
 export function renderTechniques(opts, o = {}) {
@@ -45,7 +46,9 @@ export function renderTechniques(opts, o = {}) {
       if (!leathers.some((l) => String(l.hex).toLowerCase() === String(fabricHex || '').toLowerCase())) fabricHex = (leathers[0] && leathers[0].hex) || '#8b5a2b';
     }
     const ro = Object.assign({}, opts, {
-      technique: tech, design, layout, fabricHex, view: 'patch', quality: 'high', guides: null, zoom: 1,
+      technique: tech, design, layout, fabricHex, view: 'patch', quality: 'high', guides: null,
+      // detail crops (critique-2 #6): the comparer zooms in on a characteristic spot so thread, weave and print differ
+      zoom: o.zoom || 1, zoomCenterMm: o.zoomCenterMm || undefined,
       transparent: !!o.transparent, light: o.light || opts.light, scene: o.scene || opts.scene, _fit: 0.9,
     });
     const big = makeCanvas(size * ss, size * ss);

@@ -1,5 +1,119 @@
 # Handoff: wat AI/diensten nodig hebben in bestaande code
 
+## ▶ INTEGRATIE-CHECKLIST (stand 18-11, afwerking) — begin hier
+
+Deze sectie vat alles samen en is nagekeken tegen de code van 18-11. De secties eronder zijn het logboek per bouwer
+(meer detail, soms verouderd; bij tegenspraak geldt deze checklist). Alle tests groen: `npm test` (426 ok, 3 todo),
+`npm run test:php`, `php tests/ai/run-prompt-php.php`, `php tests/ai/run-prompt-adapter-php.php`,
+`php tests/ai/backend/run-backend-php.php` (42), `php tests/services/run-services-php.php` (472),
+`node tests/ai/frontend-e2e.mjs` (58).
+
+### A. Al gebeurd (niets meer te doen)
+| Wat | Waar | Nagekeken |
+|---|---|---|
+| Modules laden | `Plugin::modules()` in `includes/class-plugin.php`: `ai` (→ `AI\Module`, standaard **uit**) en `services` (→ `Services\Module`, `requires: ['ai']`) | ja |
+| Build-entries + budget | `scripts/build.mjs`: `ai/index.js → patch-studio-ai.js` (`BPSAI`, 28 kB) en `ai/mock-api.js → patch-studio-ai-mock.js` (`BPSAIMock`, 40 kB). Test `tests/ai/frontend-bundle.test.js` bewaakt strenger: 26 kB (nu 25,0 kB) | ja |
+| Verwijderen | `uninstall.php` + `Plugin::owned_data()` ruimen `bps_ai_*`, `bps_svc_*`, tabellen, cron en `uploads/patch-studio/ai` op | ja |
+| `source.ai` in het ontwerp-payload | **nieuw** `includes/ai/class-order-review.php` hangt aan de bestaande filter `bps_payload_clean` (prio 20) en laat enkel `{jobId (ULID), index 0–3}` door. `Design_Link` controleert eigenaar + gekozen voorstel. **`Woo\Payload` hoeft dus niet meer aangepast** (oude punt "ai-backend 2" vervalt) | test "orderkant" |
+| Productiefiche "AI-ontwerp" | idem, via `bps_fiche_sections` (prio 20): sectie `ai` met model, voorstel, "Nagekeken" (warn/ok), "Afgewerkt door ontwerper" | test "orderkant" |
+| Nakijkvinkje (04-juridisch §1 laag 3) | idem: metabox **"AI-ontwerp nakijken"** (zijkolom orderscherm, klassiek + HPOS) met één vinkje per AI-regel → `_bps_ai.review = {user_id, at}`; nonce + `edit_shop_orders`. Oude punten "Juridisch 3" en "Architectuur 5" vervallen | test "orderkant" |
+| Dienstenbeheer op order | `Services\Service_Status` metabox "Diensten (Patch Studio)" | ja |
+| Kassa-vakjes, Mijn account, herroeping, privacy-exporter | `Services\*`, `AI\Privacy`, `AI\Legal_Display` registreren zichzelf | ja |
+
+### B. Nog te doen door het premium-team / integrator (PHP, config)
+1. **`package.json`** — `test:php` draait nog enkel de prijsvectoren. Vervang door (exacte regel):
+   ```json
+   "test:php": "php tests/pricing/run-php.php && php tests/ai/run-prompt-php.php && php tests/ai/run-prompt-adapter-php.php && php tests/ai/backend/run-backend-php.php && php tests/services/run-services-php.php"
+   ```
+   (Let op: het bestand `tests/ai/run-ai-php.php` uit "Architectuur 4" bestaat niet; gebruik de regel hierboven.)
+2. **`Plugin::modules()['services']['requires']`** — staat op `['ai']`. Diensten (hertekenen, borduurbestand, staal,
+   spoed) werken ook zonder AI. Wil de eigenaar diensten verkopen zonder de AI-studio aan te zetten: `requires => array()`.
+   Advies: zo doen (diensten brengen geld op zonder API-kost).
+3. **Beheer-tab (optioneel)** — link naar `admin.php?page=bps-ai` als tab in `Settings_Page::render()`
+   (`class_exists('\BorduurPatchStudio\AI\Admin')`). Nu staat de AI-beheerpagina onder **WooCommerce → Patch Studio AI**.
+4. **Proefmail** — loopt de proefmail niet via Woo-orderitems, voeg daar `legal.ai.proof_line` toe (zie Juridisch-review).
+   Zacht blokkeren: bij "proef versturen" waarschuwen als een regel `_bps_ai` heeft en `review` leeg is
+   (`\BorduurPatchStudio\AI\Order_Review::meta_of( $item )['review'] ?? null`).
+5. **Module-schakelaar in het beheer** — `Plugin::set_module_enabled( 'ai', true )` bestaat, maar geen enkel
+   beheerscherm roept het aan (grep 18-11). De eigenaar moet de module "AI-ontwerpstudio" (en "Diensten en
+   ontwerprondes") kunnen aanvinken, bv. als lijst met vinkjes uit `Plugin::modules()` in `Settings_Page`. Tot dan
+   laadt `AI\Module` niet (standaard `default: false`) en is ook de pagina WooCommerce → Patch Studio AI er niet.
+6. **Server (eigenaar/hosting)** — nginx: `location ^~ /wp-content/uploads/patch-studio/ai/ { deny all; }` (Apache: `.htaccess` staat er al).
+
+### C. Nog te doen door het studio-team (`assets/src/ui/**`) — waar de knoppen komen
+Het AI-paneel en de dienstkaarten zijn klaar; enkel de **ingangen** en de **event-afhandeling** ontbreken in de studio.
+Alles alleen tonen als `config.ai` bestaat (modus `live`, of `test` voor beheerders). `config.services` los daarvan.
+
+**C1. Knop "Ontwerp met AI" — drie plaatsen**
+| Plaats | Bestand / element | Tekst (NL / FR) | `entry` |
+|---|---|---|---|
+| Startscherm (vóór upload) | `ui/panels.js` `emptyState()`: als **eerste** knop in `div.bps-hero__alt`, vóór de knop "Alleen tekst" (`data-bps-action="text-only"`). Opvallende kaart met 2 regels | `ai.entry.title` "Nog geen logo? Laat AI iets maken" / "Pas encore de logo ? Laissez l’IA en créer un"; `ai.entry.sub` "{free} gratis · gemaakt voor borduurwerk" / "{free} gratuit(s) · conçu pour broder" (`{free}` = "1 ronde"/"3 rondes" uit `GET /ai/status`, pas opvragen na de eerste tik/hover, niet bij laden). Teksten overnemen in `ui/messages.js` | `'empty-state'` |
+| Werkruimte desktop | bovenaan het **Ontwerp-paneel** (dock `design`, `panels.design`), boven de upload-knop | `ai.title` "Ontwerp met AI" / "Créer avec l’IA" + sparkle-icoon (`icon('spark')`) | `'toolbar'` |
+| Werkruimte gsm | zelfde knop in het Ontwerp-paneel (tab `design` in `TABS`), dus in de bottom sheet | "✨ Nieuwe voorstellen" (`ai.new`) als er al een AI-ontwerp is, anders "Ontwerp met AI" | `'design-tab'` |
+Een vierde ingang "Mijn voorstellen" (`ai.history`, `entry:'history'`) mag in hetzelfde paneel als kleine link.
+
+**C2. Openen (in `ui/app.js`, één functie `ctx.openAI(entry)`)**
+```js
+let aiPanel = null;
+ctx.openAI = async (entry) => {
+  if (!config.ai) return;
+  if (!window.BPSAI) await loadScriptOnce(config.ai.bundleUrl + '?ver=' + config.ai.bundleVer); // <script async>, 1×
+  const mobile = ctx.isMobile();                       // studio-breekpunt 899 px — NIET de 1025 px-standaard van het paneel
+  if (!mobile) { ctx.ui.sideMin = false; ctx.refresh(); }
+  aiPanel = window.BPSAI.mount(mobile ? document.body : side /* aside.bps-side, app.js */, {
+    host: root, config, locale: config.locale,
+    presentation: mobile ? 'sheet' : 'inline',          // altijd expliciet meegeven
+    api: { base: config.rest.root /* …/wp-json/patch-studio/v1/ (paneel knipt de / af) */, nonce: config.rest.nonce, token: (fresh) => ctx.api.getToken(fresh) },
+    getStudio: () => ({ shape, shapeChosen, technique, sizeMm, fabric, edge, maxColors, hasDesign }),  // uit store.get()
+    quickCheck: (file) => quickAnalyse(file),          // optioneel: {status:'ok'|'warn'|'bad', reasons}
+    renderOnPatch: (src) => stage.previewOverlay(src), // optioneel; null = terug
+    historyBack: true,
+  });
+  aiPanel.open({ entry });
+};
+```
+Bij `config.ai.prefetch` mag de bundel na `requestIdleCallback` al geladen worden (niet bij eerste paint).
+In de demo/testmodus: eerst `patch-studio-ai-mock.js` laden en `mockApi: true` meegeven (label "Testmodus" verschijnt vanzelf).
+
+**C3. Events op `.bps-studio` (root) waarop de studio moet luisteren**
+| Event | Wat de studio doet |
+|---|---|
+| `bps:ai:design:chosen` `{file, ai:{jobId,index,…}, hints}` | `ctx.handleFile(detail.file)`; `store.set({source:{…, ai:{jobId, index}}})` zodat het meegaat in `POST /designs` (de server bewaart het via `bps_payload_clean`); `hints` (vorm, maxColors, kleuren) enkel toepassen op velden die de klant nog niet koos; bij `hints.textMode==='studio'` een tekstlaag met `hints.text` op `hints.placement` (`arc_top`/`arc_bottom` = boog, rest recht); badge "AI-voorstel" (`legal.ai.label`) zolang `ai.humanFinish` false is |
+| `bps:ai:local:action` `{action, text?, colors?, shape?}` | het juiste paneel openen: `open_text→text`, `open_colors`/`reduce_colors→colors`, `open_size→size`, `open_shape→shape`, `open_arrange→design` (komt altijd ná `design:chosen`) |
+| `bps:ai:upload:requested` | gewone upload openen (bestandskiezer van het Ontwerp-paneel) |
+| `bps:ai:preview` `{url|null}` | tijdelijk op de patch tonen / terug; gsm: sheet even laten zakken (`ctx.ui.sheetMin`) |
+| `bps:ai:close` | assistent terug tonen (desktop) |
+| `bps:ai:service:suggested` `{serviceId:'d1_finish', explicit?}` | dienstkaart D1 tonen (zie C4); bij `explicit:true` ook als de check `ok` was |
+| `bps:track` | enkel doorsturen met analytics-toestemming |
+
+**C4. Dienstkaarten — waar ze komen** (`import { evaluate, card, dismissedFor } from '../services/index.js'`; max. 1 kaart tegelijk, nooit vooraf aangevinkt, "Nee, dank je" even groot)
+| Moment | Luisteren op | Plaats | `stage` |
+|---|---|---|---|
+| Na analyse van een upload | `bps:analysis-done` | bovenaan de **assistent** (`ui/assistant.js`, desktop rechterkolom; gsm tab "Advies") | `'analysis'` (D2 hertekenen, D2b schets, D3 eigen machine) |
+| Na keuze van een AI-voorstel | `bps:ai:service:suggested` | zelfde plaats | `'proposals'` (D1 afwerken) |
+| Bij de prijs | `bps:quote` | onder de prijskaart in het **Prijs/checkout-paneel** (`ui/checkout.js`), boven "Bestellen" | `'price'` (D6 staal, D4 spoed als aan) |
+| Na "In winkelmand" | `bps:added-to-cart` `{ref}` | in het resultaatblok van `flows.order()` (`ui/flows.js` ±r. 120) | `'thanks'` (D3b borduurbestand erbij) |
+```js
+const offer = evaluate({ stage, analysis: ctx.analysis, check, isAi: !!st.source.ai, qty, totalIncl, technique,
+  neededBy, normalDate, rushDate, selfEmbroider, lang }, config.services.catalog, dismissedFor(st.ref));
+if (offer) card(el, offer, { locale, host: root, designRef: st.ref, info: config.services.info,
+  api: { base: config.rest.root, nonce: config.rest.nonce, token: (f) => ctx.api.getToken(f) } });
+```
+`card()` doet zelf `POST /services/cart`, onthoudt "Nee, dank je" en dispatcht `bps:svc:offer:shown|added|dismissed`.
+Regelopties (D3b, D4, D7) hebben een `designRef` nodig: pas tonen als `st.ref` bestaat (na upload/opslaan).
+
+**C5. Klein**
+- `config.contact.privacyUrl` bestaat al → het AI-paneel maakt "Meer info" daarmee een link; niets te doen.
+- Op gsm bedekt de sheet (max. 85 %) een deel van de patch: bij `bps:ai:preview` de sheet laten zakken.
+- Acceptatietest (owner-eis gsm): na openen van het AI-paneel en na "Gebruik in mijn patch" moet de patch volledig
+  zichtbaar zijn en `scrollTop` 0 blijven (zelfde Playwright-check als de andere panelen).
+
+### D. Eigenaar (geen code) — zie `docs/ai/RAPPORT.md`
+OpenAI-sleutel aanmaken + bestedingslimiet, prijzen kiezen en `verified` aanvinken, DPA aanvaarden, AV/privacytekst
+plaatsen, eerst in modus **test** proberen, dan **live**.
+
+---
+
 
 ## Juridisch (bron: docs/ai/04-juridisch.md, teksten: config/ai-legal.json)
 
@@ -28,6 +142,40 @@
 7. **Niet-code (eigenaar)** — AV-artikel §4.7 en privacytekst §6.7 plaatsen; OpenAI-DPA aanvaarden; boekhouder: OSS, Peppol,
    10 jaar bewaren.
 
+
+### Review juridisch-check (18-11) — stand en wat de integratie nog moet doen
+Nagekeken tegen 04-juridisch §0/§9. **Zelf gebouwd/aangevuld** (geen actie nodig): AI-label op tegels, provider-, chat- en
+privacyzin, rechten-uitklapper, eigen-logo-knop, misbruikpauze (al aanwezig); twee losse, lege toestemmingsvakjes +
+`_bps_ai_withdrawal_consent` + blokkering betaalde rondes tot toestemming of dag 15 (al aanwezig); herroepknop pakketten
+(al aanwezig). Nieuw in deze review:
+- `includes/ai/class-legal-display.php` — `legal.ai.cart_line` in de mand (`woocommerce_get_item_data`, prio 40) en
+  `legal.ai.proof_line` op elk orderitem met `_bps_ai` (`woocommerce_order_item_get_formatted_meta_data`, prio 40:
+  bestelmails, proefmail via Woo-mail, Mijn account, beheer). Geregistreerd in `AI\Module::register_always()`.
+  **Premium-team:** als de proefmail niet via de Woo-orderitems loopt, voeg daar `legal.ai.proof_line` toe.
+- `includes/services/class-service-withdrawal.php` — herroepknop voor diensten D1/D2/D3/D5/D7 (art. 11bis): binnen 14 d
+  en niet geleverd; nog niet gestart = volle regel terug (Woo-refund), al gestart = evenredig (taakmail atelier).
+  Knop in Mijn account (onder "Diensten") en op de getekende gastpagina; link in de klantmail
+  (`woocommerce_email_after_order_table`, prio 26). Teksten `legal.svc.withdraw_*` in `config/ai-legal.json` + 04 §8.
+- `legal.ai.pack_info` op de productpagina van een pakket (`woocommerce_single_product_summary`, prio 25) en als
+  "Voorwaarden" in de mandregel; geldigheid (24 mnd) nu ook in het pakketscherm van de studio.
+- `legal.ai.expiry_notice` onder het tekstvak als betaalde rondes binnen 30 dagen vervallen (`balance.expiring`).
+- PNG-markering: extra `tEXt`-chunk `Comment` naast iTXt + XMP (04 §1.2).
+- Merkfilter: `officialInsignia` + stadswapen/gemeentewapen/"wapenschild van de stad…"/blason/armoiries de la ville;
+  `copyIntent` + "in de stijl van het logo"/"dans le style du logo". Kaal "wapenschild" blijft toegelaten (is een
+  stijlwoord: clubschild); testvectoren S17–S21.
+- Privacy: beleidstekst nu volgens 04 §6.7 in NL én FR (verwerker, VS-doorgifte, geen training, termijnen uit de
+  instellingen, markering); exporter voegt de herroepingstoestemmingen van bestellingen toe.
+- Test `tests/ai/legal-copy.test.js`: elke sleutel uit `ai-legal.json` moet in de code gebruikt worden.
+
+**Nog nodig buiten mijn bestanden:**
+1. **Studio-team** — `card(el, offer, { ..., info: config.services.info })` doorgeven: dan toont de dienstkaart bij
+   menselijk werk de uitklapper "Goed om te weten" (`legal.svc.info`). Zonder `info` blijft die weg.
+2. **Studio-team** — badge "AI-voorstel" in de studio zolang `_bps_ai.humanFinish=false` (04 §1.3) staat nog niet in `ui/**`.
+3. **Premium-team** — beheerblok "AI-ontwerp nakijken" + vinkje (`_bps_ai.review`) staat nog open (punt 3 hierboven).
+4. **Eigenaar/jurist** — exacte Belgische wettekst van de herroepknop (knoptekst "Overeenkomst hier herroepen") en de
+   grondslag van de VS-doorgifte in de privacytekst bevestigen; AV-artikel §4.7 plaatsen; FR laten nalezen.
+5. **Bekend, bewust zo gelaten** — een pakket waarvan de korting-terug-coupon al gebruikt is, kan niet meer herroepen
+   worden (anders dubbel terugbetaald); de tekst `account.credit_none_used` legt dat uit. Laten bevestigen door de jurist.
 
 ## Prompt-engine (bron: docs/ai/02-prompting.md, code: includes/ai/class-ai-prompt-engine.php, data: config/ai-prompts.json)
 
@@ -278,3 +426,79 @@ checks incl. de testset van 30 klantvragen; beide ook via `npm test`). `AI\Jobs`
    nu de Engelse woordenlijst (elk onderwerp valt op een sjabloon, geen dode trefwoorden; test bewaakt dat) en
    `colorHex` kreeg `mustard yellow`, `rust`, `fuchsia`, `lilac` (anders vielen die kleuren weg in `Jobs::colors_hex`).
    Hex-waarden staan nu ook in `ai-prompts.json colorNames`; een test houdt beide gelijk.
+
+
+## frontend (bouwer `frontend`, 18-11; code: `assets/src/ai/**`, `assets/src/services/**`, uitleg: `docs/ai/FRONTEND.md`)
+
+Klaar en getest (`npm test`: `tests/ai/frontend-*.test.js`, `tests/services/services-js.test.js`, Playwright-brug;
+los: `NODE_PATH="$(npm root -g)" node tests/ai/frontend-e2e.mjs`). Werkende testpagina: `npm run dev` →
+`http://localhost:8787/dev/ai.html` (mock, offline). Precies nodig in bestaande code:
+
+1. **`scripts/build.mjs` (integrator)** — twee entries + budget (de nep-API zit bewust niet in de productiebundel):
+   ```js
+   { in: 'ai/index.js', out: 'patch-studio-ai.js', globalName: 'BPSAI' },
+   { in: 'ai/mock-api.js', out: 'patch-studio-ai-mock.js', globalName: 'BPSAIMock' },   // enkel demo/testmodus
+   // BUDGET: 'patch-studio-ai.js': 25 * 1024   (nu ± 24,2 kB gzip; tests/ai/frontend-bundle.test.js bewaakt dit)
+   ```
+   De stijl zit als tekst in de bundel (`ai/styles.js`, gescoped `.bps-ai`, één `<style id="bps-ai-css">`): er is
+   geen apart CSS-bestand en geen CSS-entry nodig. (Afwijking van SPEC §2 "ai/ai.css": bewust, 0 extra requests.)
+2. **Studio-UI (studio-team, `assets/src/ui/**`)** — aanvulling op §Architectuur 3:
+   ```js
+   // bij de eerste tik op een AI-ingang (lege toestand / knop "✨ AI" / tab Ontwerp "✨ Nieuwe voorstellen"):
+   await loadScriptOnce(config.ai.bundleUrl);                       // zet window.BPSAI
+   const wide = matchMedia('(min-width: 1025px)').matches;
+   const panel = window.BPSAI.mount(wide ? assistantColumnEl : document.body, {
+     host: studioRoot, config, locale,                              // studioRoot = .bps-studio (events komen hier)
+     presentation: wide ? 'inline' : 'sheet',                       // 'auto' kiest zelf op 1025 px
+     api: { base: restUrl + 'patch-studio/v1', nonce, token: (fresh) => getToken(fresh) },   // zelfde token als /designs
+     getStudio: () => ({ shape, technique, sizeMm, fabric, edge, maxColors, hasDesign }),
+     quickCheck: (file) => quickAnalyse(file),                       // optioneel → {status:'ok'|'warn'|'bad', reasons}
+     renderOnPatch: (src) => stage.previewOverlay(src),              // optioneel; null = terug naar het huidige ontwerp
+     historyBack: true,                                              // gsm: terugknop sluit de sheet (pushState); false = uit
+   });
+   panel.open({ entry: 'empty-state' });                            // of 'toolbar' | 'design-tab' | 'history'
+   ```
+   - `mount()` is idempotent per element; `panel.refreshBalance()` na terugkeer uit de kassa gebeurt al vanzelf
+     (focus/visibilitychange + elke 4 s zolang de betaal-sheet wacht).
+   - In `sheet`-modus zet het paneel zelf een overlay (dialog, focus-trap, Esc, body-scroll-lock, `visualViewport`).
+     Studio: hou het patchvoorbeeld bovenaan zichtbaar (de sheet is max. 85 % hoog).
+   - Entry-kaart (vóór de bundel geladen is) gebruikt de sleutels `ai.entry.title` en `ai.entry.sub` (`{free}` =
+     "1 ronde"/"3 rondes"); de studio neemt die twee teksten over in `ui/messages.js` of leest ze uit `config.strings`.
+   - `bps:ai:local:action` komt pas **na** `bps:ai:design:chosen` (klant tikt "Open in de studio" bij een gratis
+     verfijning: het gekozen voorstel gaat eerst de studio in, daarna opent het juiste paneel).
+   - `bps:ai:service:suggested {serviceId:'d1_finish'}` komt als `quickCheck` voor het gekozen voorstel `warn|bad`
+     gaf: toon dan `card()` (punt 3) met `evaluate({stage:'proposals', isAi:true, check, …})`.
+   - `bps:track` wordt gedispatcht met `ai_open|ai_generate|ai_done|ai_refine|ai_chosen|ai_pack_checkout` (geen
+     persoonsgegevens); doorsturen enkel met analytics-toestemming (bestaande regel).
+3. **Diensten (studio-team)** — `import { evaluate, card, dismissedFor } from '../services/index.js'`:
+   ```js
+   const offer = evaluate({ stage, analysis, check, isAi, qty, totalIncl, technique, neededBy, normalDate, rushDate,
+                            selfEmbroider, lang: locale }, config.services.catalog, dismissedFor(designRef));
+   if (offer) card(assistantEl, offer, { locale, host: studioRoot, designRef, api: { base, nonce, token } });
+   ```
+   `card()` doet zelf `POST /services/cart`, onthoudt "Nee, dank je" (localStorage + `POST /services/dismiss`) en
+   dispatcht `bps:svc:offer:shown|added|dismissed`. De catalogus mag ook `config.services` (lijst) zijn als het
+   commerce-team die vorm kiest: geef dan die lijst door.
+4. **Demo (`scripts/build-demo.mjs`, `demo/**`)** — voor `mockApi:true` eerst `patch-studio-ai-mock.js` laden
+   (zet `window.BPSAIMock`), of `mockApi: BPSAIMock.createMockApi({ lang, n })` meegeven. E-mailcode in de mock: 123456.
+5. **`config/ai-mock.json` wijzigt (ai-backend/prompt)** — daarna `node tests/ai/lib/mock-data-gen.mjs` draaien
+   (genereert `assets/src/ai/mock-data.js`); `tests/ai/frontend-mock.test.js` faalt anders met die instructie.
+6. **`tests/run-all.sh` (integrator, optioneel)** — `npm test` draait de browsercontrole al als Playwright er is
+   (`BPS_SKIP_E2E=1` slaat ze over); schermafdrukken vernieuwen: `node tests/ai/frontend-e2e.mjs` (zonder `--no-shots`).
+
+## Review gebruiksgemak (18-11) — wat de integratie nog moet doen
+Doorlopen als leek op gsm 390×844 en desktop 1366×900 (`dev/ai.html`, screenshots `docs/ai/screenshots/review/voor-*` en `na-*`):
+ontwerp kiezen = 5 tikken (AI-ingang → idee → "Maak 4 voorstellen" → voorstel → "Gebruik in mijn patch"), ± 6 s met mock.
+Al aangepast in `assets/src/ai/**`; nog nodig buiten mijn bestanden:
+1. **Studio-team (`ui/**`)** — op gsm bedekt de sheet het patchvoorbeeld; daarom zegt de hint nu "Kies je favoriet en tik
+   op Gebruik in mijn patch" i.p.v. "zie het op je patch". Beter: in sheet-modus een mini-voorbeeld (±120 px) van de
+   patch bovenaan de sheet, of de sheet bij `bps:ai:preview` tijdelijk laten zakken.
+2. **Studio-team / config** — `config.ai.privacyUrl` (of `config.contact.privacyUrl`, staat al in defaults.json) doorgeven:
+   dan wordt "Meer info" in `legal.ai.privacy_line` een echte link; zonder URL valt die (dode) tekst weg.
+3. **Studio-team** — `bps:ai:service:suggested` kan nu ook komen met `explicit: true` (klant tikte zelf "Laat onze ontwerper
+   dit afwerken" onder de voorstellen, zoals `legal.ai.chat_notice` belooft). Toon dan de D1-kaart ook als de
+   borduurcheck `ok` gaf (dus `evaluate` met `check:{status:'warn'}` of rechtstreeks `card()` met de D1-definitie).
+4. **Desktop-kolom** — staat er iets boven het AI-paneel in de assistent-kolom, dan scrollt het paneel bij openen
+   zelf in beeld (`scrollIntoView nearest`); hou de kolom toch bij voorkeur leeg boven het paneel.
+5. **Bundelbudget** — `patch-studio-ai.js` zit op ± 25,5 kB van 25 kB gzip (marge ± 50 B). Nieuwe teksten → eerst
+   ongebruikte sleutels opruimen of het budget in `tests/ai/frontend-bundle.test.js` bewust herzien.

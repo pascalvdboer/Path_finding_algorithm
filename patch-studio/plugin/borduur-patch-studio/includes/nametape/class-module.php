@@ -1,7 +1,7 @@
 <?php
 /**
- * Name tapes: module entry (SPEC-EXTRA D10). Registered via Plugin::COMPONENTS (handoff #1) or the `bps_components` filter.
- * Without WooCommerce it does nothing.
+ * Name tapes: module entry (SPEC-EXTRA D10). Module `nametape` of the registry in Plugin::modules()
+ * (switch `modules.nametape.enabled`, default on). Without WooCommerce it does nothing.
  *
  * @package BorduurPatchStudio
  */
@@ -18,6 +18,9 @@ final class Module {
 	/** @var bool */
 	private static $registered = false;
 
+	/** @var bool */
+	private static $registered_always = false;
+
 	/**
 	 * Is WooCommerce there?
 	 */
@@ -26,18 +29,38 @@ final class Module {
 	}
 
 	/**
-	 * Hooks. Cart/order/admin parts always run (existing cart lines and orders keep working when the module is switched
-	 * off); the shortcode and REST routes only when the module is enabled.
+	 * Hooks that stay when the module is off in the registry: the order tools for orders that already contain name
+	 * tapes (CSV, print sheet, preview cleanup handler), the privacy hooks, and an empty shortcode so a page with
+	 * [patch_studio_nametape] never shows the raw tag. No cron is scheduled from here.
+	 */
+	public static function register_always(): void {
+		if ( self::$registered_always || ! self::woo() ) {
+			return;
+		}
+		self::$registered_always = true;
+		Order_Tools::register();
+		if ( class_exists( __NAMESPACE__ . '\\Privacy' ) && method_exists( __NAMESPACE__ . '\\Privacy', 'register' ) ) {
+			Privacy::register();
+		}
+		if ( ! shortcode_exists( Shortcode::TAG ) ) {
+			add_shortcode( Shortcode::TAG, '__return_empty_string' );
+		}
+	}
+
+	/**
+	 * Hooks when the module is on. Cart/order/admin parts always run (existing cart lines and orders keep working
+	 * when the name-tape mode itself is switched off in its own settings); the shortcode and REST routes only when
+	 * that mode is enabled.
 	 */
 	public static function register(): void {
 		if ( self::$registered || ! self::woo() ) {
 			return;
 		}
 		self::$registered = true;
+		self::register_always();
 
 		Cart::register();
 		Product::register();
-		Order_Tools::register();
 		if ( is_admin() ) {
 			Admin::register();
 		}
@@ -50,8 +73,6 @@ final class Module {
 		}
 
 		add_filter( 'bps_public_config', array( __CLASS__, 'public_config' ), 20, 2 );
-		add_action( 'bps_activate', array( __CLASS__, 'activate' ) );
-		add_action( 'bps_deactivate', array( __CLASS__, 'deactivate' ) );
 		add_action( 'init', array( Order_Tools::class, 'schedule' ), 30 );
 		add_action( 'bps_nametape_settings_updated', array( __CLASS__, 'settings_updated' ) );
 	}
@@ -76,13 +97,17 @@ final class Module {
 	}
 
 	/**
-	 * Activation: product + cron.
+	 * Activation (plugin activation with the module on, or switching it on): product + cron.
 	 */
 	public static function activate(): void {
-		if ( self::woo() && Config::enabled() ) {
-			Product::ensure();
+		try {
+			if ( self::woo() && Config::enabled() ) {
+				Product::ensure();
+			}
+			Order_Tools::schedule();
+		} catch ( \Throwable $e ) {
+			\BorduurPatchStudio\Logger::error( 'nametape_activate_failed', array( 'exception' => $e ) );
 		}
-		Order_Tools::schedule();
 	}
 
 	/**
@@ -90,6 +115,19 @@ final class Module {
 	 */
 	public static function deactivate(): void {
 		Order_Tools::unschedule();
+	}
+
+	/**
+	 * Data owned by the module (merged into Plugin::owned_data(), also during uninstall).
+	 *
+	 * @return array<string, string[]>
+	 */
+	public static function owned_data(): array {
+		return array(
+			'options'      => array( Config::OPTION, Config::PRODUCT_OPTION, Config::PAGE_OPTION ),
+			'cron_hooks'   => array( Order_Tools::CRON ),
+			'product_meta' => array( Product::META_FLAG ),
+		);
 	}
 
 	/**

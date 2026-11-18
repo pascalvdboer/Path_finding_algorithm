@@ -132,7 +132,10 @@ final class Credits {
 	 * Balance of an owner.
 	 *
 	 * @param string $owner Owner key.
-	 * @return array{free:int, paid:int, paidLocked:int, total:int, nextExpiry:?string, lockedUntil:?string}
+	 * `expiring` = paid rounds that expire within 30 days ({rounds, at}) for legal.ai.expiry_notice (04 §8); free
+	 * rounds are left out (short-lived on purpose, no reminder needed).
+	 *
+	 * @return array{free:int, paid:int, paidLocked:int, total:int, nextExpiry:?string, lockedUntil:?string, expiring:?array}
 	 */
 	public function balance( string $owner ): array {
 		$out = array(
@@ -142,13 +145,17 @@ final class Credits {
 			'total'       => 0,
 			'nextExpiry'  => null,
 			'lockedUntil' => null,
+			'expiring'    => null,
 		);
 		if ( '' === $owner ) {
 			return $out;
 		}
 		$now  = $this->now();
+		$soon = $this->shift( '+30 days' );
 		$next = null;
 		$lock = null;
+		$exp  = null;
+		$expn = 0;
 		foreach ( $this->store->lots_for_owner( $owner, array( 'active' ) ) as $lot ) {
 			$unused = (int) $lot['rounds_total'] - (int) $lot['rounds_used'];
 			if ( $unused <= 0 || (string) $lot['expires_at'] <= $now ) {
@@ -161,6 +168,10 @@ final class Credits {
 			}
 			if ( 'pack' === $lot['source'] ) {
 				$out['paid'] += $unused;
+				if ( (string) $lot['expires_at'] <= $soon ) {
+					$expn += $unused;
+					$exp   = null === $exp || $lot['expires_at'] < $exp ? (string) $lot['expires_at'] : $exp;
+				}
 			} else {
 				$out['free'] += $unused;
 			}
@@ -169,6 +180,7 @@ final class Credits {
 		$out['total']       = $out['free'] + $out['paid'];
 		$out['nextExpiry']  = self::iso( $next );
 		$out['lockedUntil'] = self::iso( $lock );
+		$out['expiring']    = $expn > 0 ? array( 'rounds' => $expn, 'at' => self::iso( $exp ) ) : null;
 		return $out;
 	}
 

@@ -88,7 +88,8 @@ final class Fulfilment {
 
 		foreach ( $order->get_items() as $item_id => $item ) {
 			if ( self::is_patch_item( $item ) ) {
-				$patch = true;
+				// Only a patch line that was actually paid for earns free rounds (a 100 % coupon order does not).
+				$patch = $patch || self::paid_incl( $item ) > 0;
 				continue;
 			}
 			if ( $item->get_meta( self::ITEM_FLAG ) ) {
@@ -217,6 +218,11 @@ final class Fulfilment {
 			return 0;
 		}
 		$n = 0;
+		// The free rounds this order earned go too (otherwise order + cancel = free AI rounds, again and again).
+		$free_lot = (int) $order->get_meta( self::ORDER_FLAG );
+		if ( $free_lot > 0 ) {
+			self::credits()->withdraw( $free_lot, 'manual', 'refunded' );
+		}
 		foreach ( $order->get_items() as $item ) {
 			if ( self::end_pack_item( $item ) ) {
 				++$n;

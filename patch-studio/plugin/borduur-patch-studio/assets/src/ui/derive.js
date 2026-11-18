@@ -44,6 +44,48 @@ export function outerRing(analysis) {
   return out;
 }
 
+/**
+ * Measured share of the radius taken by the photographed rim (ribbed merrow / satin edge in the picture): walking
+ * inwards from the outline, the rim ends where the outer ring colour becomes continuous. Falls back to RIM_FRAC.
+ * Cached per analysis (critique-2 #8: a 6 % ribbed rim showed as a second border inside the new one).
+ */
+const rimMemo = new WeakMap();
+export function rimFrac(analysis) {
+  if (!analysis || !analysis.labels || !analysis.preview) return RIM_FRAC;
+  if (rimMemo.has(analysis)) return rimMemo.get(analysis);
+  const ring = outerRing(analysis);
+  let out = RIM_FRAC;
+  if (ring) {
+    const W = analysis.preview.width, H = analysis.preview.height, L = analysis.labels;
+    const count = (f) => {
+      const cnt = new Map(); let n = 0;
+      for (let i = 0; i < 360; i++) {
+        const ang = (i / 360) * Math.PI * 2;
+        const x = Math.round(W / 2 + Math.cos(ang) * f * W / 2), y = Math.round(H / 2 + Math.sin(ang) * f * H / 2);
+        if (x < 0 || y < 0 || x >= W || y >= H) continue;
+        n++; const l = L[y * W + x]; cnt.set(l, (cnt.get(l) || 0) + 1);
+      }
+      return { cnt, n: Math.max(1, n) };
+    };
+    // the rim shows as a steady second colour next to the ring colour (ribs, wrapped stitches)
+    const c0 = count(0.97);
+    let rimLabel = -1, rn = 0;
+    for (const [l, k] of c0.cnt) if (l !== 255 && l !== ring.label && k > rn) { rn = k; rimLabel = l; }
+    const share0 = rn / c0.n;
+    let edge = 1 - RIM_FRAC;
+    if (rimLabel >= 0 && share0 >= 0.2) {
+      let run = 0;
+      for (let f = 0.97; f >= 0.84; f -= 0.01) {
+        const c = count(f);
+        if ((c.cnt.get(rimLabel) || 0) / c.n < share0 * 0.5) { run++; if (run >= 2) { edge = f + 0.01; break; } } else run = 0;
+      }
+    }
+    out = Math.min(0.14, Math.max(RIM_FRAC, 1 - edge + 0.008));
+  }
+  rimMemo.set(analysis, out);
+  return out;
+}
+
 function cached(key, fn) {
   if (memo.has(key)) return memo.get(key);
   const v = fn();
@@ -83,6 +125,32 @@ export function effectiveAnalysis(analysis, tweaks) {
   return { ...analysis, background: { ...bg, keep } };
 }
 
+/** CIE L* of a hex colour (0..100). */
+function lstar(hex) {
+  const n = parseInt(String(hex || '').replace('#', ''), 16) || 0;
+  const lin = (v) => { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+  const y = 0.2126 * lin((n >> 16) & 255) + 0.7152 * lin((n >> 8) & 255) + 0.0722 * lin(n & 255);
+  return y > 0.008856 ? 116 * Math.cbrt(y) - 16 : 903.3 * y;
+}
+
+/**
+ * Palette indices that must keep their own thread when the palette is reduced: one colour per distinct lightness
+ * level (ΔL* > 15 to every level already kept, largest share first). Without this a mid-grey (armour, a rifle) melts
+ * into the black ground and an illustration turns into a dark blob (critique-2 #2). Light greys and white go first,
+ * so a light tone wins over an extra dark one. At most max-2 levels, so two hues (red, gold) still fit.
+ */
+export function tonalKeep(palette, max) {
+  const list = (palette || []).map((c, i) => ({ i, L: lstar(c && c.hex), share: Number(c && c.share) || 0 }))
+    .filter((c) => c.share >= 0.02);
+  const levels = [];
+  const cap = Math.max(1, max - 2);
+  const w = (c) => c.share * (c.L > 70 ? 2 : 1);
+  for (const c of list.sort((a, b) => w(b) - w(a))) {
+    if (levels.length < cap && levels.every((k) => Math.abs(k.L - c.L) > 15)) levels.push(c);
+  }
+  return levels.map((c) => c.i);
+}
+
 /**
  * Compute everything that follows from (state, analysis). Pure apart from memoisation.
  * @returns {Object} derived
@@ -99,7 +167,7 @@ export function derive(state, analysisRaw, config, tweaks) {
   const reduced = analysis && (analysis.palette || []).length
     // reduction weighs lightness fully (kL 1): mid-tones (grey ground, beige cape) must not collapse into white or
     // black when a photo of a patch is simplified (critique-1 #2); matching keeps the lighting-tolerant kL.
-    ? cached('r' + job + ':' + state.maxThreadColors, () => reducePalette(analysis.palette, state.maxThreadColors, { prepared, config, kL: 1 }))
+    ? cached('r' + job + ':' + state.maxThreadColors, () => reducePalette(analysis.palette, state.maxThreadColors, { prepared, config, kL: 1, keep: tonalKeep(analysis.palette, state.maxThreadColors) }))
     : null;
 
   // Apply customer thread overrides (paletteIndex → code) on the reduced colours.
@@ -135,7 +203,8 @@ export function derive(state, analysisRaw, config, tweaks) {
   const fabricHex = fabric.engrave && state.technique === 'leather' ? fabric.hex : fabric.hex;
   // A design that is itself a complete patch (own ring + rim): the new patch continues its outer ring colour, so a
   // round design in a shield or rectangle never sits as a sticker on a white field (critique-1 #5).
-  const ring = state.fabric === 'auto' && !keepBg ? outerRing(analysis) : null;
+  // In its own shape too: where the photo shows a notch or a torn rim, the ground continues the ring (critique-2 #8).
+  const ring = state.fabric === 'auto' && !keepBg && analysis && analysis.shape ? outerRing(analysis) : null;
   let ringHex = null;
   if (ring) {
     ringHex = ring.hex;
@@ -146,6 +215,8 @@ export function derive(state, analysisRaw, config, tweaks) {
   }
   const backgroundHex = keepBg ? bg.hex : ringHex;
   const groundHex = backgroundHex || fabricHex;
+  // the ring colour only continues the design's own outer ring: contrast advice still looks at the real fabric
+  const adviceGround = (keepBg ? bg.hex : null) || fabricHex;
 
   // Text colours: 'auto' = best-contrast thread against what lies UNDER the text (the design pixels there, else the
   // patch ground), not against the patch ground alone (critique-1 #3). Over a busy part of the design an outline in
@@ -174,7 +245,7 @@ export function derive(state, analysisRaw, config, tweaks) {
   const edgeHex = (edgeThread && edgeThread.hex) || '#1e1b1b';
 
   const contrastItems = [...colorList.map((c, i) => ({ ...c, index: i })), ...Object.values(textHex).map((hex) => ({ hex, share: 0.05, index: -1, important: true }))];
-  const contrast = colorList.length || contrastItems.length ? contrastAgainst(contrastItems, groundHex, config) : null;
+  const contrast = colorList.length || contrastItems.length ? contrastAgainst(contrastItems, ringHex ? adviceGround : groundHex, config) : null;
 
   const pin = {
     technique: state.technique,
@@ -199,7 +270,7 @@ export function derive(state, analysisRaw, config, tweaks) {
     design: designForAdvice,
     config,
     locale,
-    colors: { reduced, matches, contrast, fabricHex: groundHex },
+    colors: { reduced, matches, contrast, fabricHex: ringHex ? adviceGround : groundHex },
     quotes,
     context: { useCase: state.useCase || '' },
   });
@@ -229,7 +300,7 @@ export function fitOwnRim(layout, analysis, tech) {
   const edge = tech && tech.render === 'pvc' ? { ...layout.edge, style: 'molded' } : layout.edge;
   const cover = edgeCoverMm(edge);
   const R = Math.min(W, H) / 2;
-  const k = Math.min(1, (R - cover - 0.6) / (R * (1 - RIM_FRAC)));
+  const k = Math.min(1, (R - cover - 0.6) / (R * (1 - rimFrac(analysis))));
   if (!(k > 0.5) || k >= 0.999) return layout;
   const cx = W / 2, cy = H / 2;
   const artRectMm = { x: cx + (r.x - cx) * k, y: cy + (r.y - cy) * k, w: r.w * k, h: r.h * k };
@@ -290,12 +361,63 @@ function textPoints(l, layout, config, heightMm = l.heightMm) {
  * Colours under a text layer: mean colour, share on the design, and busy(textHex) = true when the text colour would
  * reach less than 3:1 against a noticeable part (≥ 4 %) of the pixels under it.
  */
+/**
+ * Strong-contrast edges of the design (letters, outlines), dilated ±3 px: text placed there would collide with
+ * existing lettering ("IRON CRUSADERS") even where the ground under it is calm (critique-2 #3). Cached per analysis.
+ */
+const edgeMemo = new WeakMap();
+function edgeMap(analysis) {
+  const pv = analysis && analysis.preview;
+  if (!pv || !pv.data) return null;
+  if (edgeMemo.has(analysis)) return edgeMemo.get(analysis);
+  const W = pv.width, H = pv.height, D = pv.data, lum = new Float32Array(W * H), e = new Uint8Array(W * H);
+  for (let i = 0; i < W * H; i++) lum[i] = D[i * 4 + 3] < 30 ? -1 : 0.299 * D[i * 4] + 0.587 * D[i * 4 + 1] + 0.114 * D[i * 4 + 2];
+  for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
+    const i = y * W + x;
+    if (lum[i] < 0) continue;
+    const gx = Math.abs(lum[i + 1] - lum[i - 1]), gy = Math.abs(lum[i + W] - lum[i - W]);
+    if (lum[i + 1] >= 0 && lum[i - 1] >= 0 && lum[i + W] >= 0 && lum[i - W] >= 0 && gx + gy > 70) e[i] = 1;
+  }
+  // dilate 3 px (separable max)
+  const tmp = new Uint8Array(W * H), out = new Uint8Array(W * H), R = 3;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { let m = 0; for (let k = -R; k <= R && !m; k++) { const xx = x + k; if (xx >= 0 && xx < W) m = e[y * W + xx]; } tmp[y * W + x] = m; }
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { let m = 0; for (let k = -R; k <= R && !m; k++) { const yy = y + k; if (yy >= 0 && yy < H) m = tmp[yy * W + x]; } out[y * W + x] = m; }
+  const res = { W, H, data: out };
+  edgeMemo.set(analysis, res);
+  return res;
+}
+
+/**
+ * A characteristic spot of the design (mm, patch top-left origin) for detail crops in the technique comparer: the
+ * densest cluster of contrast edges (letters, outlines) inside the patch, else the first text, else the centre.
+ */
+export function detailMm(state, d) {
+  const L = d.layout, W = L.patchWmm, H = L.patchHmm;
+  const em = d.analysis ? edgeMap(d.analysis) : null, r = L.artRectMm;
+  if (em && r) {
+    const G = 10, cnt = new Float32Array(G * G);
+    for (let y = 0; y < em.H; y += 2) for (let x = 0; x < em.W; x += 2) if (em.data[y * em.W + x]) cnt[((y * G / em.H) | 0) * G + ((x * G / em.W) | 0)]++;
+    let best = -1, bv = 0;
+    for (let i = 0; i < G * G; i++) {
+      const mx = r.x + ((i % G) + 0.5) / G * r.w, my = r.y + (((i / G) | 0) + 0.5) / G * r.h;
+      const q = Math.hypot((mx - W / 2) / (W / 2), (my - H / 2) / (H / 2));
+      if (q > 0.72) continue; // not the rim
+      if (cnt[i] > bv) { bv = cnt[i]; best = i; }
+    }
+    if (best >= 0) return { x: r.x + ((best % G) + 0.5) / G * r.w, y: r.y + (((best / G) | 0) + 0.5) / G * r.h };
+  }
+  const l = (state.texts || []).find((x) => x.text && x.text.trim());
+  if (l && l.path === 'straight') return { x: W / 2 + l.offsetMm.x, y: H / 2 + l.offsetMm.y };
+  return { x: W / 2, y: H / 2 };
+}
+
 export function underText(l, layout, analysis, groundHex, config, heightMm) {
   const r = layout.artRectMm, pv = analysis && analysis.preview;
   const pts = textPoints(l, layout, config, heightMm);
   const g = hexRgb(groundHex);
+  const em = edgeMap(analysis);
   const lums = [];
-  let sr = 0, sg = 0, sb = 0, onArt = 0;
+  let sr = 0, sg = 0, sb = 0, onArt = 0, edges = 0;
   for (const [x, y] of pts) {
     let c = g;
     if (r && pv && pv.data) {
@@ -303,6 +425,7 @@ export function underText(l, layout, analysis, groundHex, config, heightMm) {
       if (u >= 0 && v >= 0 && u < pv.width && v < pv.height) {
         const i = (v * pv.width + u) * 4, a = pv.data[i + 3] / 255;
         if (a > 0.05) { onArt++; c = [pv.data[i] * a + g[0] * (1 - a), pv.data[i + 1] * a + g[1] * (1 - a), pv.data[i + 2] * a + g[2] * (1 - a)]; }
+        if (em && em.data[v * pv.width + u]) edges++;
       }
     }
     sr += c[0]; sg += c[1]; sb += c[2];
@@ -315,6 +438,7 @@ export function underText(l, layout, analysis, groundHex, config, heightMm) {
   return {
     meanHex,
     onArt: onArt / n,
+    edges: edges / n,
     spread: sorted[Math.min(n - 1, Math.floor(n * 0.96))] - sorted[Math.floor(n * 0.04)],
     lums,
     /** share of points where `hex` reaches less than 3:1 */
@@ -376,17 +500,52 @@ export function placeText(state, d, config, layer) {
     // quiet = little of the design under it and one thread colour that reads well everywhere; big enough
     let weak = 0;
     if (u) { const th = pickEdgeColor(u.meanHex, [], d.prepared, config); weak = th ? u.weak(th.hex) : 0; }
-    let score = (u ? u.onArt + u.spread * 1.5 + weak * 3 : 0) + (want - h) * 0.25 + (w > room + 0.5 ? 5 : 0);
+    // existing lettering and outlines count as occupied, even on a calm ground (critique-2 #3)
+    let score = (u ? u.onArt + u.spread * 1.5 + weak * 3 + u.edges * 8 : 0) + (want - h) * 0.25 + (w > room + 0.5 ? 5 : 0);
     if (!a && c.path === 'straight' && c.offsetMm.y === 0) score -= 1;
     if (!a && !round && c.path === 'straight') score += Math.abs(c.offsetMm.y) / H;
-    if (globalThis.__bpsPlaceDbg) globalThis.__bpsPlaceDbg.push([c.path, c.offsetMm.y, h, u && +u.onArt.toFixed(2), u && +u.spread.toFixed(2), +weak.toFixed(2), +score.toFixed(2)]);
-    if (!best || score < best.score) best = { score, patch: { ...c, heightMm: h, angleDeg: 0, insetMm: 0 } };
+    const busy = !!u && u.onArt > 0.5 && (u.edges > 0.05 || weak > 0.1);
+    if (!best || score < best.score) best = { score, busy, patch: { ...c, heightMm: h, angleDeg: 0, insetMm: 0 } };
+  }
+  // No free spot on a design that fills the patch: make the design a bit smaller and put the text in the band that
+  // frees up (an arc under it on a round patch, a line under it otherwise). The UI offers to undo this.
+  if (a && (!best || best.busy) && !others.length && (state.art || {}).scale >= 0.95) {
+    const shrink = shrinkForText(state, d, config, layer);
+    if (shrink) return shrink;
   }
   return best ? best.patch : { path: 'straight', offsetMm: { x: 0, y: 0 }, heightMm: fitHeight(layer, layout, config, want) };
 }
 
-const roundish = (x) => x === 'circle' || x === 'oval';
-function sameShape(a, b) { return a === b || (roundish(a) && roundish(b)); }
+/** Layer patch + `_art` (smaller design) that leaves room for a text under the design, or null. */
+function shrinkForText(state, d, config, layer) {
+  const L = d.layout, T = config.text || {};
+  const W = L.patchWmm, H = L.patchHmm;
+  const round = L.shape === 'circle' || L.shape === 'oval';
+  const edge = edgeCoverMm(L.edge || {}) || (L.edge && L.edge.widthMm) || 2;
+  const lim = config.layout || {};
+  const minScale = Math.max(lim.artScaleMin || 0.2, 0.66);
+  const art = state.art || { scale: 1, offsetMm: { x: 0, y: 0 } };
+  let h = Math.max(T.minHeightMm || 3, Math.min(T.defaultHeightMm || 6, Math.min(W, H) * 0.075));
+  for (let i = 0; i < 4; i++) {
+    let scale, patch;
+    if (round) {
+      const R = Math.min(W, H) / 2, rf = d.analysis && d.analysis.shape && d.analysis.shape.fillsPatch ? rimFrac(d.analysis) : 0;
+      scale = (R - edge - h - 1.8) / (R * (1 - rf));
+      patch = { path: 'arc_bottom', offsetMm: { x: 0, y: 0 }, heightMm: h, angleDeg: 0, insetMm: 0 };
+    } else {
+      scale = (H - 2 * edge - h - 2.6) / H;
+      patch = { path: 'straight', offsetMm: { x: 0, y: Math.round((H / 2 - edge - 1 - h / 2) * 2) / 2 }, heightMm: h, angleDeg: 0, insetMm: 0 };
+    }
+    scale = Math.floor(Math.min(0.92, scale) * 100) / 100;
+    if (scale < minScale) { h -= 0.5; if (h < (T.minHeightMm || 3)) return null; continue; }
+    const l = { ...layer, ...patch };
+    const fit = fitHeight(l, L, config, h);
+    const offY = round ? 0 : -Math.round(((H - H * scale) / 2 - edge * 0.5) * 2) / 2;
+    return { ...patch, heightMm: fit, _art: { ...art, scale, offsetMm: { x: 0, y: offY } } };
+  }
+  return null;
+}
+
 
 /** RenderArt for the renderer (art image comes from render.artFromAnalysis, passed in). */
 export function renderArt(d, image) {
@@ -399,9 +558,9 @@ export function renderArt(d, image) {
     reducedMap: d.reduced ? d.reduced.map : null,
     reducedHex: d.reduced ? d.reducedColors.map((c) => (d.threadOf(c) ? d.threadOf(c).hex : c.hex)) : null,
     backdrop: a.backdrop || null,
-    // photographed rim of a patch-like design: masked away, the generated border takes its place (critique-1 #5)
-    // (only when the patch gets another shape: in its own shape the rim simply ends under the new border)
-    clip: a.shape && a.shape.fillsPatch && !d.keepBg && !sameShape(a.shape.type, d.layout.shape) ? { shape: a.shape.type, inset: RIM_FRAC } : null,
+    // photographed rim of a patch-like design: masked away, the generated border takes its place (critique-1 #5),
+    // also in its own shape: a ribbed rim in the photo must never show as a second border (critique-2 #8)
+    clip: a.shape && a.shape.fillsPatch && !d.keepBg ? { shape: a.shape.type, inset: rimFrac(a) / 2 } : null,
   };
 }
 

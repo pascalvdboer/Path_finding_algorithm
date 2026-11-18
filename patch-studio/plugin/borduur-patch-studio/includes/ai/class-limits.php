@@ -270,6 +270,35 @@ final class Limits {
 	}
 
 	/**
+	 * A job was cancelled while the AI was already working on it. The round goes back (SPEC §1.1 rule 6), but the
+	 * provider call is already paid: without a cap, "generate → cancel" would turn one round into unlimited paid
+	 * calls. After `runningCancelsPerDay` such cancels per owner or IP (line) on one day, the studio pauses for
+	 * that visitor until the day window ends (the same honest 423 "pause" the abuse rule uses).
+	 *
+	 * @param string $owner   Owner key.
+	 * @param string $ip_hash IP hash.
+	 */
+	public static function record_running_cancel( string $owner, string $ip_hash ): void {
+		$max = (int) AI_Settings::limit( 'runningCancelsPerDay' );
+		if ( $max <= 0 ) {
+			return;
+		}
+		$day = self::local_day();
+		foreach ( array( 'o' => $owner, 'i' => $ip_hash ) as $t => $id ) {
+			if ( '' === $id ) {
+				continue;
+			}
+			$k = 'bps_ai_rc_' . $t . '_' . self::hkey( $id ) . '_' . $day;
+			$n = (int) get_transient( $k ) + 1;
+			set_transient( $k, $n, DAY_IN_SECONDS + HOUR_IN_SECONDS );
+			if ( $n >= $max ) {
+				$pause = 12 * HOUR_IN_SECONDS;
+				set_transient( 'bps_ai_pause_' . $t . '_' . self::hkey( $id ), self::now() + $pause, $pause );
+			}
+		}
+	}
+
+	/**
 	 * Pause end (unix) for this owner or IP, or 0.
 	 *
 	 * @param string $owner   Owner key.

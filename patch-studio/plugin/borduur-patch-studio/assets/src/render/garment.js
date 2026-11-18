@@ -338,7 +338,7 @@ export function drawGarment(c, W, H, id, config, o = {}) {
   // frame 'patch' (default in the studio): zoom in until the patch is ±35 % of the view, the garment may run out of
   // the picture; frame 'garment' shows the whole piece (critique-1 #10)
   const fit1 = Math.min(W / (vw * k), H / (vh * k));
-  const auto = o.frame === 'patch' && o.patchMm > 0 ? Math.max(1, (0.35 * Math.min(W, H)) / (o.patchMm * fit1)) : 1;
+  const auto = o.frame === 'patch' && o.patchMm > 0 ? Math.max(1, Math.max(0.4 * Math.min(W, H), 0.28 * Math.max(W, H)) / (o.patchMm * fit1)) : 1;
   const zoom = (o.zoom || 1) * auto;
   const pxPerMm = fit1 * zoom;
   const off = Array.isArray(mk.patchCenterMm) ? mk.patchCenterMm : [0, 0];
