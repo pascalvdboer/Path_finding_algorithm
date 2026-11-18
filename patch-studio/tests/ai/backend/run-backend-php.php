@@ -1149,7 +1149,7 @@ t( 'gdpr-7: eigenaarsrijen verlopen (365 d bekend, 30 d anoniem); saldo blijft, 
 	$store->ledger[] = array( 'owner_key' => $led, 'delta' => -1 );
 	$store->jobs['J0PEN000000000000000000000'] = array( 'id' => 'J0PEN000000000000000000000', 'owner_key' => $open, 'status' => 'running', 'created_at' => $ago( 400 ), 'keep_until' => $ago( -10 ), 'input' => '{}', 'result' => null, 'client_req' => null, 'kind' => 'generate', 'chosen_index' => null );
 	$res = Cleanup::run();
-	ok( ! isset( $store->owners[ $gone ] ), 'e-mail, 400 d, niets open: rij weg' );
+	ok( ! isset( $store->owners[ $gone ] ), 'e-mail, 400 d, niets open: rij weg ' . json_encode( $res ) . json_encode( $GLOBALS['bps_logs'] ?? array() ) );
 	eq( $store->owners[ $lot ]['email'], 'saldo@example.test', 'lot met saldo: ongemoeid' );
 	ok( isset( $store->owners[ $led ] ) && null === $store->owners[ $led ]['email'] && null === $store->owners[ $led ]['email_verified_at'], 'enkel ledger: sleutel blijft, e-mail NULL' );
 	ok( ! isset( $store->owners[ $an31 ] ), 'anoniem 31 d zonder jobs: weg' );
