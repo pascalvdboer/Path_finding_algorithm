@@ -23,7 +23,7 @@ defined( 'ABSPATH' ) || exit;
 final class Response_Page {
 
 	/**
-	 * template_redirect handler.
+	 * Handler for template_redirect.
 	 */
 	public static function handle(): void {
 		// phpcs:disable WordPress.Security.NonceVerification -- the HMAC token in the link is the authorisation.
@@ -176,7 +176,7 @@ final class Response_Page {
 		$error = '';
 		if ( 'cancel' === $q['action'] ) {
 			if ( ! Proof_Service::can_customer_cancel( $order, $item ) ) {
-				$view = 'sent' === $proof['status'] ? 'confirm' : 'answered';
+				$view        = 'sent' === $proof['status'] ? 'confirm' : 'answered';
 				$q['action'] = 'approve';
 				if ( $is_post ) {
 					$error = __( 'Annuleren via deze pagina kan niet (meer). Neem contact met ons op.', 'borduur-patch-studio' );
@@ -270,11 +270,11 @@ final class Response_Page {
 		$full = '' !== $proof['image_url'] ? $proof['image_url'] : (string) ( $rec['preview_url'] ?? '' );
 		$img  = $full;
 		if ( $proof['attachment_id'] > 0 && function_exists( 'wp_get_attachment_image_src' ) ) {
-			$src = wp_get_attachment_image_src( $proof['attachment_id'], 'large' );
-			$img = is_array( $src ) && ! empty( $src[0] ) ? (string) $src[0] : $img;
-			$url = (string) wp_get_attachment_url( $proof['attachment_id'] );
+			$src  = wp_get_attachment_image_src( $proof['attachment_id'], 'large' );
+			$img  = is_array( $src ) && ! empty( $src[0] ) ? (string) $src[0] : $img;
+			$url  = (string) wp_get_attachment_url( $proof['attachment_id'] );
 			$full = '' !== $url ? $url : $full;
-		} elseif ( (int) ( $rec['id'] ?? 0 ) > 0 && $full === (string) ( $rec['preview_url'] ?? '' ) && class_exists( Designs::class ) && is_callable( array( Designs::class, 'preview_url' ) ) ) {
+		} elseif ( (int) ( $rec['id'] ?? 0 ) > 0 && (string) ( $rec['preview_url'] ?? '' ) === $full && class_exists( Designs::class ) && is_callable( array( Designs::class, 'preview_url' ) ) ) {
 			$big  = (string) Designs::preview_url( (int) $rec['id'], 'full' );
 			$full = '' !== $big ? $big : $full;
 		}

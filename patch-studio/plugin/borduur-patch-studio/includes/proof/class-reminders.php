@@ -86,7 +86,7 @@ final class Reminders {
 				),
 			)
 		);
-		$sent = 0;
+		$sent   = 0;
 		foreach ( (array) $orders as $order ) {
 			if ( ! $order instanceof \WC_Order || '' !== Proof_Service::blocked_status( $order ) ) {
 				continue;
@@ -100,7 +100,13 @@ final class Reminders {
 			} catch ( \Throwable $e ) {
 				$ok = false;
 				if ( class_exists( '\BorduurPatchStudio\Logger' ) ) {
-					\BorduurPatchStudio\Logger::error( 'proof_reminder_failed', array( 'order' => (int) $order->get_id(), 'exception' => $e ) );
+					\BorduurPatchStudio\Logger::error(
+						'proof_reminder_failed',
+						array(
+							'order'     => (int) $order->get_id(),
+							'exception' => $e,
+						)
+					);
 				}
 			}
 			if ( ! $ok ) {
@@ -109,8 +115,8 @@ final class Reminders {
 			++$sent;
 			$at = gmdate( 'c', $now );
 			foreach ( $due as $line ) {
-				$p    = $line['proof'];
-				$list = $p['reminders_sent'];
+				$p      = $line['proof'];
+				$list   = $p['reminders_sent'];
 				$list[] = array(
 					'round' => $p['round'],
 					'at'    => $at,
@@ -148,7 +154,7 @@ final class Reminders {
 			if ( 'sent' !== $p['status'] || $p['round'] < 1 ) {
 				continue;
 			}
-			$last  = strtotime( $p['sent_at'] ) ?: 0;
+			$last  = (int) strtotime( $p['sent_at'] );
 			$count = 0;
 			foreach ( $p['reminders_sent'] as $r ) {
 				if ( is_array( $r ) && (int) ( $r['round'] ?? 0 ) === $p['round'] ) {

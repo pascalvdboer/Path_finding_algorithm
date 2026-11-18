@@ -116,20 +116,20 @@ $bps_title  = 1 === count( $bps_orders )
 <?php
 foreach ( array_values( $pages ) as $bps_i => $bps_page ) :
 	$fiche       = $bps_page['fiche'];
-	$order       = $bps_page['order'];
+	$bps_order       = $bps_page['order'];
 	$order_url   = $bps_page['order_url'];
-	$bps_created = $order->get_date_created();
-	$bps_name    = trim( $order->get_formatted_billing_full_name() );
-	$bps_company = trim( (string) $order->get_billing_company() );
+	$bps_created = $bps_order->get_date_created();
+	$bps_name    = trim( $bps_order->get_formatted_billing_full_name() );
+	$bps_company = trim( (string) $bps_order->get_billing_company() );
 	$bps_facts   = (array) ( $fiche['facts'] ?? array() );
 	$bps_vis     = (string) ( $fiche['visual_url'] ?? $fiche['preview_url'] );
-	$bps_w      = (float) $fiche['width_mm'];
-	$bps_h      = (float) $fiche['height_mm'];
-	$bps_fit    = min( 1, 66 / max( 1, $bps_w ), 80 / max( 1, $bps_h ) );
-	$bps_true   = $bps_fit >= 0.999;
-	$bps_status = (string) $fiche['proof']['status'];
-	$bps_secs   = $fiche['sections'];
-	$bps_thread = $bps_secs['threads'] ?? null;
+	$bps_w       = (float) $fiche['width_mm'];
+	$bps_h       = (float) $fiche['height_mm'];
+	$bps_fit     = min( 1, 66 / max( 1, $bps_w ), 80 / max( 1, $bps_h ) );
+	$bps_true    = $bps_fit >= 0.999;
+	$bps_status  = (string) $fiche['proof']['status'];
+	$bps_secs    = $fiche['sections'];
+	$bps_thread  = $bps_secs['threads'] ?? null;
 	unset( $bps_secs['threads'] );
 	?>
 	<section class="page" aria-label="<?php echo esc_attr( $fiche['ref'] ); ?>">
@@ -139,7 +139,7 @@ foreach ( array_values( $pages ) as $bps_i => $bps_page ) :
 				<p class="head__ref"><?php echo esc_html( $fiche['ref'] ); ?></p>
 				<p class="head__meta">
 					<?php /* translators: %s: order number */ ?>
-					<strong><?php echo esc_html( sprintf( __( 'Bestelling #%s', 'borduur-patch-studio' ), $order->get_order_number() ) ); ?></strong>
+					<strong><?php echo esc_html( sprintf( __( 'Bestelling #%s', 'borduur-patch-studio' ), $bps_order->get_order_number() ) ); ?></strong>
 					<?php if ( $bps_created ) : ?>
 						· <?php echo esc_html( wc_format_datetime( $bps_created, 'd-m-Y' ) ); ?>
 					<?php endif; ?>

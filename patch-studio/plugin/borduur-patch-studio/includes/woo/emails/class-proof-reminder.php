@@ -83,7 +83,8 @@ class Proof_Reminder extends Base {
 			);
 		}
 		$this->object                         = $order;
-		$this->recipient                      = (string) ( reset( $lines )['proof']['recipient'] ?: $order->get_billing_email() );
+		$to                                   = (string) reset( $lines )['proof']['recipient'];
+		$this->recipient                      = '' !== $to ? $to : (string) $order->get_billing_email();
 		$this->placeholders['{ref}']          = implode( ', ', array_column( $cards, 'ref' ) );
 		$this->placeholders['{order_number}'] = (string) $order->get_order_number();
 		$this->bps_args                       = array(
@@ -93,7 +94,7 @@ class Proof_Reminder extends Base {
 			'contact'    => (array) Spec::cfg( 'contact', array() ),
 			'lang'       => $lang,
 		);
-		$sent = $this->bps_send();
+		$sent                                 = $this->bps_send();
 		$this->restore_locale();
 		return $sent;
 	}

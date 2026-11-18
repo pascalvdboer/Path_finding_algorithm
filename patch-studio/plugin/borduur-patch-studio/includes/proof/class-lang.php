@@ -21,7 +21,11 @@ final class Lang {
 	/** Text domain. */
 	const DOMAIN = 'borduur-patch-studio';
 
-	/** @var array<int,array{mode:string,lang:string}> Switch stack. */
+	/**
+	 * Switch stack.
+	 *
+	 * @var array<int,array{mode:string,lang:string}>
+	 */
 	private static $stack = array();
 
 	/**
@@ -35,7 +39,7 @@ final class Lang {
 			'mode' => 'none',
 			'lang' => Spec::set_lang( $lang ),
 		);
-		$i18n = '\BorduurPatchStudio\I18n';
+		$i18n  = '\BorduurPatchStudio\I18n';
 		if ( class_exists( $i18n ) && is_callable( array( $i18n, 'switch_lang' ) ) && is_callable( array( $i18n, 'restore' ) ) ) {
 			$entry['mode'] = call_user_func( array( $i18n, 'switch_lang' ), $lang ) ? 'i18n' : 'none';
 		} else {

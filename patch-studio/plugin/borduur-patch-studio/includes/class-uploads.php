@@ -73,6 +73,18 @@ final class Uploads {
 	/** Types the browser can display (used for the temporary "restore design" URL). */
 	const BROWSER_TYPES = array( 'png', 'jpg', 'webp', 'svg', 'gif' );
 
+	/**
+	 * What the storage layer keeps outside the upload dir (contract C2; collected by Woo\Designs::owned_data()).
+	 *
+	 * @return array<string, string[]>
+	 */
+	public static function owned_data(): array {
+		return array(
+			'options'        => array( self::STORAGE_OPTION ),
+			'always_options' => array( self::SELFTEST_KEY ),
+		);
+	}
+
 	/* ---------------------------------------------------------------------
 	 * Paths
 	 * ------------------------------------------------------------------- */
@@ -685,7 +697,6 @@ final class Uploads {
 	 * Bytes of originals of draft/carted designs (counter, never negative).
 	 */
 	public static function storage_used(): int {
-		wp_cache_delete( self::STORAGE_OPTION, 'options' );
 		return max( 0, (int) get_option( self::STORAGE_OPTION, 0 ) );
 	}
 
@@ -699,12 +710,8 @@ final class Uploads {
 		if ( 0 === $delta ) {
 			return;
 		}
-		$new = max( 0, self::storage_used() + $delta );
-		if ( false === get_option( self::STORAGE_OPTION, false ) ) {
-			add_option( self::STORAGE_OPTION, (string) $new, '', false );
-			return;
-		}
-		update_option( self::STORAGE_OPTION, (string) $new, false );
+		// update_option() adds a missing option with autoload off.
+		update_option( self::STORAGE_OPTION, (string) max( 0, self::storage_used() + $delta ), false );
 	}
 
 	/**
@@ -713,8 +720,7 @@ final class Uploads {
 	 * @param int $bytes Bytes.
 	 */
 	public static function storage_set( int $bytes ): void {
-		delete_option( self::STORAGE_OPTION );
-		add_option( self::STORAGE_OPTION, (string) max( 0, $bytes ), '', false );
+		update_option( self::STORAGE_OPTION, (string) max( 0, $bytes ), false );
 	}
 
 	/**

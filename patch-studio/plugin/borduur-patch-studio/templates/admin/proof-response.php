@@ -107,7 +107,7 @@ BPS_OP::template(
 						<?php endforeach; ?>
 					</table>
 				<?php endif; ?>
-				<p class="bps-pp__info"><?php esc_html_e( 'Bekijk je proef en bevestig hieronder. Pas na jouw akkoord starten we de productie. Garen- en drukkleuren kunnen licht afwijken van je scherm.', 'borduur-patch-studio' ); ?></p>
+				<p class="bps-pp__info"><?php esc_html_e( 'Bekijk je proef en bevestig hieronder. Pas na jouw akkoord starten we de productie.', 'borduur-patch-studio' ); ?></p>
 				<?php if ( '' !== $error ) : ?>
 					<p class="bps-pp__error" role="alert" id="bps-err"><?php echo esc_html( $error ); ?></p>
 				<?php endif; ?>

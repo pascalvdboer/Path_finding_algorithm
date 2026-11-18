@@ -42,13 +42,12 @@ final class Reminder {
 		add_action( 'bps_design_emailed', array( __CLASS__, 'on_design_emailed' ), 10, 3 );
 		add_action( self::HOOK, array( __CLASS__, 'run' ), 10, 1 );
 		add_filter( 'woocommerce_email_classes', array( __CLASS__, 'email_classes' ), 20 );
-		add_filter( 'bps_owned_data', array( __CLASS__, 'owned_data_filter' ) );
 		add_action( 'bps_design_ordered', array( __CLASS__, 'on_status_change' ), 10, 1 );
 		add_action( 'before_delete_post', array( __CLASS__, 'on_delete_post' ), 5, 1 );
 	}
 
 	/**
-	 * What this feature stores (contract C2; also usable statically by uninstall).
+	 * What this feature stores (contract C2; collected by Designs::owned_data()).
 	 *
 	 * @return array<string, string[]>
 	 */
@@ -58,22 +57,6 @@ final class Reminder {
 			'as_groups'  => array( self::GROUP ),
 			'options'    => array( self::OPTOUT ),
 		);
-	}
-
-	/**
-	 * Filter bps_owned_data.
-	 *
-	 * @param mixed $data Owned data.
-	 * @return mixed
-	 */
-	public static function owned_data_filter( $data ) {
-		if ( ! is_array( $data ) ) {
-			return $data;
-		}
-		foreach ( self::owned_data() as $key => $list ) {
-			$data[ $key ] = array_values( array_unique( array_merge( (array) ( $data[ $key ] ?? array() ), $list ) ) );
-		}
-		return $data;
 	}
 
 	/**
@@ -95,7 +78,7 @@ final class Reminder {
 	 * ------------------------------------------------------------------- */
 
 	/**
-	 * reminder.enabled (default on: the studio already offers the checkbox).
+	 * Setting reminder.enabled (default on: the studio already offers the checkbox).
 	 */
 	public static function enabled(): bool {
 		$v = Config::path( 'reminder.enabled', true );
@@ -103,7 +86,7 @@ final class Reminder {
 	}
 
 	/**
-	 * reminder.delayDays (default 3, 1–30).
+	 * Setting reminder.delayDays (default 3, 1–30).
 	 */
 	public static function delay_days(): int {
 		return max( 1, min( 30, (int) Config::path( 'reminder.delayDays', 3 ) ) );
@@ -447,11 +430,7 @@ final class Reminder {
 		if ( count( $list ) > self::OPTOUT_MAX ) {
 			$list = array_slice( $list, -1 * self::OPTOUT_MAX, null, true );
 		}
-		if ( false === get_option( self::OPTOUT, false ) ) {
-			add_option( self::OPTOUT, $list, '', false );
-		} else {
-			update_option( self::OPTOUT, $list, false );
-		}
+		update_option( self::OPTOUT, $list, false ); // Adds the option (autoload off) when missing.
 	}
 
 	/**

@@ -16,7 +16,11 @@ defined( 'ABSPATH' ) || exit;
  */
 trait Fr_Email_Fields {
 
-	/** @var bool Whether setup_locale() switched through Proof\Lang. */
+	/**
+	 * Whether setup_locale() switched through Proof\Lang.
+	 *
+	 * @var bool
+	 */
 	private $bps_lang_switched = false;
 
 	/**
@@ -76,7 +80,7 @@ trait Fr_Email_Fields {
 				'textarea',
 			),
 		);
-		$out = array();
+		$out   = array();
 		foreach ( (array) $this->form_fields as $key => $field ) {
 			$out[ $key ] = $field;
 			if ( isset( $extra[ $key ] ) ) {

@@ -49,12 +49,46 @@ final class Designs {
 		add_action( 'admin_post_bps_download', array( __CLASS__, 'handle_download' ) );
 		add_action( 'before_delete_post', array( __CLASS__, 'on_delete_post' ), 10, 1 );
 		add_action( 'bps_design_released', array( __CLASS__, 'count_storage' ), 10, 1 );
+		add_filter( 'bps_owned_data', array( __CLASS__, 'owned_data_filter' ) );
 
 		// Parts of the design domain (P06) that live in their own classes.
 		Emb_File::register();
 		Account::register();
 		Reminder::register();
 		Account_Routes::register();
+	}
+
+	/**
+	 * Everything the design domain stores besides the CPT and the upload dir (contract C2): the draft storage counter,
+	 * the account rewrite marker, the reminder opt-out list, cron hook and Action Scheduler group. Static, so it also
+	 * works during uninstall.
+	 *
+	 * @return array<string, string[]>
+	 */
+	public static function owned_data(): array {
+		$out = array();
+		foreach ( array( Uploads::owned_data(), Account::owned_data(), Reminder::owned_data() ) as $part ) {
+			foreach ( $part as $key => $list ) {
+				$out[ $key ] = array_values( array_unique( array_merge( $out[ $key ] ?? array(), $list ) ) );
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * Filter bps_owned_data (runtime).
+	 *
+	 * @param mixed $data Owned data.
+	 * @return mixed
+	 */
+	public static function owned_data_filter( $data ) {
+		if ( ! is_array( $data ) ) {
+			return $data;
+		}
+		foreach ( self::owned_data() as $key => $list ) {
+			$data[ $key ] = array_values( array_unique( array_merge( (array) ( $data[ $key ] ?? array() ), $list ) ) );
+		}
+		return $data;
 	}
 
 	/* ---------------------------------------------------------------------
@@ -707,6 +741,16 @@ final class Designs {
 		exit;
 	}
 
+	/**
+	 * Stored status of a design ('draft' when missing).
+	 *
+	 * @param int $id Design id.
+	 */
+	public static function status_of( int $id ): string {
+		$status = (string) get_post_meta( $id, '_bps_status', true );
+		return '' !== $status ? $status : 'draft';
+	}
+
 	/* ---------------------------------------------------------------------
 	 * Draft storage counter (security-3)
 	 * ------------------------------------------------------------------- */
@@ -721,7 +765,7 @@ final class Designs {
 		if ( $id <= 0 || '' !== (string) get_post_meta( $id, '_bps_storage_bytes', true ) ) {
 			return;
 		}
-		$status   = (string) ( get_post_meta( $id, '_bps_status', true ) ?: 'draft' );
+		$status   = self::status_of( $id );
 		$original = get_post_meta( $id, '_bps_original', true );
 		if ( ! in_array( $status, self::STORAGE_STATUSES, true ) || ! is_array( $original ) || empty( $original['path'] ) ) {
 			return;
@@ -832,7 +876,7 @@ final class Designs {
 	 * @return string deleted|hidden
 	 */
 	public static function remove_for_customer( int $id ): string {
-		$status = (string) ( get_post_meta( $id, '_bps_status', true ) ?: 'draft' );
+		$status = self::status_of( $id );
 		$linked = (int) get_post_meta( $id, '_bps_order_id', true ) > 0;
 		if ( ! $linked && in_array( $status, array( 'draft', 'saved', 'carted' ), true ) ) {
 			wp_delete_post( $id, true ); // on_delete_post() removes the files.

@@ -21,8 +21,11 @@
 
 defined( 'ABSPATH' ) || exit;
 
-$design    = isset( $design ) && is_array( $design ) ? $design : array( 'ref' => '', 'preview_url' => '' );
-$action    = isset( $action ) ? (string) $action : 'approve';
+$design    = isset( $design ) && is_array( $design ) ? $design : array(
+	'ref'         => '',
+	'preview_url' => '',
+);
+$bps_action = isset( $action ) ? (string) $action : 'approve';
 $note      = isset( $note ) ? (string) $note : '';
 $round     = isset( $round ) ? (int) $round : 1;
 $order_url = isset( $order_url ) ? (string) $order_url : admin_url();
@@ -33,19 +36,19 @@ $bps_img   = ! empty( $design['proof']['image_url'] ) ? (string) $design['proof'
 do_action( 'woocommerce_email_header', $email_heading, $email );
 $lines    = isset( $lines ) && is_array( $lines ) ? $lines : array();
 $bps_who  = '' !== $customer ? $customer : __( 'De klant', 'borduur-patch-studio' );
-$bps_warn = 'changes' === $action || 'cancel' === $action;
+$bps_warn = 'changes' === $bps_action || 'cancel' === $bps_action;
 ?>
 <p style="margin:0 0 16px;padding:14px 16px;border-left:4px solid <?php echo $bps_warn ? '#B45309' : '#15803D'; ?>;background:<?php echo $bps_warn ? '#FFF8EB' : '#F0FAF3'; ?>;border-radius:6px;font-weight:700;">
 	<?php
 	if ( $lines ) {
 		/* translators: %s: customer */
 		echo esc_html( sprintf( __( '%s beantwoordde de proef voor de hele bestelling:', 'borduur-patch-studio' ), $bps_who ) );
-	} elseif ( 'cancel' === $action ) {
+	} elseif ( 'cancel' === $bps_action ) {
 		/* translators: 1: customer, 2: ref */
 		echo esc_html( sprintf( __( '%1$s vraagt via de proefpagina om de bestelling te annuleren (patch %2$s, nog niet goedgekeurd). De bestelling is al betaald: beslis zelf over annulering en terugbetaling.', 'borduur-patch-studio' ), $bps_who, (string) $design['ref'] ) );
 	} else {
 		echo esc_html(
-			'changes' === $action
+			'changes' === $bps_action
 				/* translators: 1: customer, 2: ref, 3: round */
 				? sprintf( __( '%1$s vraagt een aanpassing aan de proef van patch %2$s (ronde %3$d).', 'borduur-patch-studio' ), $bps_who, (string) $design['ref'], $round )
 				/* translators: 1: customer, 2: ref, 3: round */

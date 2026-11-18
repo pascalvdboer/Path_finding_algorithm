@@ -589,6 +589,8 @@ mail_spy()->fail = false;
 eq( Reminder::run( $r10 ), 'already_sent', 'a failed attempt is never retried (one attempt agreed)' );
 $owned = \BorduurPatchStudio\Plugin::owned_data();
 ok( in_array( Reminder::HOOK, $owned['cron_hooks'], true ) && in_array( Reminder::GROUP, $owned['as_groups'], true ), 'cron hook and AS group listed in bps_owned_data' );
+$static = Designs::owned_data();
+ok( ! array_diff( array( 'bps_draft_storage_bytes', 'bps_account_rewrite', 'bps_reminder_optout' ), $static['options'] ), 'Designs::owned_data() (static, works in uninstall) lists every P06 option' );
 
 /* ---------------------------------------------------------------------------
  * Done

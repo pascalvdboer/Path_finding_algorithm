@@ -95,7 +95,7 @@ class Proof extends Base {
 			'contact'     => (array) Spec::cfg( 'contact', array() ),
 			'lang'        => $lang,
 		);
-		$sent = $this->bps_send();
+		$sent                                 = $this->bps_send();
 		$this->restore_locale();
 		return $sent;
 	}

@@ -18,7 +18,7 @@ defined( 'ABSPATH' ) || exit;
  * paginated. Rename, delete and reorder work without JavaScript (nonce-protected forms and links); the same actions
  * exist as REST routes for the studio (Rest\Account_Routes).
  *
- * account.enabled = false: no endpoint (the URL gives a 404), no menu item, the REST account routes answer 404.
+ * With account.enabled = false: no endpoint (the URL gives a 404), no menu item, the REST account routes answer 404.
  */
 final class Account {
 
@@ -50,12 +50,21 @@ final class Account {
 		add_action( 'template_redirect', array( __CLASS__, 'handle_actions' ), 5 );
 	}
 
+	/**
+	 * What this feature stores (contract C2; collected by Designs::owned_data()).
+	 *
+	 * @return array<string, string[]>
+	 */
+	public static function owned_data(): array {
+		return array( 'options' => array( self::REWRITE_OPT ) );
+	}
+
 	/* ---------------------------------------------------------------------
 	 * Settings
 	 * ------------------------------------------------------------------- */
 
 	/**
-	 * account.enabled (default on).
+	 * Setting account.enabled (default on).
 	 */
 	public static function enabled(): bool {
 		$v = Config::path( 'account.enabled', true );
@@ -227,7 +236,7 @@ final class Account {
 		$id       = (int) $post->ID;
 		$payload  = json_decode( (string) get_post_meta( $id, '_bps_payload', true ), true );
 		$payload  = is_array( $payload ) ? $payload : array();
-		$status   = (string) ( get_post_meta( $id, '_bps_status', true ) ?: 'draft' );
+		$status   = Designs::status_of( $id );
 		$title    = (string) get_post_meta( $id, '_bps_title', true );
 		$order_id = (int) get_post_meta( $id, '_bps_order_id', true );
 		$locale   = Config::public_locale();

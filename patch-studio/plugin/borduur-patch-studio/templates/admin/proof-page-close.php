@@ -15,7 +15,7 @@ $bps_wa    = preg_replace( '/\D+/', '', (string) ( $contact['whatsapp'] ?? '' ) 
 ?>
 	<?php if ( '' !== $bps_phone || '' !== $bps_mail ) : ?>
 		<p class="bps-pp__contact">
-			<?php esc_html_e( 'Vragen? Neem contact op', 'borduur-patch-studio' ); ?>:
+			<?php esc_html_e( 'Contact', 'borduur-patch-studio' ); ?>:
 			<?php if ( '' !== $bps_phone ) : ?>
 				<a href="tel:<?php echo esc_attr( preg_replace( '/[^0-9+]/', '', $bps_phone ) ); ?>"><?php echo esc_html( $bps_phone ); ?></a>
 			<?php endif; ?>

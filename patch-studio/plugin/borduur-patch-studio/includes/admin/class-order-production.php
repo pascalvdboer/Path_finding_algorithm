@@ -41,7 +41,8 @@ final class Order_Production {
 	const MAX_TEXT = Proof_Service::MAX_TEXT;
 
 
-	/* =====================================================================
+	/*
+	=====================================================================
 	 * Registration
 	 * =================================================================== */
 
@@ -87,7 +88,8 @@ final class Order_Production {
 		return $data;
 	}
 
-	/* =====================================================================
+	/*
+	=====================================================================
 	 * Small helpers (kept for templates and other packages)
 	 * =================================================================== */
 
@@ -179,7 +181,8 @@ final class Order_Production {
 		return Spec::customer_rows( $item, $lang );
 	}
 
-	/* =====================================================================
+	/*
+	=====================================================================
 	 * Data: order lines → fiche
 	 * =================================================================== */
 
@@ -264,9 +267,12 @@ final class Order_Production {
 		$rec  = $d['record'];
 		$p    = (array) $rec['payload'];
 
-		$tech    = (string) ( $item->get_meta( '_bps_technique_id' ) ?: ( $p['technique'] ?? '' ) );
-		$size_cm = (float) ( $item->get_meta( '_bps_size_cm' ) ?: ( $p['sizeCm'] ?? 0 ) );
-		$shape   = (string) ( $item->get_meta( '_bps_shape_id' ) ?: ( $p['shape'] ?? '' ) );
+		$tech    = (string) $item->get_meta( '_bps_technique_id' );
+		$tech    = '' !== $tech ? $tech : (string) ( $p['technique'] ?? '' );
+		$size_cm = (float) $item->get_meta( '_bps_size_cm' );
+		$size_cm = $size_cm > 0 ? $size_cm : (float) ( $p['sizeCm'] ?? 0 );
+		$shape   = (string) $item->get_meta( '_bps_shape_id' );
+		$shape   = '' !== $shape ? $shape : (string) ( $p['shape'] ?? '' );
 		$options = json_decode( (string) $item->get_meta( '_bps_options' ), true );
 		$options = is_array( $options ) ? array_map( 'strval', $options ) : array_map( 'strval', (array) ( $p['options'] ?? array() ) );
 		$w_mm    = (float) ( $p['widthMm'] ?? 0 );
@@ -625,7 +631,8 @@ final class Order_Production {
 		return Work_Order::work_steps( $fiche );
 	}
 
-	/* =====================================================================
+	/*
+	=====================================================================
 	 * Order screen
 	 * =================================================================== */
 
@@ -806,7 +813,7 @@ final class Order_Production {
 	 */
 	public static function after_order_itemmeta( $item_id, $item = null, $product = null ): void {
 		unset( $product );
-		if ( ! is_admin() || ! $item instanceof \WC_Order_Item_Product || (int) $item->get_meta( '_bps_design_id' ) <= 0 && '' === (string) $item->get_meta( '_bps_payload' ) ) {
+		if ( ! is_admin() || ! $item instanceof \WC_Order_Item_Product || ( (int) $item->get_meta( '_bps_design_id' ) <= 0 && '' === (string) $item->get_meta( '_bps_payload' ) ) ) {
 			return;
 		}
 		$status = Proof_Service::get( $item )['status'];
@@ -902,7 +909,8 @@ final class Order_Production {
 		);
 	}
 
-	/* =====================================================================
+	/*
+	=====================================================================
 	 * Printable sheet
 	 * =================================================================== */
 
@@ -924,7 +932,7 @@ final class Order_Production {
 	}
 
 	/**
-	 * admin-post handler: printable A4 sheet (one patch per page).
+	 * Admin-post handler: printable A4 sheet (one patch per page).
 	 */
 	public static function handle_print(): void {
 		$order_id = isset( $_GET['order'] ) ? absint( wp_unslash( $_GET['order'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- checked below.
@@ -991,7 +999,8 @@ final class Order_Production {
 		);
 	}
 
-	/* =====================================================================
+	/*
+	=====================================================================
 	 * Proof: send (AJAX) and manual status
 	 * =================================================================== */
 
@@ -1023,7 +1032,7 @@ final class Order_Production {
 	public static function ajax_send_proof(): void {
 		list( $order, $item ) = self::ajax_context();
 		// phpcs:disable WordPress.Security.NonceVerification.Missing -- verified in ajax_context().
-		$message   = isset( $_POST['message'] ) ? Proof_Service::clean_text( wp_unslash( $_POST['message'] ) ) : '';
+		$message   = isset( $_POST['message'] ) ? Proof_Service::clean_text( sanitize_textarea_field( wp_unslash( $_POST['message'] ) ) ) : '';
 		$image_id  = isset( $_POST['image_id'] ) ? absint( wp_unslash( $_POST['image_id'] ) ) : 0;
 		$recipient = isset( $_POST['recipient'] ) ? sanitize_email( wp_unslash( $_POST['recipient'] ) ) : '';
 		// phpcs:enable
@@ -1065,7 +1074,7 @@ final class Order_Production {
 		list( $order, $item ) = self::ajax_context();
 		// phpcs:disable WordPress.Security.NonceVerification.Missing -- verified in ajax_context().
 		$status = isset( $_POST['status'] ) ? sanitize_key( wp_unslash( $_POST['status'] ) ) : '';
-		$note   = isset( $_POST['note'] ) ? Proof_Service::clean_text( wp_unslash( $_POST['note'] ) ) : '';
+		$note   = isset( $_POST['note'] ) ? Proof_Service::clean_text( sanitize_textarea_field( wp_unslash( $_POST['note'] ) ) ) : '';
 		// phpcs:enable
 		if ( ! in_array( $status, array( 'approved', 'changes_requested', 'none' ), true ) ) {
 			wp_send_json_error( array( 'message' => __( 'Onbekende status.', 'borduur-patch-studio' ) ), 400 );
@@ -1085,7 +1094,8 @@ final class Order_Production {
 		);
 	}
 
-	/* =====================================================================
+	/*
+	=====================================================================
 	 * Orders list column
 	 * =================================================================== */
 
@@ -1145,7 +1155,8 @@ final class Order_Production {
 		}
 		$count = array_fill_keys( self::STATUSES, 0 );
 		foreach ( $items as $item ) {
-			$s = (string) ( $item->get_meta( self::ITEM_PROOF_META ) ?: 'none' );
+			$s = (string) $item->get_meta( self::ITEM_PROOF_META );
+			$s = '' !== $s ? $s : 'none';
 			++$count[ isset( $count[ $s ] ) ? $s : 'none' ];
 		}
 		$n = count( $items );
@@ -1174,7 +1185,7 @@ final class Order_Production {
 			'changes_requested' => '#B45309',
 			'cancelled'         => '#B42318',
 		);
-		$text = $labels[ $s ] . ( $n > 1 && 'cancelled' !== $s ? ' (' . $count['approved'] . '/' . $n . ')' : '' );
+		$text   = $labels[ $s ] . ( $n > 1 && 'cancelled' !== $s ? ' (' . $count['approved'] . '/' . $n . ')' : '' );
 		return sprintf(
 			'<span class="bps-proof-pill bps-proof-pill--%1$s" style="display:inline-block;padding:2px 8px;border-radius:10px;border:1px solid %2$s;color:%2$s;font-size:12px;line-height:1.6;white-space:nowrap">%3$s</span>',
 			esc_attr( $s ),

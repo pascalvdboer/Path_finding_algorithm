@@ -79,7 +79,7 @@ final class Account {
 	 * @param bool  $plain   Plain text (e-mails).
 	 */
 	public static function item_meta_end( $item_id, $item = null, $order = null, $plain = false ): void {
-		if ( $plain || ! $item instanceof \WC_Order_Item_Product || (int) $item->get_meta( '_bps_design_id' ) <= 0 && '' === (string) $item->get_meta( '_bps_payload' ) ) {
+		if ( $plain || ! $item instanceof \WC_Order_Item_Product || ( (int) $item->get_meta( '_bps_design_id' ) <= 0 && '' === (string) $item->get_meta( '_bps_payload' ) ) ) {
 			return;
 		}
 		if ( ! self::can_view( $order ) ) {
@@ -102,7 +102,7 @@ final class Account {
 			$src   = wp_get_attachment_image_src( $p['attachment_id'], 'thumbnail' );
 			$thumb = is_array( $src ) && ! empty( $src[0] ) ? (string) $src[0] : $thumb;
 		}
-		$out  = '<div class="bps-account-proof" style="display:flex;gap:10px;align-items:center;margin:8px 0 0;flex-wrap:wrap">';
+		$out = '<div class="bps-account-proof" style="display:flex;gap:10px;align-items:center;margin:8px 0 0;flex-wrap:wrap">';
 		if ( '' !== $thumb ) {
 			$out .= '<img src="' . esc_url( $thumb ) . '" alt="" width="56" height="56" loading="lazy" style="width:56px;height:56px;object-fit:contain;border:1px solid #E3EBF2;border-radius:6px;background:#fff">';
 		}

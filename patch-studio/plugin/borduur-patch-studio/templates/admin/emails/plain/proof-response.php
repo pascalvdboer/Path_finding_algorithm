@@ -25,7 +25,7 @@ $design   = isset( $design ) && is_array( $design ) ? $design : array( 'ref' => 
 $customer = isset( $customer ) && '' !== (string) $customer ? (string) $customer : __( 'De klant', 'borduur-patch-studio' );
 $round    = isset( $round ) ? (int) $round : 1;
 $lines    = isset( $lines ) && is_array( $lines ) ? $lines : array();
-$action   = isset( $action ) ? (string) $action : 'approve';
+$bps_action = isset( $action ) ? (string) $action : 'approve';
 
 echo '= ' . Lang::plain( $email_heading ) . " =\n\n";
 if ( $lines ) {
@@ -39,12 +39,12 @@ if ( $lines ) {
 		}
 	}
 	echo "\n";
-} elseif ( 'cancel' === $action ) {
+} elseif ( 'cancel' === $bps_action ) {
 	/* translators: 1: customer, 2: ref */
 	echo Lang::plain( sprintf( __( '%1$s vraagt via de proefpagina om de bestelling te annuleren (patch %2$s, nog niet goedgekeurd). De bestelling is al betaald: beslis zelf over annulering en terugbetaling.', 'borduur-patch-studio' ), $customer, (string) $design['ref'] ) ) . "\n\n";
 } else {
 	echo Lang::plain(
-		'changes' === $action
+		'changes' === $bps_action
 			/* translators: 1: customer, 2: ref, 3: round */
 			? sprintf( __( '%1$s vraagt een aanpassing aan de proef van patch %2$s (ronde %3$d).', 'borduur-patch-studio' ), $customer, (string) $design['ref'], $round )
 			/* translators: 1: customer, 2: ref, 3: round */

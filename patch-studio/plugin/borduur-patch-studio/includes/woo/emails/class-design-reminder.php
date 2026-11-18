@@ -24,7 +24,11 @@ if ( ! class_exists( '\WC_Email' ) ) {
  */
 class Design_Reminder extends Base {
 
-	/** @var string Unsubscribe URL of the current send (also used for the List-Unsubscribe header). */
+	/**
+	 * Unsubscribe URL of the current send (also used for the List-Unsubscribe header).
+	 *
+	 * @var string
+	 */
 	protected $bps_unsubscribe = '';
 
 	/**

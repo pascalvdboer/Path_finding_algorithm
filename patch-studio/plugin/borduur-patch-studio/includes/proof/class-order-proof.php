@@ -364,7 +364,7 @@ final class Order_Proof {
 	}
 
 	/**
-	 * admin-post: confirmation screen (GET) and sending (POST) of the whole-order proof. Works without
+	 * Admin-post handler: confirmation screen (GET) and sending (POST) of the whole-order proof. Works without
 	 * JavaScript and outside the order form (no nested forms).
 	 */
 	public static function handle_admin(): void {
@@ -379,7 +379,7 @@ final class Order_Proof {
 		}
 		$back = method_exists( $order, 'get_edit_order_url' ) ? $order->get_edit_order_url() : admin_url( 'post.php?post=' . $order_id . '&action=edit' );
 		if ( isset( $_SERVER['REQUEST_METHOD'] ) && 'POST' === $_SERVER['REQUEST_METHOD'] ) {
-			$message   = isset( $_POST['message'] ) ? Proof_Service::clean_text( wp_unslash( $_POST['message'] ) ) : '';
+			$message   = isset( $_POST['message'] ) ? Proof_Service::clean_text( sanitize_textarea_field( wp_unslash( $_POST['message'] ) ) ) : '';
 			$recipient = isset( $_POST['recipient'] ) ? sanitize_email( wp_unslash( $_POST['recipient'] ) ) : '';
 			$res       = self::send( $order, $message, $recipient );
 			// Only a code travels in the URL; the metabox maps it to a fixed message.
@@ -405,6 +405,15 @@ final class Order_Proof {
 	 * @param int $order_id Order id.
 	 */
 	public static function admin_url( int $order_id ): string {
-		return wp_nonce_url( add_query_arg( array( 'action' => 'bps_send_order_proof', 'order' => $order_id ), admin_url( 'admin-post.php' ) ), 'bps_send_order_proof_' . $order_id );
+		return wp_nonce_url(
+			add_query_arg(
+				array(
+					'action' => 'bps_send_order_proof',
+					'order'  => $order_id,
+				),
+				admin_url( 'admin-post.php' )
+			),
+			'bps_send_order_proof_' . $order_id
+		);
 	}
 }

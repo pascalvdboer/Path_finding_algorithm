@@ -132,7 +132,7 @@ class Proof_Response extends Base {
 			'order_url' => method_exists( $order, 'get_edit_order_url' ) ? $order->get_edit_order_url() : admin_url( 'post.php?post=' . $order->get_id() . '&action=edit' ),
 			'customer'  => trim( $order->get_formatted_billing_full_name() ),
 		);
-		$sent = $this->bps_send();
+		$sent                                 = $this->bps_send();
 		$this->restore_locale();
 		return $sent;
 	}

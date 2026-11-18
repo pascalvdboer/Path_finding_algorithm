@@ -46,6 +46,9 @@ final class Proof_Service {
 	/** Option set once the design-level proofs were copied to the order lines. */
 	const MIGRATED_OPTION = 'bps_proof_migrated';
 
+	/** Lock option while the migration runs. */
+	const MIGRATING_OPTION = 'bps_proof_migrating';
+
 	/** Max length of free text. */
 	const MAX_TEXT = 2000;
 
@@ -75,13 +78,15 @@ final class Proof_Service {
 	 */
 	public static function owned_data(): array {
 		return array(
-			'options'    => array( self::IP_KEY_OPTION, self::MIGRATED_OPTION ),
-			'cron_hooks' => array( Reminders::HOOK ),
-			'as_groups'  => array( Reminders::GROUP ),
+			'options'        => array( self::IP_KEY_OPTION, self::MIGRATED_OPTION ),
+			'always_options' => array( self::MIGRATING_OPTION ),
+			'cron_hooks'     => array( Reminders::HOOK ),
+			'as_groups'      => array( Reminders::GROUP ),
 		);
 	}
 
-	/* ---------------------------------------------------------------------
+	/*
+	---------------------------------------------------------------------
 	 * Reading and writing
 	 * ------------------------------------------------------------------- */
 
@@ -139,7 +144,7 @@ final class Proof_Service {
 			return array();
 		}
 		$old = get_post_meta( $design_id, '_bps_proof', true );
-		if ( ! is_array( $old ) || 'none' === ( $old['status'] ?? 'none' ) && empty( $old['history'] ) ) {
+		if ( ! is_array( $old ) || ( 'none' === ( $old['status'] ?? 'none' ) && empty( $old['history'] ) ) ) {
 			return array();
 		}
 		$order_id = (int) ( $old['order_id'] ?? 0 );
@@ -211,7 +216,8 @@ final class Proof_Service {
 		}
 	}
 
-	/* ---------------------------------------------------------------------
+	/*
+	---------------------------------------------------------------------
 	 * Tokens and links
 	 * ------------------------------------------------------------------- */
 
@@ -289,7 +295,8 @@ final class Proof_Service {
 		return 'invalid';
 	}
 
-	/* ---------------------------------------------------------------------
+	/*
+	---------------------------------------------------------------------
 	 * Order status rules (woo-compat-4)
 	 * ------------------------------------------------------------------- */
 
@@ -422,7 +429,8 @@ final class Proof_Service {
 		return $done;
 	}
 
-	/* ---------------------------------------------------------------------
+	/*
+	---------------------------------------------------------------------
 	 * Sending
 	 * ------------------------------------------------------------------- */
 
@@ -631,7 +639,8 @@ final class Proof_Service {
 		);
 	}
 
-	/* ---------------------------------------------------------------------
+	/*
+	---------------------------------------------------------------------
 	 * Answers
 	 * ------------------------------------------------------------------- */
 
@@ -655,9 +664,9 @@ final class Proof_Service {
 		$by     = (string) ( $ctx['by'] ?? 'customer' );
 		$event  = self::event( 'changes' === $answer ? 'changes' : 'approved', $by, $note, $proof['round'] );
 		if ( 'customer' === $by ) {
-			$ip                = (string) ( $ctx['ip'] ?? '' );
-			$event['ip_hash']  = '' !== $ip ? self::ip_hash( $ip ) : '';
-			$event['ua']       = self::cut( (string) ( $ctx['ua'] ?? '' ), self::MAX_UA );
+			$ip                 = (string) ( $ctx['ip'] ?? '' );
+			$event['ip_hash']   = '' !== $ip ? self::ip_hash( $ip ) : '';
+			$event['ua']        = self::cut( (string) ( $ctx['ua'] ?? '' ), self::MAX_UA );
 			$event['confirmed'] = ! empty( $ctx['confirmed'] );
 		}
 		$new = self::save(
@@ -776,7 +785,8 @@ final class Proof_Service {
 			&& '' === $p['cancel_requested'];
 	}
 
-	/* ---------------------------------------------------------------------
+	/*
+	---------------------------------------------------------------------
 	 * Helpers
 	 * ------------------------------------------------------------------- */
 
@@ -930,7 +940,8 @@ final class Proof_Service {
 		return $all[ $key ] ?? null;
 	}
 
-	/* ---------------------------------------------------------------------
+	/*
+	---------------------------------------------------------------------
 	 * Migration (atelier-flow-1): design-level proofs → order lines
 	 * ------------------------------------------------------------------- */
 
@@ -951,12 +962,12 @@ final class Proof_Service {
 		if ( '' !== (string) get_option( self::MIGRATED_OPTION, '' ) || ! function_exists( 'wc_get_order' ) ) {
 			return 0;
 		}
-		if ( ! add_option( 'bps_proof_migrating', time(), '', false ) ) {
-			$since = (int) get_option( 'bps_proof_migrating', 0 );
+		if ( ! add_option( self::MIGRATING_OPTION, time(), '', false ) ) {
+			$since = (int) get_option( self::MIGRATING_OPTION, 0 );
 			if ( time() - $since < 600 ) {
 				return 0;
 			}
-			update_option( 'bps_proof_migrating', time(), false );
+			update_option( self::MIGRATING_OPTION, time(), false );
 		}
 		$cpt    = class_exists( Designs::class ) && defined( Designs::class . '::CPT' ) ? (string) constant( Designs::class . '::CPT' ) : 'bps_design';
 		$copied = 0;
@@ -981,14 +992,15 @@ final class Proof_Service {
 					$copied += self::migrate_design( (int) $id ) ? 1 : 0;
 				}
 				++$page;
-			} while ( is_array( $ids ) && count( $ids ) >= 200 );
+				$more = is_array( $ids ) && count( $ids ) >= 200;
+			} while ( $more );
 			update_option( self::MIGRATED_OPTION, defined( 'BPS_VERSION' ) ? (string) BPS_VERSION : '1', false );
 		} catch ( \Throwable $e ) {
 			if ( class_exists( '\BorduurPatchStudio\Logger' ) ) {
 				\BorduurPatchStudio\Logger::error( 'proof_migration_failed', array( 'exception' => $e ) );
 			}
 		}
-		delete_option( 'bps_proof_migrating' );
+		delete_option( self::MIGRATING_OPTION );
 		return $copied;
 	}
 
@@ -1002,8 +1014,10 @@ final class Proof_Service {
 		if ( ! is_array( $old ) || ( 'none' === ( $old['status'] ?? 'none' ) && empty( $old['history'] ) ) ) {
 			return false;
 		}
-		$order_id = (int) ( $old['order_id'] ?? 0 ) ?: (int) get_post_meta( $design_id, '_bps_order_id', true );
-		$item_id  = (int) ( $old['item_id'] ?? 0 ) ?: (int) get_post_meta( $design_id, '_bps_order_item_id', true );
+		$order_id = (int) ( $old['order_id'] ?? 0 );
+		$order_id = $order_id > 0 ? $order_id : (int) get_post_meta( $design_id, '_bps_order_id', true );
+		$item_id  = (int) ( $old['item_id'] ?? 0 );
+		$item_id  = $item_id > 0 ? $item_id : (int) get_post_meta( $design_id, '_bps_order_item_id', true );
 		$order    = $order_id > 0 ? wc_get_order( $order_id ) : null;
 		$item     = $order instanceof \WC_Order ? $order->get_item( $item_id ) : null;
 		if ( ! $item instanceof \WC_Order_Item_Product || (int) $item->get_meta( '_bps_design_id' ) !== $design_id || is_array( $item->get_meta( self::META ) ) ) {
@@ -1020,7 +1034,8 @@ final class Proof_Service {
 		return true;
 	}
 
-	/* ---------------------------------------------------------------------
+	/*
+	---------------------------------------------------------------------
 	 * Privacy (export for P03, own eraser)
 	 * ------------------------------------------------------------------- */
 
@@ -1093,7 +1108,7 @@ final class Proof_Service {
 	 * @param array $erasers Erasers.
 	 */
 	public static function register_eraser( $erasers ) {
-		$erasers                 = is_array( $erasers ) ? $erasers : array();
+		$erasers               = is_array( $erasers ) ? $erasers : array();
 		$erasers['bps-proofs'] = array(
 			'eraser_friendly_name' => __( 'Patch Studio-proeven', 'borduur-patch-studio' ),
 			'callback'             => array( __CLASS__, 'erase' ),
@@ -1109,7 +1124,7 @@ final class Proof_Service {
 	 * @param int    $page  Page.
 	 */
 	public static function erase( $email, $page = 1 ): array {
-		$res = array(
+		$res   = array(
 			'items_removed'  => false,
 			'items_retained' => false,
 			'messages'       => array(),
