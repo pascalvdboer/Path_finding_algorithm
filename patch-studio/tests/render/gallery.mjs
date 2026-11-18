@@ -36,6 +36,7 @@ const cases = [
   { n: 'garment-polo', img: 'eigenaar-ronde-patch.png', o: { technique: 'embroidered', view: 'garment', garment: 'polo_chest' } },
   { n: 'garment-cap', img: 'eigenaar-ronde-patch.png', o: { technique: 'embroidered', view: 'garment', garment: 'cap_front', sizeCm: 6 } },
   { n: 'garment-jacket', img: 'eigenaar-ronde-patch.png', o: { technique: 'woven', view: 'garment', garment: 'jacket_back', sizeCm: 12 } },
+  { n: 'garment-backpack', img: 'eigenaar-ronde-patch.png', o: { technique: 'embroidered', view: 'garment', garment: 'backpack_front', sizeCm: 8 } },
   { n: 'zoom-embroidered', img: 'eigenaar-ronde-patch.png', o: { technique: 'embroidered', zoom: 3, zoomCenterMm: { x: 40, y: 22 } } },
   { n: 'guides', img: 'eigenaar-ronde-patch.png', o: { technique: 'embroidered', guides: { safeZone: true, boxesMm: [{ x: 30, y: 30, w: 10, h: 6 }] } } },
 ];

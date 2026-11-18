@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<g stroke="{{c1}}" stroke-width="{{sw}}" stroke-linejoin="round" stroke-linecap="round">
+<path d="M512 210 C650 210 730 300 730 420 C730 500 690 540 650 560 L650 640 L374 640 L374 560 C334 540 294 500 294 420 C294 300 374 210 512 210 Z" fill="{{c4}}"/>
+<path d="M410 400 C450 380 480 410 474 450 C468 484 420 492 400 470 C384 452 388 412 410 400 Z" fill="{{c1}}"/>
+<path d="M614 400 C574 380 544 410 550 450 C556 484 604 492 624 470 C640 452 636 412 614 400 Z" fill="{{c1}}"/>
+<path d="M512 482 L540 540 L484 540 Z" fill="{{c3}}"/>
+<path d="M440 640 L440 590 M490 640 L490 590 M534 640 L534 590 M584 640 L584 590" fill="none"/>
+<path d="M300 720 L724 680 M300 680 L724 720" fill="none" stroke="{{c2}}" stroke-width="40"/>
+</g>
+</svg>

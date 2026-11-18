@@ -1,0 +1,2561 @@
+{
+ "_doc": "Gegenereerd door tests/nametape/gen-vectors.mjs. ctx = defaults.json (btw, staffel, verzending) + overrides; cfg = nametape.json + overrides.",
+ "cases": [
+  {
+   "name": "controle: 25 namen 10 × 2,5, haak, zwart",
+   "batch": {
+    "v": 1,
+    "locale": "nl-BE",
+    "format": "10x2.5",
+    "custom": null,
+    "fabric": "black",
+    "letter": "white",
+    "border": "satin_letter",
+    "borderColor": null,
+    "font": "block",
+    "uppercase": true,
+    "backing": "hook",
+    "loop": false,
+    "bloodMode": null,
+    "rows": [
+     {
+      "name": "NAAM 1",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 2",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 3",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 4",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 5",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 6",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 7",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 8",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 9",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 10",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 11",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 12",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 13",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 14",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 15",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 16",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 17",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 18",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 19",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 20",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 21",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 22",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 23",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 24",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 25",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     }
+    ]
+   },
+   "ctx": {},
+   "cfg": null,
+   "expect": {
+    "ok": true,
+    "errors": [],
+    "pieces": 25,
+    "mainPieces": 25,
+    "bloodPieces": 0,
+    "tier": {
+     "min": 25,
+     "discount": 0.1
+    },
+    "mainUnitExcl": 4.05,
+    "bloodUnitExcl": 2.7,
+    "unitIncl": 4.9,
+    "lineExcl": 101.25,
+    "lineTax": 21.26,
+    "lineIncl": 122.51,
+    "fees": [],
+    "feesIncl": 0,
+    "shippingIncl": 12.1,
+    "totalIncl": 134.61,
+    "perPieceAllInIncl": 5.38,
+    "nextTier": {
+     "min": 50,
+     "needed": 25,
+     "discount": 0.15,
+     "unitIncl": 4.63
+    },
+    "breakdown": [
+     {
+      "key": "main",
+      "label": "25 × naamstrook 10 × 2,5 cm",
+      "qty": 25,
+      "unitIncl": 4.9,
+      "incl": 122.51
+     },
+     {
+      "key": "shipping",
+      "label": "Verzending (schatting)",
+      "incl": 12.1
+     }
+    ]
+   }
+  },
+  {
+   "name": "1 strook",
+   "batch": {
+    "v": 1,
+    "locale": "nl-BE",
+    "format": "10x2.5",
+    "custom": null,
+    "fabric": "black",
+    "letter": "white",
+    "border": "satin_letter",
+    "borderColor": null,
+    "font": "block",
+    "uppercase": true,
+    "backing": "hook",
+    "loop": false,
+    "bloodMode": null,
+    "rows": [
+     {
+      "name": "PEETERS J.",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     }
+    ]
+   },
+   "ctx": {},
+   "cfg": null,
+   "expect": {
+    "ok": true,
+    "errors": [],
+    "pieces": 1,
+    "mainPieces": 1,
+    "bloodPieces": 0,
+    "tier": {
+     "min": 1,
+     "discount": 0
+    },
+    "mainUnitExcl": 4.5,
+    "bloodUnitExcl": 3,
+    "unitIncl": 5.45,
+    "lineExcl": 4.5,
+    "lineTax": 0.95,
+    "lineIncl": 5.45,
+    "fees": [],
+    "feesIncl": 0,
+    "shippingIncl": 12.1,
+    "totalIncl": 17.55,
+    "perPieceAllInIncl": 17.55,
+    "nextTier": {
+     "min": 10,
+     "needed": 9,
+     "discount": 0.05,
+     "unitIncl": 5.17
+    },
+    "breakdown": [
+     {
+      "key": "main",
+      "label": "1 × naamstrook 10 × 2,5 cm",
+      "qty": 1,
+      "unitIncl": 5.45,
+      "incl": 5.45
+     },
+     {
+      "key": "shipping",
+      "label": "Verzending (schatting)",
+      "incl": 12.1
+     }
+    ]
+   }
+  },
+  {
+   "name": "1 strook met instelkost aan",
+   "batch": {
+    "v": 1,
+    "locale": "nl-BE",
+    "format": "10x2.5",
+    "custom": null,
+    "fabric": "black",
+    "letter": "white",
+    "border": "satin_letter",
+    "borderColor": null,
+    "font": "block",
+    "uppercase": true,
+    "backing": "hook",
+    "loop": false,
+    "bloodMode": null,
+    "rows": [
+     {
+      "name": "PEETERS J.",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     }
+    ]
+   },
+   "ctx": {},
+   "cfg": {
+    "smallOrderFee": {
+     "enabled": true
+    }
+   },
+   "expect": {
+    "ok": true,
+    "errors": [],
+    "pieces": 1,
+    "mainPieces": 1,
+    "bloodPieces": 0,
+    "tier": {
+     "min": 1,
+     "discount": 0
+    },
+    "mainUnitExcl": 4.5,
+    "bloodUnitExcl": 3,
+    "unitIncl": 5.45,
+    "lineExcl": 4.5,
+    "lineTax": 0.95,
+    "lineIncl": 5.45,
+    "fees": [
+     {
+      "key": "fee:nametape_setup",
+      "label": "Instelkost naamstroken (onder 5 stuks)",
+      "excl": 7.5,
+      "tax": 1.58,
+      "incl": 9.08
+     }
+    ],
+    "feesIncl": 9.08,
+    "shippingIncl": 12.1,
+    "totalIncl": 26.63,
+    "perPieceAllInIncl": 26.63,
+    "nextTier": {
+     "min": 10,
+     "needed": 9,
+     "discount": 0.05,
+     "unitIncl": 5.17
+    },
+    "breakdown": [
+     {
+      "key": "main",
+      "label": "1 × naamstrook 10 × 2,5 cm",
+      "qty": 1,
+      "unitIncl": 5.45,
+      "incl": 5.45
+     },
+     {
+      "key": "fee:nametape_setup",
+      "label": "Instelkost naamstroken (onder 5 stuks)",
+      "incl": 9.08
+     },
+     {
+      "key": "shipping",
+      "label": "Verzending (schatting)",
+      "incl": 12.1
+     }
+    ]
+   }
+  },
+  {
+   "name": "10 × 12 × 3 opnaaien (5 %)",
+   "batch": {
+    "v": 1,
+    "locale": "nl-BE",
+    "format": "12x3",
+    "custom": null,
+    "fabric": "black",
+    "letter": "white",
+    "border": "satin_letter",
+    "borderColor": null,
+    "font": "block",
+    "uppercase": true,
+    "backing": "sew",
+    "loop": false,
+    "bloodMode": null,
+    "rows": [
+     {
+      "name": "NAAM 1",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 2",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 3",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 4",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 5",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 6",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 7",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 8",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 9",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 10",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     }
+    ]
+   },
+   "ctx": {},
+   "cfg": null,
+   "expect": {
+    "ok": true,
+    "errors": [],
+    "pieces": 10,
+    "mainPieces": 10,
+    "bloodPieces": 0,
+    "tier": {
+     "min": 10,
+     "discount": 0.05
+    },
+    "mainUnitExcl": 4.0375,
+    "bloodUnitExcl": 2.1375,
+    "unitIncl": 4.89,
+    "lineExcl": 40.38,
+    "lineTax": 8.48,
+    "lineIncl": 48.86,
+    "fees": [],
+    "feesIncl": 0,
+    "shippingIncl": 12.1,
+    "totalIncl": 60.96,
+    "perPieceAllInIncl": 6.1,
+    "nextTier": {
+     "min": 25,
+     "needed": 15,
+     "discount": 0.1,
+     "unitIncl": 4.63
+    },
+    "breakdown": [
+     {
+      "key": "main",
+      "label": "10 × naamstrook 12 × 3 cm",
+      "qty": 10,
+      "unitIncl": 4.89,
+      "incl": 48.86
+     },
+     {
+      "key": "shipping",
+      "label": "Verzending (schatting)",
+      "incl": 12.1
+     }
+    ]
+   }
+  },
+  {
+   "name": "bloedgroep op eigen strook",
+   "batch": {
+    "v": 1,
+    "locale": "nl-BE",
+    "format": "10x2.5",
+    "custom": null,
+    "fabric": "black",
+    "letter": "white",
+    "border": "satin_letter",
+    "borderColor": null,
+    "font": "block",
+    "uppercase": true,
+    "backing": "hook",
+    "loop": false,
+    "bloodMode": "separate",
+    "rows": [
+     {
+      "name": "NAAM 1",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 2",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 3",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 4",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 5",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 6",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 7",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 8",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "X",
+      "line2": "",
+      "blood": {
+       "group": "O",
+       "rh": "+"
+      },
+      "qty": 2
+     }
+    ]
+   },
+   "ctx": {},
+   "cfg": null,
+   "expect": {
+    "ok": true,
+    "errors": [],
+    "pieces": 12,
+    "mainPieces": 10,
+    "bloodPieces": 2,
+    "tier": {
+     "min": 10,
+     "discount": 0.05
+    },
+    "mainUnitExcl": 4.275,
+    "bloodUnitExcl": 2.85,
+    "unitIncl": 5.17,
+    "lineExcl": 48.45,
+    "lineTax": 10.17,
+    "lineIncl": 58.62,
+    "fees": [],
+    "feesIncl": 0,
+    "shippingIncl": 12.1,
+    "totalIncl": 70.72,
+    "perPieceAllInIncl": 5.89,
+    "nextTier": {
+     "min": 25,
+     "needed": 13,
+     "discount": 0.1,
+     "unitIncl": 4.9
+    },
+    "breakdown": [
+     {
+      "key": "main",
+      "label": "10 × naamstrook 10 × 2,5 cm",
+      "qty": 10,
+      "unitIncl": 5.17,
+      "incl": 51.73
+     },
+     {
+      "key": "blood",
+      "label": "2 × bloedgroepstrook 5 × 2,5 cm",
+      "qty": 2,
+      "unitIncl": 3.45,
+      "incl": 6.9
+     },
+     {
+      "key": "shipping",
+      "label": "Verzending (schatting)",
+      "incl": 12.1
+     }
+    ]
+   }
+  },
+  {
+   "name": "camo + tegenstuk",
+   "batch": {
+    "v": 1,
+    "locale": "nl-BE",
+    "format": "10x2.5",
+    "custom": null,
+    "fabric": "camo",
+    "letter": "white",
+    "border": "satin_letter",
+    "borderColor": null,
+    "font": "block",
+    "uppercase": true,
+    "backing": "hook",
+    "loop": true,
+    "bloodMode": null,
+    "rows": [
+     {
+      "name": "NAAM 1",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 2",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 3",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     }
+    ]
+   },
+   "ctx": {},
+   "cfg": null,
+   "expect": {
+    "ok": true,
+    "errors": [],
+    "pieces": 3,
+    "mainPieces": 3,
+    "bloodPieces": 0,
+    "tier": {
+     "min": 1,
+     "discount": 0
+    },
+    "mainUnitExcl": 6,
+    "bloodUnitExcl": 4.5,
+    "unitIncl": 7.26,
+    "lineExcl": 18,
+    "lineTax": 3.78,
+    "lineIncl": 21.78,
+    "fees": [],
+    "feesIncl": 0,
+    "shippingIncl": 12.1,
+    "totalIncl": 33.88,
+    "perPieceAllInIncl": 11.29,
+    "nextTier": {
+     "min": 10,
+     "needed": 7,
+     "discount": 0.05,
+     "unitIncl": 6.9
+    },
+    "breakdown": [
+     {
+      "key": "main",
+      "label": "3 × naamstrook 10 × 2,5 cm",
+      "qty": 3,
+      "unitIncl": 7.26,
+      "incl": 21.78
+     },
+     {
+      "key": "shipping",
+      "label": "Verzending (schatting)",
+      "incl": 12.1
+     }
+    ]
+   }
+  },
+  {
+   "name": "tegenstuk telt niet bij opnaaien",
+   "batch": {
+    "v": 1,
+    "locale": "nl-BE",
+    "format": "10x2.5",
+    "custom": null,
+    "fabric": "black",
+    "letter": "white",
+    "border": "satin_letter",
+    "borderColor": null,
+    "font": "block",
+    "uppercase": true,
+    "backing": "sew",
+    "loop": true,
+    "bloodMode": null,
+    "rows": [
+     {
+      "name": "NAAM 1",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 2",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 3",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     }
+    ]
+   },
+   "ctx": {},
+   "cfg": null,
+   "expect": {
+    "ok": true,
+    "errors": [],
+    "pieces": 3,
+    "mainPieces": 3,
+    "bloodPieces": 0,
+    "tier": {
+     "min": 1,
+     "discount": 0
+    },
+    "mainUnitExcl": 3.75,
+    "bloodUnitExcl": 2.25,
+    "unitIncl": 4.54,
+    "lineExcl": 11.25,
+    "lineTax": 2.36,
+    "lineIncl": 13.61,
+    "fees": [],
+    "feesIncl": 0,
+    "shippingIncl": 12.1,
+    "totalIncl": 25.71,
+    "perPieceAllInIncl": 8.57,
+    "nextTier": {
+     "min": 10,
+     "needed": 7,
+     "discount": 0.05,
+     "unitIncl": 4.31
+    },
+    "breakdown": [
+     {
+      "key": "main",
+      "label": "3 × naamstrook 10 × 2,5 cm",
+      "qty": 3,
+      "unitIncl": 4.54,
+      "incl": 13.61
+     },
+     {
+      "key": "shipping",
+      "label": "Verzending (schatting)",
+      "incl": 12.1
+     }
+    ]
+   }
+  },
+  {
+   "name": "pool: 20 patches + 5 stroken (10 %)",
+   "batch": {
+    "v": 1,
+    "locale": "nl-BE",
+    "format": "10x2.5",
+    "custom": null,
+    "fabric": "black",
+    "letter": "white",
+    "border": "satin_letter",
+    "borderColor": null,
+    "font": "block",
+    "uppercase": true,
+    "backing": "hook",
+    "loop": false,
+    "bloodMode": null,
+    "rows": [
+     {
+      "name": "NAAM 1",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 2",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 3",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 4",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 5",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     }
+    ]
+   },
+   "ctx": {
+    "patchPoolQty": 20
+   },
+   "cfg": null,
+   "expect": {
+    "ok": true,
+    "errors": [],
+    "pieces": 5,
+    "mainPieces": 5,
+    "bloodPieces": 0,
+    "tier": {
+     "min": 25,
+     "discount": 0.1
+    },
+    "mainUnitExcl": 4.05,
+    "bloodUnitExcl": 2.7,
+    "unitIncl": 4.9,
+    "lineExcl": 20.25,
+    "lineTax": 4.25,
+    "lineIncl": 24.5,
+    "fees": [],
+    "feesIncl": 0,
+    "shippingIncl": 12.1,
+    "totalIncl": 36.6,
+    "perPieceAllInIncl": 7.32,
+    "nextTier": {
+     "min": 50,
+     "needed": 25,
+     "discount": 0.15,
+     "unitIncl": 4.63
+    },
+    "breakdown": [
+     {
+      "key": "main",
+      "label": "5 × naamstrook 10 × 2,5 cm",
+      "qty": 5,
+      "unitIncl": 4.9,
+      "incl": 24.5
+     },
+     {
+      "key": "shipping",
+      "label": "Verzending (schatting)",
+      "incl": 12.1
+     }
+    ]
+   }
+  },
+  {
+   "name": "pool uitgeschakeld",
+   "batch": {
+    "v": 1,
+    "locale": "nl-BE",
+    "format": "10x2.5",
+    "custom": null,
+    "fabric": "black",
+    "letter": "white",
+    "border": "satin_letter",
+    "borderColor": null,
+    "font": "block",
+    "uppercase": true,
+    "backing": "hook",
+    "loop": false,
+    "bloodMode": null,
+    "rows": [
+     {
+      "name": "NAAM 1",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 2",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 3",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 4",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 5",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     }
+    ]
+   },
+   "ctx": {
+    "patchPoolQty": 20
+   },
+   "cfg": {
+    "tiers": {
+     "source": "patch",
+     "pooledWithPatches": false
+    }
+   },
+   "expect": {
+    "ok": true,
+    "errors": [],
+    "pieces": 5,
+    "mainPieces": 5,
+    "bloodPieces": 0,
+    "tier": {
+     "min": 1,
+     "discount": 0
+    },
+    "mainUnitExcl": 4.5,
+    "bloodUnitExcl": 3,
+    "unitIncl": 5.45,
+    "lineExcl": 22.5,
+    "lineTax": 4.73,
+    "lineIncl": 27.23,
+    "fees": [],
+    "feesIncl": 0,
+    "shippingIncl": 12.1,
+    "totalIncl": 39.33,
+    "perPieceAllInIncl": 7.87,
+    "nextTier": {
+     "min": 10,
+     "needed": 5,
+     "discount": 0.05,
+     "unitIncl": 5.17
+    },
+    "breakdown": [
+     {
+      "key": "main",
+      "label": "5 × naamstrook 10 × 2,5 cm",
+      "qty": 5,
+      "unitIncl": 5.45,
+      "incl": 27.23
+     },
+     {
+      "key": "shipping",
+      "label": "Verzending (schatting)",
+      "incl": 12.1
+     }
+    ]
+   }
+  },
+  {
+   "name": "andere naamstrooklijst telt mee",
+   "batch": {
+    "v": 1,
+    "locale": "nl-BE",
+    "format": "10x2.5",
+    "custom": null,
+    "fabric": "black",
+    "letter": "white",
+    "border": "satin_letter",
+    "borderColor": null,
+    "font": "block",
+    "uppercase": true,
+    "backing": "hook",
+    "loop": false,
+    "bloodMode": null,
+    "rows": [
+     {
+      "name": "NAAM 1",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 2",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 3",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 4",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 5",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     }
+    ]
+   },
+   "ctx": {
+    "otherNametapePieces": 5
+   },
+   "cfg": null,
+   "expect": {
+    "ok": true,
+    "errors": [],
+    "pieces": 5,
+    "mainPieces": 5,
+    "bloodPieces": 0,
+    "tier": {
+     "min": 10,
+     "discount": 0.05
+    },
+    "mainUnitExcl": 4.275,
+    "bloodUnitExcl": 2.85,
+    "unitIncl": 5.17,
+    "lineExcl": 21.38,
+    "lineTax": 4.49,
+    "lineIncl": 25.87,
+    "fees": [],
+    "feesIncl": 0,
+    "shippingIncl": 12.1,
+    "totalIncl": 37.97,
+    "perPieceAllInIncl": 7.59,
+    "nextTier": {
+     "min": 25,
+     "needed": 15,
+     "discount": 0.1,
+     "unitIncl": 4.9
+    },
+    "breakdown": [
+     {
+      "key": "main",
+      "label": "5 × naamstrook 10 × 2,5 cm",
+      "qty": 5,
+      "unitIncl": 5.17,
+      "incl": 25.87
+     },
+     {
+      "key": "shipping",
+      "label": "Verzending (schatting)",
+      "incl": 12.1
+     }
+    ]
+   }
+  },
+  {
+   "name": "eigen maat 140 × 30",
+   "batch": {
+    "v": 1,
+    "locale": "nl-BE",
+    "format": "custom",
+    "custom": {
+     "w": 140,
+     "h": 30
+    },
+    "fabric": "black",
+    "letter": "white",
+    "border": "satin_letter",
+    "borderColor": null,
+    "font": "block",
+    "uppercase": true,
+    "backing": "hook",
+    "loop": false,
+    "bloodMode": null,
+    "rows": [
+     {
+      "name": "NAAM 1",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 2",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 3",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 4",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     }
+    ]
+   },
+   "ctx": {},
+   "cfg": null,
+   "expect": {
+    "ok": true,
+    "errors": [],
+    "pieces": 4,
+    "mainPieces": 4,
+    "bloodPieces": 0,
+    "tier": {
+     "min": 1,
+     "discount": 0
+    },
+    "mainUnitExcl": 5.5,
+    "bloodUnitExcl": 3,
+    "unitIncl": 6.66,
+    "lineExcl": 22,
+    "lineTax": 4.62,
+    "lineIncl": 26.62,
+    "fees": [],
+    "feesIncl": 0,
+    "shippingIncl": 12.1,
+    "totalIncl": 38.72,
+    "perPieceAllInIncl": 9.68,
+    "nextTier": {
+     "min": 10,
+     "needed": 6,
+     "discount": 0.05,
+     "unitIncl": 6.32
+    },
+    "breakdown": [
+     {
+      "key": "main",
+      "label": "4 × naamstrook 14 × 3 cm",
+      "qty": 4,
+      "unitIncl": 6.66,
+      "incl": 26.62
+     },
+     {
+      "key": "shipping",
+      "label": "Verzending (schatting)",
+      "incl": 12.1
+     }
+    ]
+   }
+  },
+  {
+   "name": "eigen maat buiten bereik",
+   "batch": {
+    "v": 1,
+    "locale": "nl-BE",
+    "format": "custom",
+    "custom": {
+     "w": 160,
+     "h": 30
+    },
+    "fabric": "black",
+    "letter": "white",
+    "border": "satin_letter",
+    "borderColor": null,
+    "font": "block",
+    "uppercase": true,
+    "backing": "hook",
+    "loop": false,
+    "bloodMode": null,
+    "rows": [
+     {
+      "name": "PEETERS J.",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     }
+    ]
+   },
+   "ctx": {},
+   "cfg": null,
+   "expect": {
+    "ok": false,
+    "errors": [
+     {
+      "code": "size_out_of_range"
+     }
+    ],
+    "pieces": 0,
+    "mainPieces": 0,
+    "bloodPieces": 0,
+    "tier": {
+     "min": 1,
+     "discount": 0
+    },
+    "mainUnitExcl": 0,
+    "bloodUnitExcl": 0,
+    "unitIncl": 0,
+    "lineExcl": 0,
+    "lineTax": 0,
+    "lineIncl": 0,
+    "fees": [],
+    "feesIncl": 0,
+    "shippingIncl": 0,
+    "totalIncl": 0,
+    "perPieceAllInIncl": 0,
+    "nextTier": null,
+    "breakdown": []
+   }
+  },
+  {
+   "name": "eigen maat 50 × 50",
+   "batch": {
+    "v": 1,
+    "locale": "nl-BE",
+    "format": "custom",
+    "custom": {
+     "w": 50,
+     "h": 50
+    },
+    "fabric": "black",
+    "letter": "white",
+    "border": "satin_letter",
+    "borderColor": null,
+    "font": "block",
+    "uppercase": true,
+    "backing": "hook",
+    "loop": false,
+    "bloodMode": null,
+    "rows": [
+     {
+      "name": "NAAM 1",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 2",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     }
+    ]
+   },
+   "ctx": {},
+   "cfg": null,
+   "expect": {
+    "ok": true,
+    "errors": [],
+    "pieces": 2,
+    "mainPieces": 2,
+    "bloodPieces": 0,
+    "tier": {
+     "min": 1,
+     "discount": 0
+    },
+    "mainUnitExcl": 6.5,
+    "bloodUnitExcl": 3,
+    "unitIncl": 7.87,
+    "lineExcl": 13,
+    "lineTax": 2.73,
+    "lineIncl": 15.73,
+    "fees": [],
+    "feesIncl": 0,
+    "shippingIncl": 12.1,
+    "totalIncl": 27.83,
+    "perPieceAllInIncl": 13.92,
+    "nextTier": {
+     "min": 10,
+     "needed": 8,
+     "discount": 0.05,
+     "unitIncl": 7.47
+    },
+    "breakdown": [
+     {
+      "key": "main",
+      "label": "2 × naamstrook 5 × 5 cm",
+      "qty": 2,
+      "unitIncl": 7.87,
+      "incl": 15.73
+     },
+     {
+      "key": "shipping",
+      "label": "Verzending (schatting)",
+      "incl": 12.1
+     }
+    ]
+   }
+  },
+  {
+   "name": "ongeldig formaat",
+   "batch": {
+    "v": 1,
+    "locale": "nl-BE",
+    "format": "99x9",
+    "custom": null,
+    "fabric": "black",
+    "letter": "white",
+    "border": "satin_letter",
+    "borderColor": null,
+    "font": "block",
+    "uppercase": true,
+    "backing": "hook",
+    "loop": false,
+    "bloodMode": null,
+    "rows": [
+     {
+      "name": "PEETERS J.",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     }
+    ]
+   },
+   "ctx": {},
+   "cfg": null,
+   "expect": {
+    "ok": false,
+    "errors": [
+     {
+      "code": "unknown_format"
+     }
+    ],
+    "pieces": 0,
+    "mainPieces": 0,
+    "bloodPieces": 0,
+    "tier": {
+     "min": 1,
+     "discount": 0
+    },
+    "mainUnitExcl": 0,
+    "bloodUnitExcl": 0,
+    "unitIncl": 0,
+    "lineExcl": 0,
+    "lineTax": 0,
+    "lineIncl": 0,
+    "fees": [],
+    "feesIncl": 0,
+    "shippingIncl": 0,
+    "totalIncl": 0,
+    "perPieceAllInIncl": 0,
+    "nextTier": null,
+    "breakdown": []
+   }
+  },
+  {
+   "name": "onbekende stof",
+   "batch": {
+    "v": 1,
+    "locale": "nl-BE",
+    "format": "10x2.5",
+    "custom": null,
+    "fabric": "paars",
+    "letter": "white",
+    "border": "satin_letter",
+    "borderColor": null,
+    "font": "block",
+    "uppercase": true,
+    "backing": "hook",
+    "loop": false,
+    "bloodMode": null,
+    "rows": [
+     {
+      "name": "PEETERS J.",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     }
+    ]
+   },
+   "ctx": {},
+   "cfg": null,
+   "expect": {
+    "ok": false,
+    "errors": [
+     {
+      "code": "unknown_fabric"
+     }
+    ],
+    "pieces": 0,
+    "mainPieces": 0,
+    "bloodPieces": 0,
+    "tier": {
+     "min": 1,
+     "discount": 0
+    },
+    "mainUnitExcl": 0,
+    "bloodUnitExcl": 0,
+    "unitIncl": 0,
+    "lineExcl": 0,
+    "lineTax": 0,
+    "lineIncl": 0,
+    "fees": [],
+    "feesIncl": 0,
+    "shippingIncl": 0,
+    "totalIncl": 0,
+    "perPieceAllInIncl": 0,
+    "nextTier": null,
+    "breakdown": []
+   }
+  },
+  {
+   "name": "100 stroken (20 %), gratis verzending",
+   "batch": {
+    "v": 1,
+    "locale": "nl-BE",
+    "format": "10x2.5",
+    "custom": null,
+    "fabric": "black",
+    "letter": "white",
+    "border": "satin_letter",
+    "borderColor": null,
+    "font": "block",
+    "uppercase": true,
+    "backing": "hook",
+    "loop": false,
+    "bloodMode": null,
+    "rows": [
+     {
+      "name": "NAAM 1",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 2",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 3",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 4",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 5",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 6",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 7",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 8",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 9",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 10",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 11",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 12",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 13",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 14",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 15",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 16",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 17",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 18",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 19",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 20",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 21",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 22",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 23",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 24",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 25",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 26",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 27",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 28",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 29",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 30",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 31",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 32",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 33",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 34",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 35",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 36",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 37",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 38",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 39",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 40",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 41",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 42",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 43",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 44",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 45",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 46",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 47",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 48",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 49",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 50",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 51",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 52",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 53",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 54",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 55",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 56",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 57",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 58",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 59",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 60",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 61",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 62",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 63",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 64",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 65",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 66",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 67",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 68",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 69",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 70",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 71",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 72",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 73",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 74",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 75",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 76",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 77",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 78",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 79",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 80",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 81",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 82",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 83",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 84",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 85",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 86",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 87",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 88",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 89",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 90",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 91",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 92",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 93",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 94",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 95",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 96",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 97",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 98",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 99",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 100",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     }
+    ]
+   },
+   "ctx": {},
+   "cfg": null,
+   "expect": {
+    "ok": true,
+    "errors": [],
+    "pieces": 100,
+    "mainPieces": 100,
+    "bloodPieces": 0,
+    "tier": {
+     "min": 100,
+     "discount": 0.2
+    },
+    "mainUnitExcl": 3.6,
+    "bloodUnitExcl": 2.4,
+    "unitIncl": 4.36,
+    "lineExcl": 360,
+    "lineTax": 75.6,
+    "lineIncl": 435.6,
+    "fees": [],
+    "feesIncl": 0,
+    "shippingIncl": 0,
+    "totalIncl": 435.6,
+    "perPieceAllInIncl": 4.36,
+    "nextTier": null,
+    "breakdown": [
+     {
+      "key": "main",
+      "label": "100 × naamstrook 10 × 2,5 cm",
+      "qty": 100,
+      "unitIncl": 4.36,
+      "incl": 435.6
+     },
+     {
+      "key": "shipping",
+      "label": "Verzending: gratis",
+      "incl": 0
+     }
+    ]
+   }
+  },
+  {
+   "name": "aantallen per rij (2 × 12 + 1)",
+   "batch": {
+    "v": 1,
+    "locale": "nl-BE",
+    "format": "10x2.5",
+    "custom": null,
+    "fabric": "black",
+    "letter": "white",
+    "border": "satin_letter",
+    "borderColor": null,
+    "font": "block",
+    "uppercase": true,
+    "backing": "hook",
+    "loop": false,
+    "bloodMode": null,
+    "rows": [
+     {
+      "name": "A",
+      "line2": "",
+      "blood": null,
+      "qty": 12
+     },
+     {
+      "name": "B",
+      "line2": "",
+      "blood": null,
+      "qty": 12
+     },
+     {
+      "name": "C",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     }
+    ]
+   },
+   "ctx": {},
+   "cfg": null,
+   "expect": {
+    "ok": true,
+    "errors": [],
+    "pieces": 25,
+    "mainPieces": 25,
+    "bloodPieces": 0,
+    "tier": {
+     "min": 25,
+     "discount": 0.1
+    },
+    "mainUnitExcl": 4.05,
+    "bloodUnitExcl": 2.7,
+    "unitIncl": 4.9,
+    "lineExcl": 101.25,
+    "lineTax": 21.26,
+    "lineIncl": 122.51,
+    "fees": [],
+    "feesIncl": 0,
+    "shippingIncl": 12.1,
+    "totalIncl": 134.61,
+    "perPieceAllInIncl": 5.38,
+    "nextTier": {
+     "min": 50,
+     "needed": 25,
+     "discount": 0.15,
+     "unitIncl": 4.63
+    },
+    "breakdown": [
+     {
+      "key": "main",
+      "label": "25 × naamstrook 10 × 2,5 cm",
+      "qty": 25,
+      "unitIncl": 4.9,
+      "incl": 122.51
+     },
+     {
+      "key": "shipping",
+      "label": "Verzending (schatting)",
+      "incl": 12.1
+     }
+    ]
+   }
+  },
+  {
+   "name": "aantal wordt begrensd (0 → 1, 250 → 99)",
+   "batch": {
+    "v": 1,
+    "locale": "nl-BE",
+    "format": "10x2.5",
+    "custom": null,
+    "fabric": "black",
+    "letter": "white",
+    "border": "satin_letter",
+    "borderColor": null,
+    "font": "block",
+    "uppercase": true,
+    "backing": "hook",
+    "loop": false,
+    "bloodMode": null,
+    "rows": [
+     {
+      "name": "A",
+      "line2": "",
+      "blood": null,
+      "qty": 0
+     },
+     {
+      "name": "B",
+      "line2": "",
+      "blood": null,
+      "qty": 250
+     }
+    ]
+   },
+   "ctx": {},
+   "cfg": null,
+   "expect": {
+    "ok": true,
+    "errors": [],
+    "pieces": 100,
+    "mainPieces": 100,
+    "bloodPieces": 0,
+    "tier": {
+     "min": 100,
+     "discount": 0.2
+    },
+    "mainUnitExcl": 3.6,
+    "bloodUnitExcl": 2.4,
+    "unitIncl": 4.36,
+    "lineExcl": 360,
+    "lineTax": 75.6,
+    "lineIncl": 435.6,
+    "fees": [],
+    "feesIncl": 0,
+    "shippingIncl": 0,
+    "totalIncl": 435.6,
+    "perPieceAllInIncl": 4.36,
+    "nextTier": null,
+    "breakdown": [
+     {
+      "key": "main",
+      "label": "100 × naamstrook 10 × 2,5 cm",
+      "qty": 100,
+      "unitIncl": 4.36,
+      "incl": 435.6
+     },
+     {
+      "key": "shipping",
+      "label": "Verzending: gratis",
+      "incl": 0
+     }
+    ]
+   }
+  },
+  {
+   "name": "fluo + opstrijk, FR",
+   "batch": {
+    "v": 1,
+    "locale": "fr-BE",
+    "format": "10x2.5",
+    "custom": null,
+    "fabric": "fluo-yellow",
+    "letter": "white",
+    "border": "satin_letter",
+    "borderColor": null,
+    "font": "block",
+    "uppercase": true,
+    "backing": "iron",
+    "loop": false,
+    "bloodMode": null,
+    "rows": [
+     {
+      "name": "NAAM 1",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 2",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 3",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 4",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 5",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 6",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 7",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 8",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 9",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     }
+    ]
+   },
+   "ctx": {
+    "locale": "fr-BE"
+   },
+   "cfg": null,
+   "expect": {
+    "ok": true,
+    "errors": [],
+    "pieces": 9,
+    "mainPieces": 9,
+    "bloodPieces": 0,
+    "tier": {
+     "min": 1,
+     "discount": 0
+    },
+    "mainUnitExcl": 4.5,
+    "bloodUnitExcl": 3,
+    "unitIncl": 5.45,
+    "lineExcl": 40.5,
+    "lineTax": 8.51,
+    "lineIncl": 49.01,
+    "fees": [],
+    "feesIncl": 0,
+    "shippingIncl": 12.1,
+    "totalIncl": 61.11,
+    "perPieceAllInIncl": 6.79,
+    "nextTier": {
+     "min": 10,
+     "needed": 1,
+     "discount": 0.05,
+     "unitIncl": 5.17
+    },
+    "breakdown": [
+     {
+      "key": "main",
+      "label": "9 × bande nominative 10 × 2,5 cm",
+      "qty": 9,
+      "unitIncl": 5.45,
+      "incl": 49.01
+     },
+     {
+      "key": "shipping",
+      "label": "Livraison (estimation)",
+      "incl": 12.1
+     }
+    ]
+   }
+  },
+  {
+   "name": "gratis verzending dankzij andere artikelen",
+   "batch": {
+    "v": 1,
+    "locale": "nl-BE",
+    "format": "10x2.5",
+    "custom": null,
+    "fabric": "black",
+    "letter": "white",
+    "border": "satin_letter",
+    "borderColor": null,
+    "font": "block",
+    "uppercase": true,
+    "backing": "hook",
+    "loop": false,
+    "bloodMode": null,
+    "rows": [
+     {
+      "name": "NAAM 1",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     },
+     {
+      "name": "NAAM 2",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     }
+    ]
+   },
+   "ctx": {
+    "otherItemsInclVat": 145
+   },
+   "cfg": null,
+   "expect": {
+    "ok": true,
+    "errors": [],
+    "pieces": 2,
+    "mainPieces": 2,
+    "bloodPieces": 0,
+    "tier": {
+     "min": 1,
+     "discount": 0
+    },
+    "mainUnitExcl": 4.5,
+    "bloodUnitExcl": 3,
+    "unitIncl": 5.45,
+    "lineExcl": 9,
+    "lineTax": 1.89,
+    "lineIncl": 10.89,
+    "fees": [],
+    "feesIncl": 0,
+    "shippingIncl": 0,
+    "totalIncl": 10.89,
+    "perPieceAllInIncl": 5.45,
+    "nextTier": {
+     "min": 10,
+     "needed": 8,
+     "discount": 0.05,
+     "unitIncl": 5.17
+    },
+    "breakdown": [
+     {
+      "key": "main",
+      "label": "2 × naamstrook 10 × 2,5 cm",
+      "qty": 2,
+      "unitIncl": 5.45,
+      "incl": 10.89
+     },
+     {
+      "key": "shipping",
+      "label": "Verzending: gratis",
+      "incl": 0
+     }
+    ]
+   }
+  },
+  {
+   "name": "geen rijen",
+   "batch": {
+    "v": 1,
+    "locale": "nl-BE",
+    "format": "10x2.5",
+    "custom": null,
+    "fabric": "black",
+    "letter": "white",
+    "border": "satin_letter",
+    "borderColor": null,
+    "font": "block",
+    "uppercase": true,
+    "backing": "hook",
+    "loop": false,
+    "bloodMode": null,
+    "rows": []
+   },
+   "ctx": {},
+   "cfg": null,
+   "expect": {
+    "ok": false,
+    "errors": [
+     {
+      "code": "no_rows"
+     }
+    ],
+    "pieces": 0,
+    "mainPieces": 0,
+    "bloodPieces": 0,
+    "tier": {
+     "min": 1,
+     "discount": 0
+    },
+    "mainUnitExcl": 4.5,
+    "bloodUnitExcl": 3,
+    "unitIncl": 5.45,
+    "lineExcl": 0,
+    "lineTax": 0,
+    "lineIncl": 0,
+    "fees": [],
+    "feesIncl": 0,
+    "shippingIncl": 0,
+    "totalIncl": 0,
+    "perPieceAllInIncl": 0,
+    "nextTier": null,
+    "breakdown": []
+   }
+  },
+  {
+   "name": "instelkost vervalt door andere lijst",
+   "batch": {
+    "v": 1,
+    "locale": "nl-BE",
+    "format": "10x2.5",
+    "custom": null,
+    "fabric": "black",
+    "letter": "white",
+    "border": "satin_letter",
+    "borderColor": null,
+    "font": "block",
+    "uppercase": true,
+    "backing": "hook",
+    "loop": false,
+    "bloodMode": null,
+    "rows": [
+     {
+      "name": "PEETERS J.",
+      "line2": "",
+      "blood": null,
+      "qty": 1
+     }
+    ]
+   },
+   "ctx": {
+    "otherNametapePieces": 4
+   },
+   "cfg": {
+    "smallOrderFee": {
+     "enabled": true
+    }
+   },
+   "expect": {
+    "ok": true,
+    "errors": [],
+    "pieces": 1,
+    "mainPieces": 1,
+    "bloodPieces": 0,
+    "tier": {
+     "min": 1,
+     "discount": 0
+    },
+    "mainUnitExcl": 4.5,
+    "bloodUnitExcl": 3,
+    "unitIncl": 5.45,
+    "lineExcl": 4.5,
+    "lineTax": 0.95,
+    "lineIncl": 5.45,
+    "fees": [],
+    "feesIncl": 0,
+    "shippingIncl": 12.1,
+    "totalIncl": 17.55,
+    "perPieceAllInIncl": 17.55,
+    "nextTier": {
+     "min": 10,
+     "needed": 5,
+     "discount": 0.05,
+     "unitIncl": 5.17
+    },
+    "breakdown": [
+     {
+      "key": "main",
+      "label": "1 × naamstrook 10 × 2,5 cm",
+      "qty": 1,
+      "unitIncl": 5.45,
+      "incl": 5.45
+     },
+     {
+      "key": "shipping",
+      "label": "Verzending (schatting)",
+      "incl": 12.1
+     }
+    ]
+   }
+  }
+ ]
+}

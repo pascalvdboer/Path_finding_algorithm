@@ -129,7 +129,7 @@
       },
       "hint": {
         "nl": "Voor je club, ploeg of jeugdbeweging: figuur met naamband.",
-        "fr": "Pour ton club, ton équipe ou ton mouvement de jeunesse : motif avec bandeau de nom."
+        "fr": "Pour votre club, votre équipe ou votre mouvement de jeunesse : motif avec bandeau de nom."
       },
       "en": "club crest style: a proud central emblem with a ribbon banner and a solid frame, traditional and bold, readable from a distance",
       "defaultColors": 4,
@@ -249,7 +249,7 @@
       "action": "open_colors",
       "message": {
         "nl": "Kleuren aanpassen kan gratis in de studio: tik op een kleur en kies een garen.",
-        "fr": "Tu peux changer les couleurs gratuitement dans le studio : touche une couleur et choisis un fil."
+        "fr": "Vous pouvez changer les couleurs gratuitement dans le studio : touchez une couleur et choisissez un fil."
       }
     },
     "fewer": {
@@ -261,7 +261,7 @@
       "action": "reduce_colors",
       "message": {
         "nl": "Minder kleuren kan gratis: gebruik de schuif 'Aantal garenkleuren'.",
-        "fr": "Moins de couleurs, c'est gratuit : utilise le curseur « Nombre de couleurs »."
+        "fr": "Moins de couleurs, c'est gratuit : utilisez le curseur « Nombre de couleurs »."
       }
     },
     "text": {
@@ -519,10 +519,10 @@
       "embleem van"
     ],
     "copyIntent": [
-      "\\b(namaken|nagemaakt|nabootsen|kopieer|kopieren|kopie van|copie de|copier|reproduire|imiter|replica|precies zoals|exactement comme)\\b"
+      "\\b(namaken|nagemaakt|nabootsen|kopieer|kopieren|kopie van|copie de|copier|reproduire|imiter|replica|precies zoals|exactement comme|zoals het logo van|comme le logo de|namaak|contrefacon|contrefait)\\b"
     ],
     "officialInsignia": [
-      "\\b(politie|police|polizei|defensie|defense|armee|leger|armée|gendarmerie|douane|brandweer\\s+logo|logo\\s+pompiers|para-commando|paracommando|special forces|navy seals?|seals?\\s+team|swat|fbi|cia|interpol|ambulance\\s+logo|staatsveiligheid)\\b"
+      "\\b(politie|police|polizei|defensie|defense|armee|leger|armée|gendarmerie|douane|brandweer\\s+logo|logo\\s+pompiers|para-commando|paracommando|special forces|navy seals?|seals?\\s+team|swat|fbi|cia|interpol|ambulance\\s+logo|staatsveiligheid|olympische ringen|anneaux olympiques|olympic rings)\\b"
     ],
     "person": [
       "\\b(lijkt op|gelijkend op|ressemble a|ressemblant a|ressemblant|bekende vlaming|beroemdheid|celebrite|celebrity|koning filip|roi philippe|koningin mathilde|trump|biden|poetin|putin|elon musk|messi|ronaldo|taylor swift)\\b",
@@ -547,11 +547,11 @@
     "messages": {
       "brand": {
         "nl": "We maken geen logo's of merken van anderen na. Beschrijf liever de sfeer die je wil, dan tekenen we iets eigens.",
-        "fr": "Nous ne reproduisons pas les logos ou marques d'autres. Décris plutôt l'ambiance souhaitée, on dessinera quelque chose d'original."
+        "fr": "Nous ne reproduisons pas les logos ou marques d'autres. Décrivez plutôt l'ambiance souhaitée, nous dessinerons quelque chose d'original."
       },
       "official": {
         "nl": "Officiële emblemen (politie, leger, hulpdiensten) maken we niet met de AI. Heb je een echte toelating? Vraag dan een offerte aan.",
-        "fr": "Nous ne créons pas d'insignes officiels (police, armée, secours) avec l'IA. Tu as une autorisation ? Demande alors un devis."
+        "fr": "Nous ne créons pas d'insignes officiels (police, armée, secours) avec l'IA. Vous avez une autorisation ? Demandez alors un devis."
       },
       "person": {
         "nl": "We tekenen geen echte personen na. Een eigen, getekend figuur of mascotte kan wel.",
@@ -559,7 +559,7 @@
       },
       "artist": {
         "nl": "We kopiëren de stijl van een bestaande tekenaar niet. Kies een van onze stijlen, bv. vintage of mascotte.",
-        "fr": "Nous ne copions pas le style d'un dessinateur existant. Choisis un de nos styles, par ex. vintage ou mascotte."
+        "fr": "Nous ne copions pas le style d'un dessinateur existant. Choisissez un de nos styles, par ex. vintage ou mascotte."
       },
       "hate": {
         "nl": "Dit ontwerp kunnen we niet maken.",
@@ -579,11 +579,11 @@
       },
       "empty": {
         "nl": "Beschrijf in een paar woorden wat je op je patch wil, bv. 'een wolf met een bijl'.",
-        "fr": "Décris en quelques mots ce que tu veux sur ton écusson, par ex. « un loup avec une hache »."
+        "fr": "Décrivez en quelques mots ce que vous voulez sur votre écusson, par ex. « un loup avec une hache »."
       },
       "copy": {
         "nl": "Wil je een bestaand logo op een patch? Is het van jou of je club, upload het dan gewoon in de studio: dat is gratis en het wordt exact overgenomen.",
-        "fr": "Tu veux un logo existant sur un écusson ? S'il est à toi ou à ton club, importe-le simplement dans le studio : c'est gratuit et il sera repris exactement."
+        "fr": "Vous voulez un logo existant sur un écusson ? S'il est à vous ou à votre club, importez-le simplement dans le studio : c'est gratuit et il sera repris exactement."
       }
     },
     "appendWhenSoftBrand": "Any animal or word mentioned refers to the generic thing, not to a brand or its logo."
@@ -591,15 +591,19 @@
   "stopwords": {
     "nl": [
       "aan",
+      "alleen",
       "als",
       "badge",
       "bij",
+      "cool",
+      "coole",
       "dat",
       "de",
       "die",
       "dit",
       "een",
       "embleem",
+      "enkel",
       "er",
       "erop",
       "graag",
@@ -612,9 +616,13 @@
       "is",
       "je",
       "jouw",
+      "leuk",
+      "leuke",
       "maak",
       "maken",
       "mijn",
+      "mooi",
+      "mooie",
       "nog",
       "of",
       "ons",
@@ -622,7 +630,12 @@
       "onze",
       "ook",
       "patch",
+      "slechts",
+      "soort",
+      "stijl",
       "te",
+      "tof",
+      "toffe",
       "van",
       "wat",
       "we",
@@ -631,14 +644,18 @@
       "willen",
       "z'n",
       "zijn",
-      "zo"
+      "zo",
+      "zoiets"
     ],
     "fr": [
       "a",
       "au",
       "aux",
       "badge",
+      "beau",
+      "belle",
       "chose",
+      "cool",
       "d",
       "de",
       "des",
@@ -649,7 +666,11 @@
       "est",
       "faire",
       "fais",
+      "genre",
       "je",
+      "joli",
+      "jolie",
+      "juste",
       "l",
       "la",
       "le",
@@ -657,6 +678,7 @@
       "leur",
       "ma",
       "mes",
+      "moi",
       "moins",
       "mon",
       "nos",
@@ -670,12 +692,18 @@
       "qui",
       "sa",
       "ses",
+      "seulement",
       "son",
+      "stp",
+      "style",
+      "sympa",
       "ta",
       "ton",
       "tres",
+      "truc",
       "un",
       "une",
+      "uniquement",
       "veux",
       "voudrais",
       "voudrions"
@@ -819,7 +847,15 @@
       "heks": "witch",
       "sorciere": "witch",
       "tovenaar": "wizard",
-      "magicien": "wizard"
+      "magicien": "wizard",
+      "puma": "puma (the animal)",
+      "poema": "puma (the animal)",
+      "jaguar": "jaguar (the animal)",
+      "mustang": "wild mustang horse",
+      "zwaluw": "swallow bird",
+      "hirondelle": "swallow bird",
+      "mus": "sparrow",
+      "moineau": "sparrow"
     },
     "object": {
       "bijl": "axe",
@@ -1014,7 +1050,11 @@
       "taart": "cake",
       "gateau": "cake",
       "verjaardagstaart": "birthday cake",
-      "gateau d anniversaire": "birthday cake"
+      "gateau d anniversaire": "birthday cake",
+      "ballon de rugby": "rugby ball",
+      "rugbybal": "rugby ball",
+      "ballon de foot": "football (soccer ball)",
+      "ballon de basket": "basketball"
     },
     "group": {
       "motorclub": "motorcycle club",
@@ -1099,7 +1139,6 @@
       "agressif": "aggressive",
       "vriendelijk": "friendly",
       "vriendelijker": "friendlier",
-      "sympa": "friendly",
       "gentil": "friendly",
       "stoer": "tough",
       "stoerder": "tougher",
@@ -1215,7 +1254,23 @@
       "ailes deployees": "spread wings",
       "aux ailes deployees": "with spread wings",
       "plus feroce": "fiercer",
-      "feroce": "fierce"
+      "feroce": "fierce",
+      "springt": "jumping",
+      "saute": "jumping",
+      "vliegt": "flying",
+      "vole": "flying",
+      "brult": "roaring",
+      "rugit": "roaring",
+      "huilt": "howling",
+      "hurle": "howling",
+      "lacht": "smiling",
+      "sourit": "smiling",
+      "rent": "running",
+      "court": "running",
+      "zwemt": "swimming",
+      "nage": "swimming",
+      "dort": "sleeping",
+      "slaapt": "sleeping"
     },
     "color": {
       "zwart": "black",

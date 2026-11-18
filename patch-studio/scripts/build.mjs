@@ -19,8 +19,13 @@ const dist = resolve(plugin, 'assets/dist');
 const args = new Set(process.argv.slice(2));
 const dev = args.has('--dev') || args.has('--watch');
 
-/** Budgetten in bytes gzip (SPEC §5.3; patch-studio.js 60 → 100 kB door integrator, zie docs/integratie.md) */
-const BUDGET = { 'patch-studio.js': 100 * 1024, 'patch-studio-worker.js': 25 * 1024, 'patch-studio-admin.js': 15 * 1024 };
+/**
+ * Budgetten in bytes gzip (SPEC §5.3). patch-studio.js: 60 → 100 kB (integrator v1) → 125 kB (integrator v2).
+ * Waarom 125: de v2-ontwerpstudio (canvas, panelen, assistent) en render v2 (belichte materialen, 4 kledingstukken,
+ * techniekvergelijker; render ±19 → ±32 kB) brengen de bundel op ±119 kB. Ook met de FR-catalogi via config.strings
+ * (±13 kB) blijft hij boven 100 kB. Het script laadt alleen op de pagina met de studio. Zie docs/integratie.md.
+ */
+const BUDGET = { 'patch-studio.js': 125 * 1024, 'patch-studio-worker.js': 25 * 1024, 'patch-studio-admin.js': 15 * 1024 };
 
 const entries = [
   { in: 'main.js', out: 'patch-studio.js', globalName: 'BPS' },

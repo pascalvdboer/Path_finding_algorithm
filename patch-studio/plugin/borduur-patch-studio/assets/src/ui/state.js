@@ -152,7 +152,8 @@ export function sanitizeState(raw, config) {
     insetMm: clamp(num(l && l.insetMm, 0), -5, 60),
     letterSpacing: clamp(num(l && l.letterSpacing, 0.05), -0.05, 0.5),
   }));
-  s.mockup = ['polo_chest', 'cap_front', 'jacket_back'].includes(raw.mockup) ? raw.mockup : 'none';
+  // View on a garment (UI only; the stage checks the id against the garments render can draw).
+  s.mockup = typeof raw.mockup === 'string' && /^[a-z][a-z_]{1,29}$/.test(raw.mockup) ? raw.mockup : 'none';
   s.notes = String(raw.notes || '').slice(0, 2000);
   s.useCase = String(raw.useCase || '').slice(0, 30);
   const src = raw.source || {};

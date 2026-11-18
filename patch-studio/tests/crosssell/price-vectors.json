@@ -1,0 +1,30 @@
+{
+  "_doc": "Cross-sell prijzen (SPEC-EXTRA §2.6, voorbeelden uit docs/extra/02-cross-sell.md §3b–3d). De patchprijs komt uit de echte prijsengine (JS: pricing/index.js quote(); PHP: Pricing::cart_unit_excl) met defaults.json. Bedragen excl. btw tenzij 'Incl'.",
+  "prices": [
+    { "name": "trucker + patch 6 cm (02 §3b)", "item": "cap", "input": { "qty": 1, "poolQty": 0, "blankExcl": 14.96, "technique": "embroidered", "patchSizeCm": 6, "designOptions": ["cut_from_fabric", "velcro_hook", "velcro_black"] }, "expect": { "unitExcl": 23, "unitIncl": 27.83, "lineIncl": 27.83, "tierDiscount": 0, "parts": [18.1, 4.89, 4.84] } },
+    { "name": "Flexfit KP908 + patch 6 cm", "item": "cap", "input": { "qty": 1, "blankExcl": 22.5, "technique": "embroidered", "patchSizeCm": 6, "designOptions": [] }, "expect": { "unitExcl": 30.54, "unitIncl": 36.95 } },
+    { "name": "muts RC027 + patch 6 cm (02 §3b)", "item": "beanie", "input": { "qty": 1, "blankExcl": 3.8, "technique": "embroidered", "patchSizeCm": 6, "designOptions": [] }, "expect": { "unitExcl": 11.34, "unitIncl": 13.72 } },
+    { "name": "Thinsulate B447 + patch 6 cm", "item": "beanie", "input": { "qty": 1, "blankExcl": 5.86, "technique": "embroidered", "patchSizeCm": 6, "designOptions": [] }, "expect": { "unitExcl": 13.4, "unitIncl": 16.21 } },
+    { "name": "hoodie Eco + patch 10 cm borst (02 §3b)", "item": "hoodie", "input": { "qty": 1, "blankExcl": 33.73, "technique": "embroidered", "patchSizeCm": 10, "placement": "chest", "designOptions": [] }, "expect": { "unitExcl": 43.96, "unitIncl": 53.19 } },
+    { "name": "hoodie Eco + patch 12 cm rug", "item": "hoodie", "input": { "qty": 1, "blankExcl": 33.73, "technique": "embroidered", "patchSizeCm": 12, "placement": "back", "designOptions": [] }, "expect": { "unitExcl": 45.9, "unitIncl": 55.54 } },
+    { "name": "25 petten, 25 patches in de mand: staffel 15 % op patch en aanbrengen, niet op de pet", "item": "cap", "input": { "qty": 25, "poolQty": 25, "blankExcl": 14.96, "technique": "embroidered", "patchSizeCm": 6, "designOptions": [] }, "expect": { "unitExcl": 21.794, "unitIncl": 26.37, "tierDiscount": 0.15, "lineExcl": 544.85 } },
+    { "name": "10 mutsen zonder pool: 5 %", "item": "beanie", "input": { "qty": 10, "poolQty": 0, "blankExcl": 3.8, "technique": "embroidered", "patchSizeCm": 6, "designOptions": [] }, "expect": { "unitExcl": 10.963, "unitIncl": 13.27, "tierDiscount": 0.05 } },
+    { "name": "gesublimeerde patch op pet: geen staffel op aanbrengen (techniek zonder staffel)", "item": "cap", "input": { "qty": 25, "poolQty": 0, "blankExcl": 14.96, "technique": "sublimated", "patchSizeCm": 6, "designOptions": [] }, "expect": { "unitExcl": 22.46, "tierDiscount": 0 } },
+    { "name": "lederen sleutelhanger (02 §3c)", "item": "leather_keychain", "input": { "qty": 1, "productExcl": 7 }, "expect": { "unitExcl": 7, "unitIncl": 8.47 } },
+    { "name": "lederen sleutelhanger, echt leder + naam, 10 st. (5 %)", "item": "leather_keychain", "input": { "qty": 10, "productExcl": 7, "options": ["real_leather", "name_back"] }, "expect": { "unitExcl": 9.025, "unitIncl": 10.92, "tierDiscount": 0.05 } },
+    { "name": "lederen sleutelhanger: onbekende optie telt niet", "item": "leather_keychain", "input": { "qty": 1, "productExcl": 7, "options": ["gold_leaf"] }, "expect": { "unitExcl": 7 } },
+    { "name": "tassenlabel 25 st. (10 %)", "item": "leather_bagtag", "input": { "qty": 25, "productExcl": 9.5 }, "expect": { "unitExcl": 8.55, "unitIncl": 10.35 } },
+    { "name": "lederen patch op trucker (02 §3c)", "item": "leather_patch_cap", "input": { "qty": 1, "blankExcl": 14.96 }, "expect": { "unitExcl": 23.46, "unitIncl": 28.39 } },
+    { "name": "kader 20 × 20 + patch 10 cm", "item": "frame", "input": { "qty": 1, "productExcl": 24.75, "technique": "embroidered", "patchSizeCm": 10, "designOptions": [] }, "expect": { "unitExcl": 30.98, "unitIncl": 37.49 } },
+    { "name": "kader 25 × 25 + patch 12 cm", "item": "frame", "input": { "qty": 1, "productExcl": 28.92, "technique": "embroidered", "patchSizeCm": 12, "designOptions": [] }, "expect": { "unitExcl": 36.09, "unitIncl": 43.67 } },
+    { "name": "PVC-sleutelhanger 50 st. met mal (02 §3d)", "item": "pvc_keychain", "input": { "qty": 50, "productExcl": 4.2 }, "expect": { "unitExcl": 3.57, "unitIncl": 4.32, "lineIncl": 215.99, "fees": [96.8] } },
+    { "name": "PVC-sleutelhanger 100 st. (−20 %)", "item": "pvc_keychain", "input": { "qty": 100, "productExcl": 4.2 }, "expect": { "unitExcl": 3.36, "unitIncl": 4.07 } },
+    { "name": "PVC-sleutelhanger, gedeelde mal (sharedMold + PVC-patch in mand)", "item": "pvc_keychain", "input": { "qty": 50, "productExcl": 4.2, "moldCovered": true }, "expect": { "unitExcl": 3.57, "fees": [] } },
+    { "name": "PVC-sleutelhanger, mal al aangerekend", "item": "pvc_keychain", "input": { "qty": 60, "productExcl": 4.2, "moldCharged": true }, "expect": { "fees": [] } },
+    { "name": "PVC-sleutelhanger onder minimum", "item": "pvc_keychain", "input": { "qty": 20, "productExcl": 4.2 }, "expect": { "ok": false, "errors": ["below_min_qty"], "unitExcl": 0 } },
+    { "name": "PVC-sleutelhanger buiten stap", "item": "pvc_keychain", "input": { "qty": 55, "productExcl": 4.2 }, "expect": { "ok": false, "errors": ["qty_step"] } },
+    { "name": "pet zonder prijs → fout", "item": "cap", "input": { "qty": 1, "blankExcl": 0, "technique": "embroidered", "patchSizeCm": 6 }, "expect": { "ok": false, "errors": ["no_price"] } },
+    { "name": "pet met onbekende techniek → fout", "item": "cap", "input": { "qty": 1, "blankExcl": 14.96, "technique": "goud", "patchSizeCm": 6 }, "expect": { "ok": false, "errors": ["technique", "patch_price"] } },
+    { "name": "Franse labels", "item": "cap", "locale": "fr-BE", "input": { "qty": 1, "blankExcl": 14.96, "technique": "embroidered", "patchSizeCm": 6 }, "expect": { "labels": ["Casquette", "écusson", "pose"] } }
+  ]
+}

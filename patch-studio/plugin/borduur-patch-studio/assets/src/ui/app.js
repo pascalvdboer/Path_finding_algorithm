@@ -117,7 +117,7 @@ export function createApp(root, config) {
     h('div.bps-top__brand', h('span.bps-top__logo', { 'aria-hidden': 'true' }, icon('spark')), h('span.bps-top__name', t('ui.top.title')), fileName),
     h('div.bps-top__tools', { role: 'toolbar', 'aria-label': t('ui.top.tools') }, undoBtn, redoBtn),
     h('div.bps-top__end',
-      h('button.bps-btn.bps-btn--small.bps-btn--ghost.bps-top__new', { type: 'button', onclick: () => ctx.reset() }, icon('plus'), h('span', t('ui.new')))));
+      h('button.bps-btn.bps-btn--small.bps-btn--ghost.bps-top__new', { type: 'button', 'aria-label': t('ui.new'), onclick: () => { if (window.confirm(t('ui.new.confirm'))) ctx.reset(); } }, icon('plus'), h('span', t('ui.new')))));
 
   /* left rail */
   const railBtns = DOCK.map(([id, ic]) => h('button.bps-rail__btn', { type: 'button', 'aria-pressed': 'false', 'aria-controls': ctx.uidBase + '-dock', dataset: { panel: id }, onclick: () => (ctx.ui.dock === id ? ctx.closePanel(id) : ctx.openPanel(id)) },
@@ -281,6 +281,8 @@ export function createApp(root, config) {
         if (p.el.hidden === v) p.el.hidden = !v;
         if (v) p.update(s, d);
       }
+      // Visible panels as a stable hook for tests and analytics (e.g. data-bps-panels="design advice").
+      root.setAttribute('data-bps-panels', Object.keys(all).filter((id) => !all[id].el.hidden).join(' '));
       const inDock = (id) => DOCK.some(([x]) => x === id);
       dock.hidden = mob ? !inDock(ctx.ui.mob) : !ctx.ui.dock;
       side.hidden = mob && inDock(ctx.ui.mob);
@@ -292,7 +294,7 @@ export function createApp(root, config) {
         const key = group.join() + ctx.ui.mob;
         if (subnav._k !== key) {
           subnav._k = key;
-          subnav.replaceChildren(...group.map((id) => h('button.bps-subnav__btn' + (id === ctx.ui.mob ? '.is-on' : ''), { type: 'button', 'aria-pressed': String(id === ctx.ui.mob), onclick: () => ctx.openPanel(id) }, t('ui.panel.' + id + '.short'))));
+          subnav.replaceChildren(...group.map((id) => h('button.bps-subnav__btn' + (id === ctx.ui.mob ? '.is-on' : ''), { type: 'button', 'aria-pressed': String(id === ctx.ui.mob), dataset: { panel: id }, onclick: () => ctx.openPanel(id) }, t('ui.panel.' + id + '.short'))));
         }
       }
       grab.setAttribute('aria-expanded', String(!ctx.ui.sheetMin));

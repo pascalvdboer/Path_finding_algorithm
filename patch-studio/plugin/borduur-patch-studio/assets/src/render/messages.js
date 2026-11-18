@@ -11,6 +11,7 @@ export default {
     'render.garment.polo_chest': 'op de borst van een polo',
     'render.garment.cap_front': 'op de voorkant van een pet',
     'render.garment.jacket_back': 'op de rug van een jas',
+    'render.garment.backpack_front': 'op de voorkant van een rugzak',
     'render.disclaimer': 'Voorbeeld ter illustratie. Garen- en drukkleuren kunnen licht afwijken van je scherm. Je digitale proef toont de definitieve versie.',
   },
   fr: {
@@ -22,6 +23,7 @@ export default {
     'render.garment.polo_chest': 'sur la poitrine d’un polo',
     'render.garment.cap_front': 'sur l’avant d’une casquette',
     'render.garment.jacket_back': 'dans le dos d’une veste',
+    'render.garment.backpack_front': 'sur l’avant d’un sac à dos',
     'render.disclaimer': 'Aperçu à titre indicatif. Les couleurs de fil et d’impression peuvent légèrement différer de votre écran. Votre épreuve numérique montre la version définitive.',
   },
 };

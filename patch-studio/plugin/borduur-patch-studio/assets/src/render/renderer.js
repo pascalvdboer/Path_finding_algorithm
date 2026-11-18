@@ -9,13 +9,13 @@
 import { shapePolygon, transformPolygon, tracePath, bbox, offsetPolygon, contourFromMask, convexHull, traceBoundary } from './shapes.js';
 import { analyzeComponents, chooseModes, colorTable, cleanLabels } from './stylize.js';
 import { edgeCoverMm, edgeBandMm, edgeGeo, shadeEdge, edgeDecor } from './edges.js';
-import { normLight, shadeGeo } from './light.js';
+import { normLight, shadeGeo, halfGeo } from './light.js';
 import { buildLayer, baseTile, shadeBase } from './material.js';
 import { bandField, absorbSmall } from './field.js';
 import { drawBackdrop } from './scene.js';
 import { drawTextLayer, fontFor, fontReady, loadFont } from './text.js';
 import { drawGarment, placePatch } from './garment.js';
-import { makeCanvas, ctx2d, Lru, idOf, now, shade, rgbOf, lum, clamp, softShadow } from './util.js';
+import { makeCanvas, ctx2d, Lru, WLru, idOf, now, shade, rgbOf, lum, clamp, softShadow } from './util.js';
 
 const LABEL_LOOKS = { embroidered: 1, woven: 1, chenille: 1, pvc: 1 };
 const artCache = new Lru(6);
@@ -229,17 +229,17 @@ function reliefOf(design) {
   return 1;
 }
 
-const geoCache = new Lru(3);       // art geometry (light independent)
-const bandCache = new Lru(4);
-const edgeGeoCache = new Lru(4);
-const litCache = new Lru(8);        // lit art layers (per light)
+const geoCache = new WLru(5e6, 24);   // art geometry (light independent), bounded by pixels
+const bandCache = new Lru(12);
+const edgeGeoCache = new Lru(12);
+const litCache = new WLru(1.2e7, 48); // lit art layers (per light), bounded by pixels
 
 /** Lit canvas of a geometry buffer, with an optional light-dependent relief shadow baked in. */
 function litCanvas(geo, light, shadow, ppm, extraPad = 0) {
   const w = geo.w, h = geo.h;
   const cv = makeCanvas(w, h), c = ctx2d(cv);
   const id = c.createImageData(w, h);
-  shadeGeo(geo, light, id.data, { specTint: 0.38 });
+  shadeGeo(geo, light, id.data, { specTint: 0.38, ambient: geo.ambient });
   c.putImageData(id, 0, 0);
   if (!shadow) return { canvas: cv, pad: 0 };
   const [L0, L1, L2] = light.L;
@@ -295,15 +295,26 @@ function artLayer(art, look, rect, ppm, o) {
     const tq = now();
     geo = buildLayer(img, look, { ppm: layerPpm, labels: clean, comps, engrave: rgbOf(o.engraveHex), relief: o.relief, pvcDepth: o.pvcDepth });
     PT('artBuild', tq);
-    geoCache.set(key, geo);
+    geoCache.set(key, geo, lw * lh);
   }
   const tl = now();
+  if (o.quality === 'fast') {
+    // pointer-driven light: relight a half-resolution copy (¼ of the pixels); 'high' restores full detail
+    const hk = key + '#h#' + o.light.key;
+    let hl = litCache.get(hk);
+    if (!hl) {
+      const hg = halfGeo(geo);
+      const l2 = litCanvas(hg, o.light, RELIEF_SHADOW[look], layerPpm / 2);
+      hl = litCache.set(hk, { canvas: l2.canvas, pad: l2.pad, w: hg.w, h: hg.h, ppm: layerPpm / 2 }, l2.canvas.width * l2.canvas.height);
+    }
+    return hl;
+  }
   const lit = litCanvas(geo, o.light, RELIEF_SHADOW[look], layerPpm);
   PT('artLit', tl);
   const out = { canvas: lit.canvas, pad: lit.pad, w: lw, h: lh, ppm: layerPpm };
   const outKey = key + '#' + o.light.key;
   artLatest.set(prefix, outKey);
-  return litCache.set(outKey, out);
+  return litCache.set(outKey, out, out.canvas.width * out.canvas.height);
 }
 
 /** Text layer in the patch-local frame (same frame as the base layer), lit + relief shadow baked. */
@@ -336,8 +347,8 @@ function textLayer(layer, look, g, o) {
 
 /* ------------------------------ patch body + border ------------------------------ */
 
-const underCache = new Lru(6);
-const overCache = new Lru(6);
+const underCache = new WLru(1.2e7, 32);
+const overCache = new WLru(1.2e7, 32);
 const frameLatest = new Map();
 
 function bandFor(F) {
@@ -395,7 +406,7 @@ function underLayer0(F) {
     { roll: body.roll, thick: Math.min(body.roll, body.thick * 0.5) * F.relief, ppm });
   PT('baseBuild', tb);
   ac.putImageData(img, bx0, by0);
-  if (!F.shadow) return underCache.set(key, cv);
+  if (!F.shadow) return underCache.set(key, cv, F.W * F.H);
   const out = makeCanvas(F.W, F.H), c = ctx2d(out);
   // contact shadow + soft cast shadow, both following the light
   const [L0, L1, L2] = F.light.L;
@@ -404,7 +415,7 @@ function underLayer0(F) {
   softShadow(c, cv, 0, 0, sx * 1.6, sy * 1.6 + ppm * 0.3, t * 2.2 + ppm * 1.5, 0.16 + body.shadowA * 0.22, '18,24,38');
   softShadow(c, cv, 0, 0, sx * 0.35, sy * 0.35, Math.max(1.5, ppm * 0.45), 0.25 + body.shadowA * 0.3, '10,14,24');
   c.drawImage(cv, 0, 0);
-  return underCache.set(key, out);
+  return underCache.set(key, out, F.W * F.H);
 }
 
 /** Band field re-indexed into a crop of the frame. */
@@ -445,7 +456,7 @@ function overLayer0(F) {
     c.drawImage(tmp, 0, 0);
   } else c.drawImage(tmp, 0, 0);
   edgeDecor(c, F.poly, F.ppm, F.edge, { fabricHex: F.baseHex, edgeHex: F.edgeHex, seed: 1 + F.polyKey });
-  return overCache.set(key, cv);
+  return overCache.set(key, cv, F.W * F.H);
 }
 
 /** Cached frame layers at another scale (fast mode while zooming): {canvas, ppm, lx, ly}. */
@@ -455,9 +466,8 @@ function frameLayer(kind, F, build) {
   const geomKey = [F.W, F.H, F.ppm.toFixed(3)].join('#'), sizeKey = geomKey + '#' + F.light.key;
   if (F.quality === 'fast') {
     const prev = frameLatest.get(prefix);
-    // fast: reuse the cached layer at another scale; when only the light moved, relight the (cheap) border
-    // and keep the patch body as it is
-    if (prev && prev.sizeKey !== sizeKey && !(kind === 'o' && prev.geomKey === geomKey)) return prev.layer;
+    // fast: reuse the cached layer at another scale / light (the design layer carries the moving glint)
+    if (prev && prev.sizeKey !== sizeKey) return prev.layer;
   }
   const canvas = build(F);
   const layer = { canvas, ppm: F.ppm, lx: F.lx, ly: F.ly };

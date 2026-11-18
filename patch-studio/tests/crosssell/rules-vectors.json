@@ -1,0 +1,20 @@
+{
+  "_doc": "Kaartkeuze (SPEC-EXTRA §2.1). `fits`: item → fit ('ok'|'adjust'|'hide'); 'all' = elk item uit config/crosssell.json dat aan staat krijgt 'ok'. `cfg` wordt over de config gemerged.",
+  "rules": [
+    { "name": "1 patch (cadeau): kader, leder, pet", "fits": "all", "context": { "qty": 1, "technique": "embroidered", "kind": "flat", "month": 6 }, "expect": { "ids": ["frame", "leather_keychain", "cap"], "rule": "gift" } },
+    { "name": "25 patches in juni: pet, hoodie, muts", "fits": "all", "context": { "qty": 25, "technique": "embroidered", "kind": "flat", "month": 6 }, "expect": { "ids": ["cap", "hoodie", "beanie"], "rule": "team" } },
+    { "name": "25 patches in november: muts eerst", "fits": "all", "context": { "qty": 25, "technique": "embroidered", "kind": "flat", "month": 11 }, "expect": { "ids": ["beanie", "cap", "hoodie"], "rule": "team" } },
+    { "name": "25 patches in februari: muts eerst", "fits": "all", "context": { "qty": 25, "technique": "embroidered", "kind": "flat", "month": 2 }, "expect": { "ids": ["beanie", "cap", "hoodie"] } },
+    { "name": "60 patches: pet, PVC, hoodie", "fits": "all", "context": { "qty": 60, "technique": "embroidered", "kind": "flat", "month": 6 }, "expect": { "ids": ["cap", "pvc_keychain", "hoodie"], "rule": "volume" } },
+    { "name": "foto, 1 stuk: kader, leder, pet", "fits": "all", "context": { "qty": 1, "technique": "printed", "kind": "photo", "month": 6 }, "expect": { "ids": ["frame", "leather_keychain", "cap"], "rule": "photo" } },
+    { "name": "verloop, 25 stuks: foto-regel wint van aantallen", "fits": "all", "context": { "qty": 25, "technique": "printed", "kind": "gradient", "month": 11 }, "expect": { "ids": ["frame", "leather_keychain", "cap"], "rule": "photo" } },
+    { "name": "5 patches: pet, hoodie, leder", "fits": "all", "context": { "qty": 5, "technique": "embroidered", "kind": "flat", "month": 6 }, "expect": { "ids": ["cap", "hoodie", "leather_keychain"], "rule": "default" } },
+    { "name": "kader past niet: aanvullen in config-volgorde", "fits": { "cap": "ok", "beanie": "ok", "hoodie": "ok", "leather_keychain": "adjust", "frame": "hide", "pvc_keychain": "hide" }, "context": { "qty": 1, "technique": "embroidered", "kind": "flat", "month": 6 }, "expect": { "ids": ["leather_keychain", "cap", "beanie"] } },
+    { "name": "automatisch uitgeschakelde pet", "fits": "all", "stats": { "cap": { "autoDisabled": true } }, "context": { "qty": 25, "technique": "embroidered", "kind": "flat", "month": 6 }, "expect": { "ids": ["hoodie", "beanie", "leather_keychain"] } },
+    { "name": "maximaal 2 kaarten", "fits": "all", "cfg": { "maxCards": 2 }, "context": { "qty": 1, "technique": "embroidered", "kind": "flat", "month": 6 }, "expect": { "ids": ["frame", "leather_keychain"] } },
+    { "name": "naamstrook-modus: muts, pet", "fits": "all", "context": { "qty": 24, "technique": "embroidered", "kind": "flat", "month": 6, "mode": "nametape" }, "expect": { "ids": ["beanie", "cap", "hoodie"], "rule": "nametape" } },
+    { "name": "PVC-techniek 50 stuks", "fits": "all", "context": { "qty": 50, "technique": "pvc", "kind": "flat", "month": 6 }, "expect": { "ids": ["cap", "pvc_keychain", "hoodie"] } },
+    { "name": "niets past: geen kaarten", "fits": { "cap": "hide", "frame": "hide" }, "context": { "qty": 1, "technique": "embroidered", "kind": "flat", "month": 6 }, "expect": { "ids": [] } },
+    { "name": "uitgeschakeld item telt niet", "fits": "all", "cfg": { "items": [ { "id": "frame", "type": "frame", "enabled": false }, { "id": "cap", "type": "patch_on_blank" }, { "id": "leather_keychain", "type": "laser" } ] }, "context": { "qty": 1, "technique": "embroidered", "kind": "flat", "month": 6 }, "expect": { "ids": ["leather_keychain", "cap"] } }
+  ]
+}

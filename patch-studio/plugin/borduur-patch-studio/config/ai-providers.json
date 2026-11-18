@@ -1,0 +1,76 @@
+{
+  "schema": 1,
+  "_doc": "AI-beeldproviders (SPEC-AI-DIENSTEN §6.6). Geen sleutels hier: die staan in wp-config.php (BPS_OPENAI_API_KEY, BPS_RECRAFT_API_KEY) of versleuteld in de optie bps_ai_secrets. Modus 'test' gebruikt altijd 'mock'. 'fallback' en 'vectorizer' worden enkel gebruikt als die provider een sleutel heeft. Prijzen: verified=false tot de eigenaar ze op de officiële pagina nakeek (docs/ai/01-apis.md).",
+  "default": "openai",
+  "fallback": "recraft",
+  "vectorizer": null,
+  "n": 3,
+  "refineN": 2,
+  "showProviderName": true,
+  "timeoutSec": 60,
+  "providers": {
+    "mock": {
+      "label": "Voorbeeldontwerpen (test)",
+      "estUsdPerImage": 0
+    },
+    "openai": {
+      "label": "OpenAI",
+      "endpoint": "https://api.openai.com/v1",
+      "models": ["gpt-image-2", "gpt-image-2.5-flare"],
+      "model": "gpt-image-2",
+      "quality": "medium",
+      "qualities": ["low", "medium"],
+      "size": "1024x1024",
+      "background": "transparent",
+      "outputFormat": "png",
+      "moderation": "auto",
+      "timeoutSec": 60,
+      "pricing": {
+        "_doc": "USD per miljoen tokens; estUsdPerImage als usage ontbreekt (schatting medium 1024²).",
+        "usdPerMTokens": { "textIn": 5, "imageIn": 8, "imageOut": 30 },
+        "estUsdPerImage": 0.05,
+        "estUsdPerImageLow": 0.01
+      },
+      "verified": false
+    },
+    "recraft": {
+      "label": "Recraft",
+      "endpoint": "https://external.api.recraft.ai/v1",
+      "models": ["recraftv4_vector", "recraftv4"],
+      "model": "recraftv4_vector",
+      "style": "vector_illustration",
+      "size": "1024x1024",
+      "estUsdPerImage": 0.08,
+      "vectorizeUsd": 0.01,
+      "timeoutSec": 45,
+      "promptMaxChars": 1000,
+      "verified": false
+    }
+  },
+  "moderation": {
+    "enabled": true,
+    "provider": "openai",
+    "model": "omni-moderation-latest",
+    "_doc": "Categorie van de moderatie-API → code uit ai-prompts.json safety.messages.",
+    "categoryMap": {
+      "sexual": "adult",
+      "sexual/minors": "adult",
+      "hate": "hate",
+      "hate/threatening": "hate",
+      "harassment": "hate",
+      "harassment/threatening": "hate",
+      "violence": "violence",
+      "violence/graphic": "violence",
+      "self-harm": "violence",
+      "self-harm/intent": "violence",
+      "self-harm/instructions": "violence",
+      "illicit": "drugs",
+      "illicit/violent": "violence"
+    }
+  },
+  "mock": {
+    "latencyMs": 1200,
+    "slowMs": 8000,
+    "png": false
+  }
+}

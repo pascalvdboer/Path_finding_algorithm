@@ -140,3 +140,23 @@ export function shadeGeo(g, light, out, o = {}) {
 
 /** Pack gloss: exponent class (index in GLOSS) + anisotropic flag. */
 export function glossByte(idx, aniso) { return (idx & 7) | (aniso ? 8 : 0); }
+
+/** Half-resolution copy of a finished geometry (2×2 average): cheap relighting while the pointer moves. */
+export function halfGeo(g) {
+  if (g.half) return g.half;
+  const w = Math.max(1, g.w >> 1), h = Math.max(1, g.h >> 1), n = w * h;
+  const alb = new Uint8ClampedArray(n * 4), nrm = new Int8Array(n * 2), tan = new Int8Array(n * 2);
+  const spec = new Uint8Array(n), gloss = new Uint8Array(n), ao = new Uint8Array(n);
+  const W = g.w;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const o = y * w + x, i0 = (2 * y) * W + 2 * x, i1 = i0 + 1, i2 = i0 + W, i3 = i2 + 1;
+    for (let c = 0; c < 4; c++) alb[o * 4 + c] = (g.alb[i0 * 4 + c] + g.alb[i1 * 4 + c] + g.alb[i2 * 4 + c] + g.alb[i3 * 4 + c]) >> 2;
+    nrm[o * 2] = (g.nrm[i0 * 2] + g.nrm[i1 * 2] + g.nrm[i2 * 2] + g.nrm[i3 * 2]) >> 2;
+    nrm[o * 2 + 1] = (g.nrm[i0 * 2 + 1] + g.nrm[i1 * 2 + 1] + g.nrm[i2 * 2 + 1] + g.nrm[i3 * 2 + 1]) >> 2;
+    tan[o * 2] = g.tan[i0 * 2]; tan[o * 2 + 1] = g.tan[i0 * 2 + 1];
+    spec[o] = g.spec[i0]; gloss[o] = g.gloss[i0];
+    ao[o] = (g.ao[i0] + g.ao[i1] + g.ao[i2] + g.ao[i3]) >> 2;
+  }
+  g.half = { w, h, alb, nrm, tan, spec, gloss, ao, maxH: (g.maxH || 0) / 2, ambient: g.ambient };
+  return g.half;
+}

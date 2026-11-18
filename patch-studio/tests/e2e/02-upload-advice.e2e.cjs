@@ -45,22 +45,24 @@ t.run(async (keep) => {
   t.ok(nonBlank === -1 || nonBlank > 3, 'preview canvas is painted (several colours)', nonBlank);
   await shot(page, '02-flat-step1');
 
-  await studio.next(page); // → step 2
-  t.ok(/Techniek/.test(await studio.currentStep(page)), 'step 2 "Techniek" is current', await studio.currentStep(page));
+  await studio.next(page); // "Bekijk ons advies" → the assistant
+  t.ok((await studio.panels(page)).includes('advice'), 'assistant (advice + technique comparer) is shown', await studio.panels(page));
   const adviceHead = (await page.locator('.bps-advice__head').innerText().catch(() => '')).trim();
   const adviceBody = (await page.locator('.bps-advice__body').innerText().catch(() => '')).trim();
   t.info(`advice: ${adviceHead} — ${adviceBody.replace(/\n/g, ' ')}`);
   t.ok(adviceHead.length > 5, 'advice headline shown', adviceHead);
   t.ok(/Advies van ons atelier/i.test(await page.locator('.bps-advice').innerText()), 'advice labelled "Advies van ons atelier …"');
-  t.ok(/digitaliseerder|proef/i.test(await page.locator('.bps-advice').innerText()), 'advice says a person checks it for the proof');
-  const cards = page.locator('.bps-step:visible .bps-cards').first().locator('.bps-card');
+  t.ok(/digitaliseerder|proef/i.test(await page.locator('.bps-assist').innerText()), 'assistant says a person checks it for the proof');
+  const cards = page.locator('.bps-assist .bps-cards').first().locator('.bps-card');
   const nCards = await cards.count();
-  t.ok(nCards === 3, 'top-3 technique cards', nCards);
-  const badges = await page.locator('.bps-step:visible .bps-card .bps-badge').count();
+  t.ok(nCards >= 3 && nCards <= 4, 'technique comparer: top 3–4 tiles side by side', nCards);
+  await page.waitForFunction(() => document.querySelectorAll('.bps-assist .bps-card__vis.is-ready canvas').length >= 3, null, { timeout: 20000 }).catch(() => {});
+  t.ok(await page.locator('.bps-assist .bps-card__vis.is-ready canvas').count() >= 3, 'comparer shows live renders of the design in each technique');
+  const badges = await page.locator('.bps-assist .bps-card .bps-badge').count();
   t.ok(badges === 1, 'exactly one "Ons advies" badge', badges);
-  const statuses = await page.locator('.bps-step:visible .bps-cards').first().locator('.bps-status').allInnerTexts();
+  const statuses = await page.locator('.bps-assist .bps-cards').first().locator('.bps-status').allInnerTexts();
   t.ok(statuses.length === nCards && statuses.every((s) => /Aanrader|Kan, met aanpassing|Raden we af/.test(s)), 'verdict as text (Aanrader / Kan, met aanpassing / Raden we af)', statuses);
-  const prices = await page.locator('.bps-step:visible .bps-cards').first().locator('.bps-card__price').allInnerTexts();
+  const prices = await page.locator('.bps-assist .bps-cards').first().locator('.bps-card__price').allInnerTexts();
   t.ok(prices.some((p) => /€\s?\d/.test(p)), 'at least one card shows a price in euro', prices);
   t.ok(prices.every((p) => /€\s?\d|Prijs op aanvraag/.test(p)), 'every card shows a price or "Prijs op aanvraag"', prices);
   const st = await studio.state(page);
@@ -71,6 +73,7 @@ t.run(async (keep) => {
 
   // Thread colours for a thread technique.
   await studio.chooseTechnique(page, 'embroidered');
+  await studio.show(page, 'colors');
   const threads = page.locator('.bps-threads:visible');
   t.ok(await threads.count() === 1, 'thread colours section visible for embroidered');
   if (await threads.count()) {
@@ -82,9 +85,9 @@ t.run(async (keep) => {
   if (v2) t.ok(v2.length === 0, 'axe: 0 serious/critical (step 2)', v2);
   await shot(page, '02-flat-step2');
 
-  // Size advice in step 3.
-  await studio.next(page);
-  t.ok(/Maat/.test(await studio.currentStep(page)), 'step 3 "Maat & aantal" is current');
+  // Size advice in the "Maat" panel.
+  await studio.show(page, 'size');
+  t.ok((await studio.panels(page)).includes('size'), '"Maat & aantal" panel is shown');
   const ladder = await page.locator('.bps-ladder__row').count();
   t.ok(ladder >= 2, 'tier ladder shown for embroidered', ladder);
   const total = await studio.uiTotal(page);

@@ -51,3 +51,25 @@ Integrator, 17-11-2026. Ik heb SPEC.md, alle handoffs (core, ui, analysis, color
 4. `languages/*.pot` en `fr_BE.po` voor de PHP-teksten. Laat ook de Franse teksten nalezen door een moedertaalspreker.
 5. WooCommerce-verzending: zet "Gratis verzending" bovenaan.
 6. Server-cron voor de opruiming.
+
+## Integratie v2: ontwerpstudio + render v2 (18-11-2026)
+
+| Controle | Status |
+|---|---|
+| `npm run build` | groen: `patch-studio.js` 119,2 kB gzip (budget **125**), worker 18,0 (25), admin 5,1 (15) |
+| `npm test` | 253 geslaagd, 0 gefaald, 3 todo (bekende analyse-TODO's) |
+| `npm run test:php` | 47 vectoren, 652 checks, 0 fouten |
+| `npm run test:e2e` (WP + WooCommerce, SQLite) | 01–08 + php-debug-log allemaal PASS (selectors herschreven voor de studio) |
+| `npm run demo` + `node tests/demo/screenshots-v2.mjs` | beide testbeelden van de eigenaar, desktop 1440 en gsm 390: 0 consolefouten, geen horizontale scroll, patch altijd volledig in beeld met scrollTop 0. Screenshots: `docs/screenshots/v2/` |
+
+**Budget 100 → 125 kB gzip.** De studio-UI en render v2 (belichte materialen, 4 kledingstukken, techniekvergelijker; render ±19 → ±32 kB) brengen de bundel op 119 kB. Ook als de FR-catalogi via `config.strings` uit PHP komen (±13 kB) blijft hij boven 100 kB, dus het budget moest omhoog. Het script laadt alleen op de studiopagina. Volgende besparing als het nodig is: FR-catalogi via PHP en `garment.js`/`compare.js` lazy laden (±6 kB).
+
+**Wat de UI nu van render v2 gebruikt**
+- *Glans volgt de muis*, subtiel (`lightFromPointer(e, canvas, 0.45)`), enkel met een muis en nooit bij `prefers-reduced-motion`. Tijdens het bewegen rendert de studio `quality: 'fast'`, 200 ms na stilstand `high`. Verlaat de muis het canvas, dan glijdt het licht in 320 ms terug naar de standaard (linksboven).
+- *Fast/high*: slepen, schalen met de hoekgrepen, knijpen, scroll-zoom en het licht tekenen `fast`; bij loslaten of 160 ms rust `high`.
+- *Vergelijker*: `renderTechniques` met elk een passende rand en materiaal, één kaart per idle-callback, 280 px (2× supersampled). De kaarten staan nu als tegels zij aan zij (2 kolommen) met de render als held, badge "Ons advies" op de render, prijs per stuk en levertijd.
+- *Mockups*: close-up, polo, pet, jas en rugzak (`backpack_front` staat nu ook in `config/defaults.json` → `mockups`, zodat de beheerder kleur/schaal kan instellen). Wisselen van weergave of techniek doet een crossfade (uit bij reduced motion).
+- *Prewarm*: de top-4 technieken uit het advies worden in idle-tijd voorbereid.
+- Het root-element krijgt `data-bps-panels` (zichtbare panelen) als stabiele haak voor tests en analytics; de gsm-subtabs hebben `data-panel`.
+
+**Open:** PVC 2D/3D (`pvcDepth`) wordt nog niet aangeboden: daar is eerst een prijsoptie in de catalogus voor nodig, anders tonen we iets wat de klant niet kan bestellen. Mockups blijven vectorieel (geen foto). Gedrag met open gsm-toetsenbord niet op een echt toestel getest.

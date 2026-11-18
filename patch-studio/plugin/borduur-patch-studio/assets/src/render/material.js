@@ -87,7 +87,8 @@ export function buildLayer(img, look, o) {
   }
   PT('kernel', _t2);
   const _t3 = now();
-  const r = finishGeo(g, look === 'woven' || look === 'printed' || look === 'sublimated' ? 1 : 1.25);
+  const r = finishGeo(g, look === 'chenille' ? 0.55 : look === 'woven' || look === 'printed' || look === 'sublimated' ? 1 : 1.25);
+  r.ambient = look === 'chenille' ? 0.6 : 0.5;
   PT('finish', _t3);
   return r;
 }
@@ -114,6 +115,8 @@ function embroidery(ctx) {
   const fade = smooth((0.4 * ppm - 1.3) / 2.2); // thread ripples only where they can be resolved
   const ripple = 0.075 * ppm * fade, rowRipple = 0.06 * ppm * fade;
   const glSatin = glossByte(4, true), glFill = glossByte(3, true);
+  // far away (thumbnails, garments) the single threads blur together: less mirror-like sheen
+  const spS = Math.round(215 * (0.55 + 0.45 * fade)), spF = Math.round(150 * (0.6 + 0.4 * fade));
   // per component dome height (thicker columns stand higher, like real satin) and half width
   const n = comps ? comps.n : 0;
   const domeH = new Float32Array(n), halfT = new Float32Array(n);
@@ -143,7 +146,7 @@ function embroidery(ctx) {
         tx = cs; ty = sn;
         f = 0.94 + 0.08 * pr + (hashI(rI, c) - 0.5) * 0.05;
         cav = (0.84 + 0.16 * pr) * (tq < 0.06 ? 0.86 : 1);
-        sp[i] = 150; gl[i] = glFill;
+        sp[i] = spF; gl[i] = glFill;
       } else {
         let u;
         if (mode === 1 && c >= 0) {
@@ -160,11 +163,11 @@ function embroidery(ctx) {
         const q = Math.min(1, d / ht), dome = Math.sqrt(Math.max(0, 1 - (1 - q) * (1 - q)));
         h = h0 * dome + ripple * pr;
         f = 0.95 + 0.07 * pr + (hashI(ui, c) - 0.5) * 0.09;
-        cav = 0.8 + 0.2 * pr;
-        sp[i] = 215; gl[i] = glSatin;
+        cav = 0.86 + 0.14 * pr;
+        sp[i] = spS; gl[i] = glSatin;
       }
       // needle groove where two regions (or the ground) meet
-      cav *= 0.6 + 0.4 * smooth(d / 0.32);
+      cav *= 0.68 + 0.32 * smooth(d / 0.3);
       hg[i] = h;
       tan[i * 2] = tx * 127; tan[i * 2 + 1] = ty * 127;
       ao[i] = cav * 255;

@@ -7,7 +7,10 @@ import * as R from '../render/index.js';
 import { h, text, keyed, icon, uid } from './dom.js';
 import { renderArt, renderOptions, fabricList } from './derive.js';
 
+const RNS = R; // namespace object: optional render features are looked up at runtime
 const STATUS_ICON = { ok: 'ok', warn: 'warn', bad: 'bad' };
+/** Comparer tiles are ±170 CSS px wide: 280 px renders (2× supersampled inside render) stay crisp on retina. */
+const THUMB_PX = 280;
 const idle = (fn) => (typeof requestIdleCallback === 'function' ? requestIdleCallback(fn, { timeout: 600 }) : setTimeout(fn, 30));
 
 /** Standalone render of the current design in technique `tech` (a canvas, or an empty placeholder). */
@@ -20,7 +23,9 @@ export function thumb(ctx, s, d, tech, extra = {}, px = 192) {
   const fabricHex = !fl.length || fl.some((f) => f.hex === d.fabricHex) ? d.fabricHex : fl[0].hex;
   const opts = renderOptions(s, d, renderArt(d, img), { technique: tech, fabricHex, reduced: !!config.techniques[tech].threadBased && !!d.reduced, quality: 'high', pxSize: px, view: 'patch', zoom: 1, ...extra });
   try {
-    const c = R.renderThumb(opts, px);
+    // render v2: each technique with its own fitting border/material (feature-detected, older render: renderThumb).
+    const RT = RNS['renderTechniques'];
+    const c = typeof RT === 'function' ? (RT(opts, { size: px, techniques: [tech], config }) [0] || {}).canvas : R.renderThumb(opts, px);
     if (c && c.nodeType === 1) { c.setAttribute('aria-hidden', 'true'); c.classList.add('bps-thumb'); return c; }
     if (c && c.width) {
       const cv = h('canvas.bps-thumb', { width: c.width, height: c.height, 'aria-hidden': 'true' });
@@ -66,7 +71,7 @@ export function createAssistant(ctx) {
       busy = false;
       const job = queue.shift();
       if (job && job.sig === sigNow) {
-        const cv = thumb(ctx, job.s, job.d, job.id);
+        const cv = thumb(ctx, job.s, job.d, job.id, {}, THUMB_PX);
         thumbs.set(job.sig + job.id, cv);
         const slot = el.querySelector(`[data-thumb="${job.id}"]`);
         if (slot) { slot.replaceChildren(cv.cloneNode ? copy(cv) : cv); slot.classList.add('is-ready'); }

@@ -14,6 +14,8 @@ import { renderArt, renderOptions } from './derive.js';
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const RNS = R; // namespace object: optional render-v2 features are looked up at runtime (feature detection)
 const CAPS = RNS['capabilities'] || {};
+/** render v2: the thread glint follows the pointer (feature-detected). */
+const lightFrom = typeof RNS['lightFromPointer'] === 'function' ? RNS['lightFromPointer'] : null;
 const ZMIN = 0.6, ZMAX = 6;
 const reduceMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -121,7 +123,8 @@ export function createStage(ctx) {
     return renderArt(d, img);
   }
 
-  const garmentOf = () => (state && state.mockup && state.mockup !== 'none' ? state.mockup : null);
+  const VIEWS = viewIds(config);
+  const garmentOf = () => (state && state.mockup && state.mockup !== 'none' && VIEWS.includes(state.mockup) ? state.mockup : null);
 
   function options(extra = {}) {
     const g = garmentOf();
@@ -135,7 +138,7 @@ export function createStage(ctx) {
       zoomCenterMm: center || undefined,
       ...extra,
     });
-    if (CAPS.light && light) o.light = light;
+    if ((CAPS.light || lightFrom) && light) o.light = light;
     return o;
   }
 
@@ -187,12 +190,45 @@ export function createStage(ctx) {
     queued = true;
     requestAnimationFrame(draw);
   }
-  /** Fast quality while interacting, high quality shortly after. */
-  function interacting() {
+  /** Fast quality while interacting (drag, pinch, zoom, light), full quality once the pointer rests. */
+  function interacting(settleMs = 160) {
     quality = 'fast';
     clearTimeout(hiTimer);
-    hiTimer = setTimeout(() => { quality = 'high'; schedule(); }, 160);
+    hiTimer = setTimeout(() => { quality = 'high'; schedule(); }, settleMs);
   }
+
+  /*
+   * render v2: the thread glint follows the mouse, subtly (strength 0.45 around the default light top-left).
+   * Only for a mouse, never with prefers-reduced-motion. Moving the light only relights (render 'fast', ≤ 25 ms);
+   * 200 ms after the mouse rests the patch is drawn in full quality. Leaving the stage eases back to the default.
+   */
+  const LIGHT_K = 0.45;
+  let lightAnim = 0;
+  function followLight(ev) {
+    if (!lightFrom || reduceMotion() || !d) return;
+    cancelAnimationFrame(lightAnim);
+    let l = null;
+    try { l = lightFrom(ev, canvas, LIGHT_K); } catch (e) { l = null; }
+    if (!l) return;
+    if (light && Math.abs(light.x - l.x) < 0.02 && Math.abs(light.y - l.y) < 0.02) return; // same cache key anyway
+    light = l;
+    interacting(200);
+    schedule();
+  }
+  function resetLight() {
+    cancelAnimationFrame(lightAnim);
+    if (!light || !d) return;
+    const L0 = RNS['DEFAULT_LIGHT'] || { x: -0.55, y: -0.65 };
+    const from = { ...light }, t0 = performance.now(), dur = reduceMotion() ? 0 : 320;
+    const stepL = (now) => {
+      const k = dur ? Math.min(1, (now - t0) / dur) : 1;
+      const e = 1 - Math.pow(1 - k, 3);
+      light = { x: from.x + (L0.x - from.x) * e, y: from.y + (L0.y - from.y) * e };
+      if (k < 1) { interacting(200); schedule(); lightAnim = requestAnimationFrame(stepL); } else { light = null; interacting(60); schedule(); }
+    };
+    lightAnim = requestAnimationFrame(stepL);
+  }
+  wrap.addEventListener('pointerleave', (ev) => { if (ev.pointerType === 'mouse' && !drag) resetLight(); });
 
   function setZoom(z, focusMm) {
     z = clamp(Math.round(z * 100) / 100, ZMIN, ZMAX);
@@ -475,12 +511,7 @@ export function createStage(ctx) {
       return;
     }
     if (!drag || ev.pointerId !== drag.id) {
-      if (CAPS.light && !drag && ev.pointerType === 'mouse') {
-        const r = canvas.getBoundingClientRect();
-        light = { x: clamp((ev.clientX - r.left) / r.width * 2 - 1, -1, 1), y: clamp((ev.clientY - r.top) / r.height * 2 - 1, -1, 1) };
-        interacting();
-        schedule();
-      }
+      if (!drag && ev.pointerType === 'mouse') followLight(ev);
       return;
     }
     interacting();
@@ -518,11 +549,14 @@ export function createStage(ctx) {
   el.addEventListener('pointerdown', () => { wheelArmed = true; });
   el.addEventListener('pointerleave', () => { wheelArmed = false; });
   wrap.addEventListener('wheel', (ev) => {
-    if (!state || !d || !(ev.ctrlKey || ev.metaKey || wheelArmed)) return;
+    // Plain wheel zooms once the customer works in the stage or when the studio fills the window (no page to scroll).
+    const r = el.getBoundingClientRect();
+    const fits = r.top >= -2 && r.bottom <= window.innerHeight + 2;
+    if (!state || !d || !(ev.ctrlKey || ev.metaKey || wheelArmed || fits)) return;
     ev.preventDefault();
     const p = toMm(ev);
     const L = d.layout;
-    setZoom(zoom * Math.exp(-ev.deltaY * (ev.ctrlKey ? 0.01 : 0.0018)), { x: p.x + L.patchWmm / 2, y: p.y + L.patchHmm / 2 });
+    setZoom(zoom * Math.exp(-clamp(ev.deltaY, -60, 60) * (ev.ctrlKey ? 0.006 : 0.0025)), { x: p.x + L.patchWmm / 2, y: p.y + L.patchHmm / 2 });
   }, { passive: false });
 
   canvas.addEventListener('keydown', (ev) => {
@@ -560,7 +594,8 @@ export function createStage(ctx) {
     el,
     canvas,
     update(s, derived) {
-      const techChanged = state && lastTech && s.technique !== lastTech;
+      // Crossfade when the technique or the view (close-up / garment) changes; render v2 needs one full render then.
+      const techChanged = state && lastTech && (s.technique !== lastTech || (s.mockup || 'none') !== (state.mockup || 'none'));
       state = s;
       d = derived;
       if (!s || !derived) return;

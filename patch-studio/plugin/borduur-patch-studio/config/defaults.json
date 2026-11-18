@@ -589,7 +589,8 @@
   "mockups": {
     "polo_chest": { "label": { "nl": "Op een polo (borst)", "fr": "Sur un polo (poitrine)" }, "garmentHex": "#1b2a4a", "patchCenterMm": [0, 0], "scaleRefMm": 520 },
     "cap_front": { "label": { "nl": "Op een pet", "fr": "Sur une casquette" }, "garmentHex": "#222222", "patchCenterMm": [0, 0], "scaleRefMm": 200 },
-    "jacket_back": { "label": { "nl": "Op een jas (rug)", "fr": "Sur une veste (dos)" }, "garmentHex": "#2d2d2d", "patchCenterMm": [0, 0], "scaleRefMm": 600 }
+    "jacket_back": { "label": { "nl": "Op een jas (rug)", "fr": "Sur une veste (dos)" }, "garmentHex": "#2d2d2d", "patchCenterMm": [0, 0], "scaleRefMm": 600 },
+    "backpack_front": { "label": { "nl": "Op een rugzak", "fr": "Sur un sac à dos" }, "garmentHex": "#2b2f36", "patchCenterMm": [0, 0], "scaleRefMm": 300 }
   },
 
   "analysis": {

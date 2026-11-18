@@ -1,0 +1,1319 @@
+{
+ "_doc": "Gegenereerd door tests/nametape/gen-vectors.mjs (JS = referentie). Node en PHP (run-php.php) moeten exact gelijk zijn.",
+ "fit": [
+  {
+   "name": "kort, blokletter",
+   "input": {
+    "fontId": "block",
+    "borderId": "satin_letter",
+    "uppercase": true,
+    "format": {
+     "id": "10x2.5",
+     "w": 100,
+     "h": 25,
+     "lines": 1
+    },
+    "lines": [
+     "PEETERS J."
+    ]
+   },
+   "expect": {
+    "status": "ok",
+    "codes": [],
+    "capMm": 12.2,
+    "widthsMm": [
+     92.9
+    ],
+    "badChars": [],
+    "fixes": []
+   }
+  },
+  {
+   "name": "kleine letters worden hoofdletters",
+   "input": {
+    "fontId": "block",
+    "borderId": "satin_letter",
+    "uppercase": true,
+    "format": {
+     "id": "10x2.5",
+     "w": 100,
+     "h": 25,
+     "lines": 1
+    },
+    "lines": [
+     "peeters j."
+    ]
+   },
+   "expect": {
+    "status": "ok",
+    "codes": [],
+    "capMm": 12.2,
+    "widthsMm": [
+     92.9
+    ],
+    "badChars": [],
+    "fixes": []
+   }
+  },
+  {
+   "name": "geen hoofdletters",
+   "input": {
+    "fontId": "block",
+    "borderId": "satin_letter",
+    "uppercase": false,
+    "format": {
+     "id": "10x2.5",
+     "w": 100,
+     "h": 25,
+     "lines": 1
+    },
+    "lines": [
+     "Peeters J."
+    ]
+   },
+   "expect": {
+    "status": "ok",
+    "codes": [],
+    "capMm": 13,
+    "widthsMm": [
+     89.9
+    ],
+    "badChars": [],
+    "fixes": []
+   }
+  },
+  {
+   "name": "accenten (é, ë, ç)",
+   "input": {
+    "fontId": "block",
+    "borderId": "satin_letter",
+    "uppercase": true,
+    "format": {
+     "id": "10x2.5",
+     "w": 100,
+     "h": 25,
+     "lines": 1
+    },
+    "lines": [
+     "HÉLÈNE DE BRÛCKER-ÇA"
+    ]
+   },
+   "expect": {
+    "status": "warn",
+    "codes": [
+     "small_text"
+    ],
+    "capMm": 5.3,
+    "widthsMm": [
+     93.6
+    ],
+    "badChars": [],
+    "fixes": [
+     "use_font:condensed",
+     "use_format:12x3",
+     "edit"
+    ]
+   }
+  },
+  {
+   "name": "lange naam: te lang",
+   "input": {
+    "fontId": "block",
+    "borderId": "satin_letter",
+    "uppercase": true,
+    "format": {
+     "id": "10x2.5",
+     "w": 100,
+     "h": 25,
+     "lines": 1
+    },
+    "lines": [
+     "VANDENBROUCKE-DESMEDT ALEX."
+    ]
+   },
+   "expect": {
+    "status": "error",
+    "codes": [
+     "too_long"
+    ],
+    "capMm": 3.7,
+    "widthsMm": [
+     93.3
+    ],
+    "badChars": [],
+    "fixes": [
+     "use_font:condensed",
+     "use_format:12x3",
+     "edit"
+    ]
+   }
+  },
+  {
+   "name": "te lang, precies 30 tekens",
+   "input": {
+    "fontId": "block",
+    "borderId": "satin_letter",
+    "uppercase": true,
+    "format": {
+     "id": "10x2.5",
+     "w": 100,
+     "h": 25,
+     "lines": 1
+    },
+    "lines": [
+     "DE VLEESCHAUWER-VERSTRAETEN J."
+    ]
+   },
+   "expect": {
+    "status": "error",
+    "codes": [
+     "too_long"
+    ],
+    "capMm": 3.5,
+    "widthsMm": [
+     92.8
+    ],
+    "badChars": [],
+    "fixes": [
+     "use_font:condensed",
+     "use_format:12x3",
+     "edit"
+    ]
+   }
+  },
+  {
+   "name": "middellange naam: kleine letters (warn)",
+   "input": {
+    "fontId": "block",
+    "borderId": "satin_letter",
+    "uppercase": true,
+    "format": {
+     "id": "10x2.5",
+     "w": 100,
+     "h": 25,
+     "lines": 1
+    },
+    "lines": [
+     "VERSTRAETEN-JANSSENS K."
+    ]
+   },
+   "expect": {
+    "status": "warn",
+    "codes": [
+     "small_text"
+    ],
+    "capMm": 4.5,
+    "widthsMm": [
+     92.3
+    ],
+    "badChars": [],
+    "fixes": [
+     "use_font:condensed",
+     "edit"
+    ]
+   }
+  },
+  {
+   "name": "grens precies 6,0 mm (ok)",
+   "input": {
+    "fontId": "block",
+    "borderId": "satin_letter",
+    "uppercase": true,
+    "format": {
+     "id": "10x2.5",
+     "w": 100,
+     "h": 25,
+     "lines": 1
+    },
+    "lines": [
+     "VERMEULEN VERM BE."
+    ]
+   },
+   "expect": {
+    "status": "ok",
+    "codes": [],
+    "capMm": 6,
+    "widthsMm": [
+     93.5
+    ],
+    "badChars": [],
+    "fixes": []
+   }
+  },
+  {
+   "name": "grens 5,9 mm (warn)",
+   "input": {
+    "fontId": "block",
+    "borderId": "satin_letter",
+    "uppercase": true,
+    "format": {
+     "id": "10x2.5",
+     "w": 100,
+     "h": 25,
+     "lines": 1
+    },
+    "lines": [
+     "VERMEULEN VERM AB."
+    ]
+   },
+   "expect": {
+    "status": "warn",
+    "codes": [
+     "small_text"
+    ],
+    "capMm": 5.9,
+    "widthsMm": [
+     93.5
+    ],
+    "badChars": [],
+    "fixes": [
+     "use_font:condensed",
+     "use_format:12x3",
+     "edit"
+    ]
+   }
+  },
+  {
+   "name": "grens precies 4,0 mm (warn)",
+   "input": {
+    "fontId": "block",
+    "borderId": "satin_letter",
+    "uppercase": true,
+    "format": {
+     "id": "10x2.5",
+     "w": 100,
+     "h": 25,
+     "lines": 1
+    },
+    "lines": [
+     "VANDENBROUCKE VANDEN AM."
+    ]
+   },
+   "expect": {
+    "status": "warn",
+    "codes": [
+     "small_text"
+    ],
+    "capMm": 4,
+    "widthsMm": [
+     92.3
+    ],
+    "badChars": [],
+    "fixes": [
+     "use_font:condensed",
+     "edit"
+    ]
+   }
+  },
+  {
+   "name": "grens 3,9 mm (error)",
+   "input": {
+    "fontId": "block",
+    "borderId": "satin_letter",
+    "uppercase": true,
+    "format": {
+     "id": "10x2.5",
+     "w": 100,
+     "h": 25,
+     "lines": 1
+    },
+    "lines": [
+     "VANDENBROUCKE VANDEN WW."
+    ]
+   },
+   "expect": {
+    "status": "error",
+    "codes": [
+     "too_long"
+    ],
+    "capMm": 3.9,
+    "widthsMm": [
+     92.1
+    ],
+    "badChars": [],
+    "fixes": [
+     "use_font:condensed",
+     "use_format:12x3",
+     "edit"
+    ]
+   }
+  },
+  {
+   "name": "smalle letter",
+   "input": {
+    "fontId": "condensed",
+    "borderId": "satin_letter",
+    "uppercase": true,
+    "format": {
+     "id": "10x2.5",
+     "w": 100,
+     "h": 25,
+     "lines": 1
+    },
+    "lines": [
+     "VANDENBROUCKE-DESMEDT A."
+    ]
+   },
+   "expect": {
+    "status": "ok",
+    "codes": [],
+    "capMm": 6.3,
+    "widthsMm": [
+     93.3
+    ],
+    "badChars": [],
+    "fixes": []
+   }
+  },
+  {
+   "name": "schrijfletter (geen hoofdletters, strenger)",
+   "input": {
+    "fontId": "script",
+    "borderId": "satin_letter",
+    "uppercase": true,
+    "format": {
+     "id": "10x2.5",
+     "w": 100,
+     "h": 25,
+     "lines": 1
+    },
+    "lines": [
+     "Peeters Jan"
+    ]
+   },
+   "expect": {
+    "status": "ok",
+    "codes": [],
+    "capMm": 13,
+    "widthsMm": [
+     77.2
+    ],
+    "badChars": [],
+    "fixes": []
+   }
+  },
+  {
+   "name": "schrijfletter lang: strengere grens (warn)",
+   "input": {
+    "fontId": "script",
+    "borderId": "satin_letter",
+    "uppercase": true,
+    "format": {
+     "id": "10x2.5",
+     "w": 100,
+     "h": 25,
+     "lines": 1
+    },
+    "lines": [
+     "Alexandra Vandenbroucke-Smet"
+    ]
+   },
+   "expect": {
+    "status": "warn",
+    "codes": [
+     "small_text"
+    ],
+    "capMm": 6,
+    "widthsMm": [
+     92.7
+    ],
+    "badChars": [],
+    "fixes": [
+     "use_format:12x3",
+     "edit"
+    ]
+   }
+  },
+  {
+   "name": "college",
+   "input": {
+    "fontId": "college",
+    "borderId": "satin_letter",
+    "uppercase": true,
+    "format": {
+     "id": "10x2.5",
+     "w": 100,
+     "h": 25,
+     "lines": 1
+    },
+    "lines": [
+     "MAES L."
+    ]
+   },
+   "expect": {
+    "status": "ok",
+    "codes": [],
+    "capMm": 13,
+    "widthsMm": [
+     68.4
+    ],
+    "badChars": [],
+    "fixes": []
+   }
+  },
+  {
+   "name": "klassiek (serif)",
+   "input": {
+    "fontId": "serif",
+    "borderId": "satin_letter",
+    "uppercase": true,
+    "format": {
+     "id": "10x2.5",
+     "w": 100,
+     "h": 25,
+     "lines": 1
+    },
+    "lines": [
+     "DUBOIS M."
+    ]
+   },
+   "expect": {
+    "status": "ok",
+    "codes": [],
+    "capMm": 12.7,
+    "widthsMm": [
+     93.4
+    ],
+    "badChars": [],
+    "fixes": []
+   }
+  },
+  {
+   "name": "zonder rand",
+   "input": {
+    "fontId": "block",
+    "borderId": "none",
+    "uppercase": true,
+    "format": {
+     "id": "10x2.5",
+     "w": 100,
+     "h": 25,
+     "lines": 1
+    },
+    "lines": [
+     "VERSTRAETEN-JANSSENS K."
+    ]
+   },
+   "expect": {
+    "status": "warn",
+    "codes": [
+     "small_text"
+    ],
+    "capMm": 4.7,
+    "widthsMm": [
+     96.4
+    ],
+    "badChars": [],
+    "fixes": [
+     "use_font:condensed",
+     "edit"
+    ]
+   }
+  },
+  {
+   "name": "twee regels op 12 × 3",
+   "input": {
+    "fontId": "block",
+    "borderId": "satin_letter",
+    "uppercase": true,
+    "format": {
+     "id": "12x3",
+     "w": 120,
+     "h": 30,
+     "lines": 2
+    },
+    "lines": [
+     "PEETERS J.",
+     "VERPLEEGKUNDIGE"
+    ]
+   },
+   "expect": {
+    "status": "ok",
+    "codes": [],
+    "capMm": 8.1,
+    "widthsMm": [
+     61.7,
+     113.1
+    ],
+    "badChars": [],
+    "fixes": []
+   }
+  },
+  {
+   "name": "regel 2 op 1-regelformaat",
+   "input": {
+    "fontId": "block",
+    "borderId": "satin_letter",
+    "uppercase": true,
+    "format": {
+     "id": "10x2.5",
+     "w": 100,
+     "h": 25,
+     "lines": 1
+    },
+    "lines": [
+     "PEETERS J.",
+     "BRANDWEER"
+    ]
+   },
+   "expect": {
+    "status": "error",
+    "codes": [
+     "line2_no_room"
+    ],
+    "capMm": 0,
+    "widthsMm": [],
+    "badChars": [],
+    "fixes": [
+     "use_format:12x3",
+     "drop_line2",
+     "edit"
+    ]
+   }
+  },
+  {
+   "name": "drie regels op 8 × 5",
+   "input": {
+    "fontId": "block",
+    "borderId": "satin_letter",
+    "uppercase": true,
+    "format": {
+     "id": "8x5",
+     "w": 80,
+     "h": 50,
+     "lines": 3
+    },
+    "lines": [
+     "PEETERS J.",
+     "SERGEANT",
+     "O POS"
+    ]
+   },
+   "expect": {
+    "status": "ok",
+    "codes": [],
+    "capMm": 9.4,
+    "widthsMm": [
+     71.5,
+     72.9,
+     41.9
+    ],
+    "badChars": [],
+    "fixes": []
+   }
+  },
+  {
+   "name": "vier regels op 8 × 5",
+   "input": {
+    "fontId": "block",
+    "borderId": "satin_letter",
+    "uppercase": true,
+    "format": {
+     "id": "8x5",
+     "w": 80,
+     "h": 50,
+     "lines": 3
+    },
+    "lines": [
+     "A",
+     "B",
+     "C",
+     "D"
+    ]
+   },
+   "expect": {
+    "status": "error",
+    "codes": [
+     "too_many_lines"
+    ],
+    "capMm": 0,
+    "widthsMm": [],
+    "badChars": [],
+    "fixes": [
+     "drop_line2",
+     "edit"
+    ]
+   }
+  },
+  {
+   "name": "5 × 2,5 bloedgroep",
+   "input": {
+    "fontId": "block",
+    "borderId": "satin_letter",
+    "uppercase": true,
+    "format": {
+     "id": "5x2.5",
+     "w": 50,
+     "h": 25,
+     "lines": 1
+    },
+    "lines": [
+     "O POS"
+    ]
+   },
+   "expect": {
+    "status": "ok",
+    "codes": [],
+    "capMm": 9.7,
+    "widthsMm": [
+     43.2
+    ],
+    "badChars": [],
+    "fixes": []
+   }
+  },
+  {
+   "name": "5 × 2,5 bloedgroep kort",
+   "input": {
+    "fontId": "block",
+    "borderId": "satin_letter",
+    "uppercase": true,
+    "format": {
+     "id": "5x2.5",
+     "w": 50,
+     "h": 25,
+     "lines": 1
+    },
+    "lines": [
+     "AB-"
+    ]
+   },
+   "expect": {
+    "status": "ok",
+    "codes": [],
+    "capMm": 13,
+    "widthsMm": [
+     35.1
+    ],
+    "badChars": [],
+    "fixes": []
+   }
+  },
+  {
+   "name": "verboden tekens",
+   "input": {
+    "fontId": "block",
+    "borderId": "satin_letter",
+    "uppercase": true,
+    "format": {
+     "id": "10x2.5",
+     "w": 100,
+     "h": 25,
+     "lines": 1
+    },
+    "lines": [
+     "PEETERS ☺ J.!"
+    ]
+   },
+   "expect": {
+    "status": "error",
+    "codes": [
+     "bad_chars"
+    ],
+    "capMm": 8.8,
+    "widthsMm": [
+     92.8
+    ],
+    "badChars": [
+     "☺",
+     "!"
+    ],
+    "fixes": [
+     "edit"
+    ]
+   }
+  },
+  {
+   "name": "te veel tekens",
+   "input": {
+    "fontId": "block",
+    "borderId": "satin_letter",
+    "uppercase": true,
+    "format": {
+     "id": "10x2.5",
+     "w": 100,
+     "h": 25,
+     "lines": 1
+    },
+    "lines": [
+     "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEF"
+    ]
+   },
+   "expect": {
+    "status": "error",
+    "codes": [
+     "too_many_chars",
+     "too_long"
+    ],
+    "capMm": 2.9,
+    "widthsMm": [
+     91.6
+    ],
+    "badChars": [],
+    "fixes": [
+     "edit"
+    ]
+   }
+  },
+  {
+   "name": "lege naam",
+   "input": {
+    "fontId": "block",
+    "borderId": "satin_letter",
+    "uppercase": true,
+    "format": {
+     "id": "10x2.5",
+     "w": 100,
+     "h": 25,
+     "lines": 1
+    },
+    "lines": [
+     ""
+    ]
+   },
+   "expect": {
+    "status": "error",
+    "codes": [
+     "empty"
+    ],
+    "capMm": 0,
+    "widthsMm": [],
+    "badChars": [],
+    "fixes": [
+     "edit"
+    ]
+   }
+  },
+  {
+   "name": "spaties en tabs worden opgeschoond",
+   "input": {
+    "fontId": "block",
+    "borderId": "satin_letter",
+    "uppercase": true,
+    "format": {
+     "id": "10x2.5",
+     "w": 100,
+     "h": 25,
+     "lines": 1
+    },
+    "lines": [
+     "  PEETERS \t  J.  "
+    ]
+   },
+   "expect": {
+    "status": "ok",
+    "codes": [],
+    "capMm": 12.2,
+    "widthsMm": [
+     92.9
+    ],
+    "badChars": [],
+    "fixes": []
+   }
+  },
+  {
+   "name": "typografische apostrof",
+   "input": {
+    "fontId": "block",
+    "borderId": "satin_letter",
+    "uppercase": true,
+    "format": {
+     "id": "10x2.5",
+     "w": 100,
+     "h": 25,
+     "lines": 1
+    },
+    "lines": [
+     "D’HONDT P."
+    ]
+   },
+   "expect": {
+    "status": "ok",
+    "codes": [],
+    "capMm": 11.1,
+    "widthsMm": [
+     92.8
+    ],
+    "badChars": [],
+    "fixes": []
+   }
+  },
+  {
+   "name": "eigen maat 140 × 30",
+   "input": {
+    "fontId": "block",
+    "borderId": "satin_letter",
+    "uppercase": true,
+    "format": {
+     "id": "custom",
+     "w": 140,
+     "h": 30,
+     "lines": 2
+    },
+    "lines": [
+     "VANDENBROUCKE-DESMEDT A."
+    ]
+   },
+   "expect": {
+    "status": "warn",
+    "codes": [
+     "small_text"
+    ],
+    "capMm": 5.9,
+    "widthsMm": [
+     133.7
+    ],
+    "badChars": [],
+    "fixes": [
+     "use_font:condensed",
+     "split_lines",
+     "edit"
+    ]
+   }
+  },
+  {
+   "name": "split op 2 regels mogelijk (12 × 3)",
+   "input": {
+    "fontId": "block",
+    "borderId": "satin_letter",
+    "uppercase": true,
+    "format": {
+     "id": "12x3",
+     "w": 120,
+     "h": 30,
+     "lines": 2
+    },
+    "lines": [
+     "VANDENBROUCKE DESMEDT-WOUTERS"
+    ]
+   },
+   "expect": {
+    "status": "warn",
+    "codes": [
+     "small_text"
+    ],
+    "capMm": 4,
+    "widthsMm": [
+     113.8
+    ],
+    "badChars": [],
+    "fixes": [
+     "use_font:condensed",
+     "split_lines",
+     "edit"
+    ]
+   }
+  },
+  {
+   "name": "ß wordt SS",
+   "input": {
+    "fontId": "block",
+    "borderId": "satin_letter",
+    "uppercase": true,
+    "format": {
+     "id": "10x2.5",
+     "w": 100,
+     "h": 25,
+     "lines": 1
+    },
+    "lines": [
+     "STRAßER K."
+    ]
+   },
+   "expect": {
+    "status": "ok",
+    "codes": [],
+    "capMm": 10.2,
+    "widthsMm": [
+     92.9
+    ],
+    "badChars": [],
+    "fixes": []
+   }
+  },
+  {
+   "name": "cijfers en tekens",
+   "input": {
+    "fontId": "block",
+    "borderId": "satin_letter",
+    "uppercase": true,
+    "format": {
+     "id": "10x2.5",
+     "w": 100,
+     "h": 25,
+     "lines": 1
+    },
+    "lines": [
+     "TEAM #12 (A&B) 3/4"
+    ]
+   },
+   "expect": {
+    "status": "ok",
+    "codes": [],
+    "capMm": 6.8,
+    "widthsMm": [
+     93.3
+    ],
+    "badChars": [],
+    "fixes": []
+   }
+  }
+ ],
+ "rows": [
+  {
+   "name": "bloedgroep op eigen strook",
+   "batch": {
+    "v": 1,
+    "locale": "nl-BE",
+    "format": "10x2.5",
+    "custom": null,
+    "fabric": "black",
+    "letter": "white",
+    "border": "satin_letter",
+    "borderColor": null,
+    "font": "block",
+    "uppercase": true,
+    "backing": "hook",
+    "loop": false,
+    "bloodMode": "separate",
+    "rows": [
+     {
+      "name": "PEETERS J.",
+      "line2": "",
+      "blood": {
+       "group": "O",
+       "rh": "+"
+      },
+      "qty": 2
+     }
+    ]
+   },
+   "cfg": null,
+   "expect": [
+    {
+     "fit": {
+      "status": "ok",
+      "codes": [],
+      "capMm": 12.2,
+      "widthsMm": [
+       92.9
+      ],
+      "badChars": [],
+      "fixes": []
+     },
+     "bloodFit": {
+      "status": "ok",
+      "codes": [],
+      "capMm": 9.7,
+      "widthsMm": [
+       43.2
+      ],
+      "badChars": [],
+      "fixes": []
+     },
+     "review": []
+    }
+   ]
+  },
+  {
+   "name": "bloedgroep op regel 2 (12 × 3)",
+   "batch": {
+    "v": 1,
+    "locale": "nl-BE",
+    "format": "12x3",
+    "custom": null,
+    "fabric": "black",
+    "letter": "white",
+    "border": "satin_letter",
+    "borderColor": null,
+    "font": "block",
+    "uppercase": true,
+    "backing": "hook",
+    "loop": false,
+    "bloodMode": "line2",
+    "rows": [
+     {
+      "name": "PEETERS J.",
+      "line2": "",
+      "blood": {
+       "group": "AB",
+       "rh": "-"
+      },
+      "qty": 1
+     }
+    ]
+   },
+   "cfg": null,
+   "expect": [
+    {
+     "fit": {
+      "status": "ok",
+      "codes": [],
+      "capMm": 9.8,
+      "widthsMm": [
+       74.6,
+       53.2
+      ],
+      "badChars": [],
+      "fixes": []
+     },
+     "bloodFit": null,
+     "review": []
+    }
+   ]
+  },
+  {
+   "name": "bloedgroep achter de naam",
+   "batch": {
+    "v": 1,
+    "locale": "nl-BE",
+    "format": "10x2.5",
+    "custom": null,
+    "fabric": "black",
+    "letter": "white",
+    "border": "satin_letter",
+    "borderColor": null,
+    "font": "block",
+    "uppercase": true,
+    "backing": "hook",
+    "loop": false,
+    "bloodMode": "inline",
+    "rows": [
+     {
+      "name": "PEETERS J.",
+      "line2": "",
+      "blood": {
+       "group": "A",
+       "rh": "+"
+      },
+      "qty": 1
+     }
+    ]
+   },
+   "cfg": null,
+   "expect": [
+    {
+     "fit": {
+      "status": "ok",
+      "codes": [],
+      "capMm": 7.6,
+      "widthsMm": [
+       93
+      ],
+      "badChars": [],
+      "fixes": []
+     },
+     "bloodFit": null,
+     "review": []
+    }
+   ]
+  },
+  {
+   "name": "controlewoord POLITIE",
+   "batch": {
+    "v": 1,
+    "locale": "nl-BE",
+    "format": "10x2.5",
+    "custom": null,
+    "fabric": "black",
+    "letter": "white",
+    "border": "satin_letter",
+    "borderColor": null,
+    "font": "block",
+    "uppercase": true,
+    "backing": "hook",
+    "loop": false,
+    "bloodMode": null,
+    "rows": [
+     {
+      "name": "JANSSENS K.",
+      "line2": "Lokale Politie",
+      "blood": null,
+      "qty": 1
+     }
+    ]
+   },
+   "cfg": null,
+   "expect": [
+    {
+     "fit": {
+      "status": "error",
+      "codes": [
+       "line2_no_room"
+      ],
+      "capMm": 0,
+      "widthsMm": [],
+      "badChars": [],
+      "fixes": [
+       "use_format:12x3",
+       "drop_line2",
+       "edit"
+      ]
+     },
+     "bloodFit": null,
+     "review": [
+      "POLITIE",
+      "LOKALE POLITIE"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "controlewoord met accent (Maréchaussée)",
+   "batch": {
+    "v": 1,
+    "locale": "nl-BE",
+    "format": "12x3",
+    "custom": null,
+    "fabric": "black",
+    "letter": "white",
+    "border": "satin_letter",
+    "borderColor": null,
+    "font": "block",
+    "uppercase": true,
+    "backing": "hook",
+    "loop": false,
+    "bloodMode": null,
+    "rows": [
+     {
+      "name": "DE VRIES T.",
+      "line2": "Koninklijke Maréchaussée",
+      "blood": null,
+      "qty": 1
+     }
+    ]
+   },
+   "cfg": null,
+   "expect": [
+    {
+     "fit": {
+      "status": "warn",
+      "codes": [
+       "small_text"
+      ],
+      "capMm": 5.1,
+      "widthsMm": [
+       39.9,
+       113.2
+      ],
+      "badChars": [],
+      "fixes": [
+       "use_font:condensed",
+       "edit"
+      ]
+     },
+     "bloodFit": null,
+     "review": [
+      "MARECHAUSSEE",
+      "KONINKLIJKE MARECHAUSSEE"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "geen controlewoord in POLITIEKE",
+   "batch": {
+    "v": 1,
+    "locale": "nl-BE",
+    "format": "12x3",
+    "custom": null,
+    "fabric": "black",
+    "letter": "white",
+    "border": "satin_letter",
+    "borderColor": null,
+    "font": "block",
+    "uppercase": true,
+    "backing": "hook",
+    "loop": false,
+    "bloodMode": null,
+    "rows": [
+     {
+      "name": "MAES L.",
+      "line2": "POLITIEKE PARTIJ",
+      "blood": null,
+      "qty": 1
+     }
+    ]
+   },
+   "cfg": null,
+   "expect": [
+    {
+     "fit": {
+      "status": "ok",
+      "codes": [],
+      "capMm": 8.9,
+      "widthsMm": [
+       49.1,
+       112.6
+      ],
+      "badChars": [],
+      "fixes": []
+     },
+     "bloodFit": null,
+     "review": []
+    }
+   ]
+  },
+  {
+   "name": "notatie O+",
+   "batch": {
+    "v": 1,
+    "locale": "nl-BE",
+    "format": "10x2.5",
+    "custom": null,
+    "fabric": "black",
+    "letter": "white",
+    "border": "satin_letter",
+    "borderColor": null,
+    "font": "block",
+    "uppercase": true,
+    "backing": "hook",
+    "loop": false,
+    "bloodMode": "separate",
+    "rows": [
+     {
+      "name": "PEETERS J.",
+      "line2": "",
+      "blood": {
+       "group": "O",
+       "rh": "-"
+      },
+      "qty": 1
+     }
+    ]
+   },
+   "cfg": {
+    "blood": {
+     "notation": "O+",
+     "separateFormat": "5x2.5",
+     "defaultMode": "auto"
+    }
+   },
+   "expect": [
+    {
+     "fit": {
+      "status": "ok",
+      "codes": [],
+      "capMm": 12.2,
+      "widthsMm": [
+       92.9
+      ],
+      "badChars": [],
+      "fixes": []
+     },
+     "bloodFit": {
+      "status": "ok",
+      "codes": [],
+      "capMm": 13,
+      "widthsMm": [
+       24.3
+      ],
+      "badChars": [],
+      "fixes": []
+     },
+     "review": []
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<g stroke="{{c1}}" stroke-width="{{sw}}" stroke-linejoin="round" stroke-linecap="round">
+<path d="M512 450 C600 450 680 540 680 610 C680 670 620 690 570 670 C540 660 484 660 454 670 C404 690 344 670 344 610 C344 540 424 450 512 450 Z" fill="{{c2}}"/>
+<ellipse cx="390" cy="380" rx="52" ry="70" fill="{{c2}}" transform="rotate(-20 390 380)"/>
+<ellipse cx="634" cy="380" rx="52" ry="70" fill="{{c2}}" transform="rotate(20 634 380)"/>
+<ellipse cx="470" cy="290" rx="52" ry="72" fill="{{c3}}"/>
+<ellipse cx="554" cy="290" rx="52" ry="72" fill="{{c3}}"/>
+</g>
+</svg>

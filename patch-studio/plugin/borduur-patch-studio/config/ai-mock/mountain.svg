@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<g stroke="{{c1}}" stroke-width="{{sw}}" stroke-linejoin="round" stroke-linecap="round">
+<circle cx="660" cy="320" r="78" fill="{{c3}}"/>
+<path d="M196 680 L404 330 L520 520 L600 420 L828 680 Z" fill="{{c2}}"/>
+<path d="M404 330 L346 428 L384 410 L414 438 L446 400 L470 438 Z" fill="{{c4}}"/>
+<path d="M600 420 L560 470 L594 462 L620 480 L648 474 Z" fill="{{c4}}"/>
+<path d="M196 680 L828 680" fill="none"/>
+</g>
+</svg>

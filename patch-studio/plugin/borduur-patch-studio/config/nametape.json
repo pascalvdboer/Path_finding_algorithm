@@ -1,0 +1,94 @@
+{
+  "schema": 1,
+  "_doc": "Naamstroken-modus (docs/extra/SPEC-EXTRA.md §1.4). Bedragen in EUR EXCL. btw. Sleutels bevroren na v1; waarden aanpasbaar via WooCommerce › Patch Studio · Naamstroken (optie bps_nametape_settings, enkel verschillen).",
+  "enabled": true,
+  "formats": [
+    { "id": "10x2.5", "w": 100, "h": 25, "lines": 1, "priceExcl": 4.50, "default": true,
+      "label": { "nl": "10 × 2,5 cm", "fr": "10 × 2,5 cm" }, "hint": { "nl": "Standaard naamstrook", "fr": "Bande nominative standard" } },
+    { "id": "12x3", "w": 120, "h": 30, "lines": 2, "priceExcl": 5.00,
+      "label": { "nl": "12 × 3 cm", "fr": "12 × 3 cm" }, "hint": { "nl": "Naam + functie of rang", "fr": "Nom + fonction ou grade" } },
+    { "id": "8x5", "w": 80, "h": 50, "lines": 3, "priceExcl": 5.80,
+      "label": { "nl": "8 × 5 cm", "fr": "8 × 5 cm" }, "hint": { "nl": "ID-patch, tot 3 regels", "fr": "Écusson ID, jusqu'à 3 lignes" } },
+    { "id": "5x2.5", "w": 50, "h": 25, "lines": 1, "priceExcl": 3.00, "bloodFormat": true,
+      "label": { "nl": "5 × 2,5 cm", "fr": "5 × 2,5 cm" }, "hint": { "nl": "Bloedgroep of korte code", "fr": "Groupe sanguin ou code court" } }
+  ],
+  "customSize": {
+    "enabled": true, "minW": 50, "maxW": 150, "heights": [25, 30, 50],
+    "linesByHeight": { "25": 1, "30": 2, "50": 3 },
+    "price": [
+      { "maxW": 50, "maxH": 25, "priceExcl": 3.00 },
+      { "maxW": 100, "maxH": 25, "priceExcl": 4.50 },
+      { "maxW": 120, "maxH": 30, "priceExcl": 5.00 },
+      { "maxW": 150, "maxH": 30, "priceExcl": 5.50 },
+      { "maxW": 150, "maxH": 50, "priceExcl": 6.50 }
+    ]
+  },
+  "fabrics": [
+    { "id": "black", "hex": "#1c1c1c", "label": { "nl": "Zwart", "fr": "Noir" }, "inStock": true, "surchargeExcl": 0 },
+    { "id": "navy", "hex": "#1b2a4a", "label": { "nl": "Navy", "fr": "Marine" }, "inStock": true, "surchargeExcl": 0 },
+    { "id": "olive", "hex": "#4b5320", "label": { "nl": "Olijfgroen", "fr": "Vert olive" }, "inStock": true, "surchargeExcl": 0 },
+    { "id": "coyote", "hex": "#8d7350", "label": { "nl": "Coyote (zandbruin)", "fr": "Coyote (brun sable)" }, "inStock": true, "surchargeExcl": 0 },
+    { "id": "grey", "hex": "#6e6f71", "label": { "nl": "Grijs", "fr": "Gris" }, "inStock": true, "surchargeExcl": 0 },
+    { "id": "white", "hex": "#f4f4f2", "label": { "nl": "Wit", "fr": "Blanc" }, "inStock": true, "surchargeExcl": 0 },
+    { "id": "red", "hex": "#b3202a", "label": { "nl": "Rood", "fr": "Rouge" }, "inStock": true, "surchargeExcl": 0 },
+    { "id": "camo", "hex": "#5d5a3c", "pattern": "camo-woodland", "label": { "nl": "Camo (meerkleurig)", "fr": "Camo (multicolore)" }, "inStock": false, "surchargeExcl": 0.50 },
+    { "id": "fluo-yellow", "hex": "#d7f20f", "label": { "nl": "Fluo geel", "fr": "Jaune fluo" }, "inStock": true, "surchargeExcl": 0.25,
+      "note": { "nl": "Fluo-stof, geen gecertificeerde signalisatie.", "fr": "Tissu fluo, pas de signalisation certifiée." } },
+    { "id": "fluo-orange", "hex": "#ff6a13", "label": { "nl": "Fluo oranje", "fr": "Orange fluo" }, "inStock": true, "surchargeExcl": 0.25,
+      "note": { "nl": "Fluo-stof, geen gecertificeerde signalisatie.", "fr": "Tissu fluo, pas de signalisation certifiée." } },
+    { "id": "reflective", "hex": "#c9cbcc", "pattern": "reflective", "label": { "nl": "Reflecterend", "fr": "Réfléchissant" }, "surchargeExcl": 1.50, "inStock": false,
+      "note": { "nl": "Reflecteert koplampen. Geen nachtzicht/IR en geen gecertificeerde signalisatie.", "fr": "Réfléchit la lumière des phares. Pas d'IR/vision nocturne, pas de signalisation certifiée." } }
+  ],
+  "letterColors": [
+    { "id": "white", "hex": "#ffffff", "threadCode": "", "label": { "nl": "Wit", "fr": "Blanc" } },
+    { "id": "black", "hex": "#111111", "threadCode": "", "label": { "nl": "Zwart", "fr": "Noir" } },
+    { "id": "gold", "hex": "#d4a017", "threadCode": "", "label": { "nl": "Goudgeel", "fr": "Jaune or" } },
+    { "id": "red", "hex": "#c1121f", "threadCode": "", "label": { "nl": "Rood", "fr": "Rouge" } },
+    { "id": "silver", "hex": "#a7a9ac", "threadCode": "", "label": { "nl": "Zilvergrijs", "fr": "Gris argent" } },
+    { "id": "tan", "hex": "#c2a878", "threadCode": "", "label": { "nl": "Tan (zandkleur)", "fr": "Tan (sable)" } },
+    { "id": "olive", "hex": "#5b6236", "threadCode": "", "label": { "nl": "Olijfgroen", "fr": "Vert olive" } },
+    { "id": "navy", "hex": "#1b2a4a", "threadCode": "", "label": { "nl": "Navy", "fr": "Marine" } },
+    { "id": "fluo-yellow", "hex": "#d7f20f", "threadCode": "", "label": { "nl": "Fluo geel", "fr": "Jaune fluo" } }
+  ],
+  "presets": [
+    { "id": "classic", "fabric": "black", "letter": "white", "border": "satin_letter", "label": { "nl": "Klassiek zwart/wit", "fr": "Classique noir/blanc" } },
+    { "id": "rescue", "fabric": "navy", "letter": "white", "border": "satin_letter", "label": { "nl": "Navy/wit (hulpdienst)", "fr": "Marine/blanc (secours)" } },
+    { "id": "subdued_olive", "fabric": "olive", "letter": "tan", "border": "satin_letter", "subdued": true, "label": { "nl": "Olijf/tan (tactisch, ingetogen)", "fr": "Olive/tan (tactique, discret)" } },
+    { "id": "coyote", "fabric": "coyote", "letter": "black", "border": "satin_letter", "subdued": true, "label": { "nl": "Coyote/zwart", "fr": "Coyote/noir" } },
+    { "id": "crew", "fabric": "fluo-yellow", "letter": "black", "border": "satin_letter", "label": { "nl": "Fluo geel/zwart (crew)", "fr": "Jaune fluo/noir (crew)" } },
+    { "id": "care", "fabric": "white", "letter": "navy", "border": "satin_letter", "label": { "nl": "Wit/navy (zorg)", "fr": "Blanc/marine (soins)" } }
+  ],
+  "fonts": [
+    { "id": "block", "family": "Sora", "file": "sora-700.woff2", "weight": 700, "label": { "nl": "Blokletter", "fr": "Capitales bâton" }, "default": true, "enabled": true },
+    { "id": "condensed", "family": "Oswald", "file": "oswald-600.woff2", "weight": 600, "label": { "nl": "Smal (lange namen)", "fr": "Étroite (noms longs)" }, "enabled": true },
+    { "id": "college", "family": "Graduate", "file": "graduate-400.woff2", "weight": 400, "label": { "nl": "College", "fr": "College" }, "enabled": true },
+    { "id": "serif", "family": "Roboto Slab", "file": "roboto-slab-700.woff2", "weight": 700, "label": { "nl": "Klassiek", "fr": "Classique" }, "enabled": true },
+    { "id": "script", "family": "Pacifico", "file": "pacifico-400.woff2", "weight": 400, "label": { "nl": "Schrijfletter", "fr": "Manuscrite" }, "script": true, "forceMixedCase": true, "enabled": true }
+  ],
+  "borders": [
+    { "id": "satin_letter", "borderMm": 2.0, "label": { "nl": "Geborduurde rand (letterkleur)", "fr": "Bord brodé (couleur du texte)" }, "default": true, "enabled": true },
+    { "id": "satin_color", "borderMm": 2.0, "label": { "nl": "Geborduurde rand (andere kleur)", "fr": "Bord brodé (autre couleur)" }, "enabled": true },
+    { "id": "none", "borderMm": 0, "label": { "nl": "Zonder rand (strak gesneden)", "fr": "Sans bord (découpe nette)" }, "enabled": true }
+  ],
+  "backings": [
+    { "id": "hook", "deltaExcl": 0, "default": true, "label": { "nl": "Klittenband (haakzijde)", "fr": "Scratch (côté crochets)" } },
+    { "id": "sew", "deltaExcl": -0.75, "label": { "nl": "Opnaaien", "fr": "À coudre" } },
+    { "id": "iron", "deltaExcl": -0.25, "label": { "nl": "Opstrijken", "fr": "Thermocollant" } }
+  ],
+  "loopCounterpart": { "enabled": true, "priceExcl": 1.00, "onlyWith": ["hook"] },
+  "fit": { "padMm": 1.5, "lineGapRatio": 0.35, "maxCapMm": 13, "minCapMm": 6, "absMinCapMm": 4,
+           "scriptMinCapMm": 7, "scriptAbsMinCapMm": 5, "maxCharsPerLine": 30 },
+  "text": { "uppercaseDefault": true, "allowedPattern": "^[\\p{L}\\p{M}\\p{N} .,'’\\-/&+#()]+$" },
+  "blood": { "notation": "O POS", "separateFormat": "5x2.5", "defaultMode": "auto" },
+  "tiers": { "source": "patch", "pooledWithPatches": true },
+  "smallOrderFee": { "enabled": false, "belowQty": 5, "amountExcl": 7.50,
+    "label": { "nl": "Instelkost naamstroken (onder 5 stuks)", "fr": "Frais de mise en route bandes nominatives (moins de 5 pièces)" } },
+  "maxRows": 250,
+  "maxTotalQty": 2000,
+  "reviewWords": ["POLITIE", "POLICE", "POLIZEI", "LOKALE POLITIE", "FEDERALE POLITIE", "MILITAIRE POLITIE", "DOUANE", "DOUANES", "VIGILIS", "MARECHAUSSEE", "KONINKLIJKE MARECHAUSSEE"],
+  "irOnRequest": false,
+  "flags": { "enabled": false },
+  "promises": { "proof": "", "leadTime": "" },
+  "quoteUrl": "",
+  "woo": { "productName": { "nl": "Naamstroken op maat", "fr": "Bandes nominatives sur mesure" }, "categorySlug": "naamstroken", "shippingClassSlug": "", "pageId": 0 }
+}

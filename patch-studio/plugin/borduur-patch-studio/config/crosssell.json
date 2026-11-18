@@ -1,0 +1,138 @@
+{
+  "schema": 1,
+  "_doc": "Cross-sell 'zelfde ontwerp, meer producten' (docs/extra/SPEC-EXTRA.md §2). Bedragen excl. btw. Beheerinstellingen (optie bps_crosssell_settings) worden hierop gemerged: objecten recursief, lijsten vervangen.",
+  "enabled": true,
+  "maxCards": 3,
+  "showAfter": "add_to_cart",
+  "hideAfterDecline": "session",
+  "showInCart": true,
+  "useStudioRenderer": false,
+  "openTimeoutMs": 4000,
+  "colorAttribute": "",
+  "sizeAttribute": "",
+  "colorAttributeCandidates": ["pa_kleur", "pa_color", "pa_colour", "kleur", "color"],
+  "sizeAttributeCandidates": ["pa_maat", "pa_size", "maat", "size"],
+  "colorMap": {
+    "black": "#1c1c1c", "zwart": "#1c1c1c", "noir": "#1c1c1c",
+    "navy": "#1b2a4a", "marine": "#1b2a4a", "navy-blue": "#1b2a4a", "donkerblauw": "#1b2a4a",
+    "white": "#f4f4f2", "wit": "#f4f4f2", "blanc": "#f4f4f2",
+    "grey": "#7a7c80", "gray": "#7a7c80", "grijs": "#7a7c80", "heather-grey": "#9a9ca0", "dark-grey": "#4a4c50", "charcoal": "#3b3d40",
+    "red": "#b3202a", "rood": "#b3202a", "royal": "#2546a8", "royal-blue": "#2546a8", "kobaltblauw": "#2546a8",
+    "olive": "#4b5320", "olijf": "#4b5320", "khaki": "#a8976b", "beige": "#d8c8a8", "brown": "#5a3d2b", "bruin": "#5a3d2b",
+    "green": "#2f6b3a", "groen": "#2f6b3a", "bottle-green": "#1f4d34", "yellow": "#f2c230", "geel": "#f2c230",
+    "orange": "#e86a1c", "oranje": "#e86a1c", "fluo-orange": "#ff6a13", "fluo-yellow": "#d7f20f", "fluo-geel": "#d7f20f", "fluo-oranje": "#ff6a13",
+    "pink": "#e58fb0", "roze": "#e58fb0", "purple": "#5b3a8c", "paars": "#5b3a8c", "burgundy": "#6b1f2a", "bordeaux": "#6b1f2a",
+    "black-white": "#1c1c1c", "zwart-wit": "#1c1c1c", "navy-white": "#1b2a4a", "black-black": "#1c1c1c"
+  },
+  "defaultColors": ["black", "zwart", "noir", "navy", "marine", "navy-blue", "donkerblauw", "white", "wit", "blanc", "grey", "gray", "grijs", "heather-grey", "black-white", "zwart-wit", "navy-white"],
+  "neutralHex": "#8a8d91",
+  "application": {
+    "cap": 4.00, "beanie": 3.50, "garment_front": 4.00, "garment_back": 5.00,
+    "own_garment": 6.00, "own_garment_leather": 3.00,
+    "tiers": "patch",
+    "forceBacking": "sew_on"
+  },
+  "resizeNote": "free",
+  "engraveHex": "#5a3a22",
+  "items": [
+    {
+      "id": "cap", "type": "patch_on_blank", "enabled": true,
+      "wcProductIds": [36262, 36278, 36027, 36247], "defaultProductId": 36262,
+      "zone": "cap", "placement": "front",
+      "fit": { "maxPatchHeightMm": 65, "maxPatchWidthMm": 110, "suggestSizeCm": 6, "wideAspect": 1.6, "wideSizeCm": 10, "maxSizeCm": 12 },
+      "mockup": "cap_trucker", "mockupByProduct": { "36262": "cap_trucker", "36278": "cap_snapback", "36027": "cap_dad", "36247": "cap_dad" },
+      "scaleRefMm": 230,
+      "label": { "nl": "Pet met je patch", "fr": "Casquette avec votre écusson" },
+      "why": { "nl": "Je patch, stevig op een trucker genaaid.", "fr": "Votre écusson, solidement cousu sur une casquette trucker." },
+      "blankLabel": { "nl": "Pet", "fr": "Casquette" }
+    },
+    {
+      "id": "beanie", "type": "patch_on_blank", "enabled": true,
+      "wcProductIds": [36237, 36225, 36209, 36178], "defaultProductId": 36237,
+      "zone": "beanie", "placement": "cuff",
+      "noIronOn": [36178],
+      "fit": { "maxPatchHeightMm": 55, "sizesCm": [6, 4], "maxAspect": 2.2, "minTextMmWide": 5, "maxSizeCm": 12 },
+      "mockup": "beanie_cuff", "scaleRefMm": 230,
+      "label": { "nl": "Muts met je patch", "fr": "Bonnet avec votre écusson" },
+      "why": { "nl": "Je patch op de omslag van een warme muts genaaid.", "fr": "Votre écusson cousu sur le revers d'un bonnet chaud." },
+      "blankLabel": { "nl": "Muts", "fr": "Bonnet" }
+    },
+    {
+      "id": "hoodie", "type": "patch_on_blank", "enabled": true,
+      "wcProductIds": [15590, 16400, 15324], "defaultProductId": 15590,
+      "zone": "garment_front", "placement": "chest", "requiresSize": true,
+      "fit": { "chestMaxCm": 10, "backMaxCm": 12 },
+      "mockup": "hoodie_chest", "mockupBack": "hoodie_back", "scaleRefMm": 560,
+      "label": { "nl": "Hoodie met je patch", "fr": "Sweat à capuche avec votre écusson" },
+      "why": { "nl": "Je patch op de borst van een zachte hoodie genaaid. Kies per maat hoeveel je er nodig hebt.", "fr": "Votre écusson cousu sur la poitrine d'un sweat doux. Choisissez la quantité par taille." },
+      "blankLabel": { "nl": "Hoodie", "fr": "Sweat" }
+    },
+    {
+      "id": "leather_keychain", "type": "laser", "enabled": true, "material": "leatherette",
+      "wcProductIds": [], "defaultProductId": 0, "createPriceExcl": 7.00,
+      "options": [
+        { "id": "real_leather", "priceExcl": 1.50, "label": { "nl": "Echt leder i.p.v. kunstleder", "fr": "Cuir véritable au lieu de simili" } },
+        { "id": "name_back", "priceExcl": 1.00, "label": { "nl": "Naam op de achterkant (per stuk)", "fr": "Nom au dos (par pièce)" } }
+      ],
+      "tiers": "own",
+      "fit": { "sizeMm": 60, "minLineMm": 0.5, "minTextMm": 2.5, "minDeltaL": 15, "minShare": 0.10 },
+      "mockup": "leather_tag", "scaleRefMm": 110,
+      "label": { "nl": "Lederen sleutelhanger", "fr": "Porte-clés en cuir" },
+      "why": { "nl": "Je ontwerp in leder gelaserd, in één bruine tint.", "fr": "Votre design gravé au laser dans le cuir, en une seule teinte brune." }
+    },
+    {
+      "id": "leather_bagtag", "type": "laser", "enabled": false, "material": "leatherette",
+      "wcProductIds": [], "defaultProductId": 0, "createPriceExcl": 9.50, "includesName": true,
+      "options": [
+        { "id": "real_leather", "priceExcl": 1.50, "label": { "nl": "Echt leder i.p.v. kunstleder", "fr": "Cuir véritable au lieu de simili" } }
+      ],
+      "tiers": "own",
+      "fit": { "sizeMm": 60, "minLineMm": 0.5, "minTextMm": 2.5, "minDeltaL": 15, "minShare": 0.10 },
+      "mockup": "bagtag", "scaleRefMm": 170,
+      "label": { "nl": "Lederen tassenlabel", "fr": "Étiquette de sac en cuir" },
+      "why": { "nl": "Je ontwerp in leder gelaserd, met een naam op de achterkant.", "fr": "Votre design gravé dans le cuir, avec un nom au dos." }
+    },
+    {
+      "id": "leather_patch_cap", "type": "laser_patch_on_blank", "enabled": false,
+      "wcProductIds": [36262, 36278, 36027], "defaultProductId": 36262,
+      "zone": "cap", "placement": "front", "patchExcl": 4.50, "patchSizeCm": 7,
+      "fit": { "sizeMm": 70, "minLineMm": 0.5, "minTextMm": 2.5, "minDeltaL": 15, "minShare": 0.10 },
+      "mockup": "cap_trucker", "mono": true, "scaleRefMm": 230,
+      "label": { "nl": "Pet met lederen patch", "fr": "Casquette avec écusson en cuir" },
+      "why": { "nl": "Je ontwerp gelaserd in een lederen patch, op een trucker genaaid.", "fr": "Votre design gravé sur un écusson en cuir, cousu sur une casquette trucker." },
+      "blankLabel": { "nl": "Pet", "fr": "Casquette" }
+    },
+    {
+      "id": "pvc_keychain", "type": "pvc", "enabled": true,
+      "wcProductIds": [], "defaultProductId": 0, "createPriceExcl": 4.20,
+      "minQty": 50, "qtyStep": 10, "moldFeeExcl": 80.00, "sharedMold": false, "showFromQty": 10,
+      "leadTime": { "nl": "± 4 weken na goedkeuring van je proef", "fr": "± 4 semaines après validation de votre épreuve" },
+      "fit": { "classes": ["flat", "illustration"], "maxColors": 6, "hardMaxColors": 8, "minLineMm": 1.0, "hardMinLineMm": 0.6, "minTextMm": 4, "hardMinTextMm": 3, "sizeMm": 50 },
+      "mockup": "pvc_keychain", "scaleRefMm": 100,
+      "label": { "nl": "PVC-sleutelhanger", "fr": "Porte-clés en PVC" },
+      "why": { "nl": "Je logo in soepel rubber gegoten: waterdicht en bijna onverwoestbaar.", "fr": "Votre logo coulé en caoutchouc souple : étanche et quasi indestructible." },
+      "moldLabel": { "nl": "PVC-mal sleutelhanger (eenmalig)", "fr": "Moule PVC porte-clés (unique)" }
+    },
+    {
+      "id": "frame", "type": "frame", "enabled": true,
+      "sizes": [
+        { "id": "20x20", "maxPatchCm": 10, "productId": 0, "createPriceExcl": 24.75, "label": { "nl": "Schaduwdoos 20 × 20 cm", "fr": "Cadre vitrine 20 × 20 cm" }, "scaleRefMm": 260 },
+        { "id": "25x25", "maxPatchCm": 12, "productId": 0, "createPriceExcl": 28.92, "label": { "nl": "Schaduwdoos 25 × 25 cm", "fr": "Cadre vitrine 25 × 25 cm" }, "scaleRefMm": 320 }
+      ],
+      "plate": { "lines": 2, "maxChars": 28, "material": "anodized_alu", "hex": "#c9b26b", "textHex": "#2b2b2b" },
+      "mockup": "frame_box", "scaleRefMm": 260,
+      "label": { "nl": "Ingekaderde patch", "fr": "Écusson encadré" },
+      "why": { "nl": "Ingekaderd met een gegraveerd plaatje: een cadeau dat blijft hangen.", "fr": "Encadré avec une plaquette gravée : un cadeau qui reste." }
+    }
+  ],
+  "rules": [
+    { "id": "photo", "when": { "class": ["photo", "gradient"] }, "order": ["frame", "leather_keychain", "cap"] },
+    { "id": "nametape", "when": { "mode": "nametape" }, "order": ["beanie", "cap"] },
+    { "id": "gift", "when": { "qtyMax": 3 }, "order": ["frame", "leather_keychain", "cap"] },
+    { "id": "volume", "when": { "qtyMin": 50 }, "order": ["cap", "pvc_keychain", "hoodie"] },
+    { "id": "pvc", "when": { "technique": ["pvc"] }, "order": ["cap", "pvc_keychain", "hoodie"] },
+    { "id": "team", "when": { "qtyMin": 10, "qtyMax": 49 }, "order": ["cap", "hoodie", "beanie"], "boost": { "item": "beanie", "months": [10, 11, 12, 1, 2] } },
+    { "id": "default", "when": {}, "order": ["cap", "hoodie", "leather_keychain"] }
+  ],
+  "stats": { "enabled": true, "autoDisable": false, "minShown": 200, "minAddRate": 0.01 }
+}

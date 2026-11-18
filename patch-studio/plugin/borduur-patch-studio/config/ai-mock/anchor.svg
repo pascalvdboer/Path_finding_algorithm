@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<g stroke="{{c1}}" stroke-width="{{sw}}" stroke-linejoin="round" stroke-linecap="round">
+<circle cx="512" cy="236" r="54" fill="{{c4}}"/>
+<rect x="488" y="290" width="48" height="390" rx="10" fill="{{c2}}"/>
+<rect x="400" y="340" width="224" height="44" rx="12" fill="{{c2}}"/>
+<path d="M300 520 C300 640 400 708 512 708 C624 708 724 640 724 520 L670 560 C660 616 600 650 512 650 C424 650 364 616 354 560 Z" fill="{{c2}}"/>
+<path d="M280 520 L326 470 L354 540 Z M744 520 L698 470 L670 540 Z" fill="{{c3}}"/>
+</g>
+</svg>

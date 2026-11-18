@@ -29,7 +29,7 @@ final class Prompt_Engine {
 	const CATEGORIES = array( 'style', 'shape', 'color', 'group', 'subject', 'object', 'adj' );
 
 	/** Verbs that carry no meaning for the image ("maak", "fais"...). */
-	const VERBS = array( 'maak', 'maken', 'doe', 'zet', 'geef', 'teken', 'fais', 'faire', 'rends', 'rendre', 'mets', 'mettre', 'dessine', 'graag', 'svp', 'aub', 'alstublieft', 'please', 'stp', 'merci' );
+	const VERBS = array( 'maak', 'maakt', 'maken', 'doe', 'zet', 'geef', 'teken', 'fais', 'faites', 'faire', 'rends', 'rendez', 'rendre', 'mets', 'mettre', 'dessine', 'graag', 'svp', 'aub', 'alstublieft', 'please', 'stp', 'merci' );
 
 	/** Verbs that mean "add" / "remove" in a refine instruction. */
 	const ADD_VERBS    = array( 'voeg', 'toevoegen', 'erbij', 'ajoute', 'ajouter', 'rajoute' );
@@ -225,7 +225,7 @@ final class Prompt_Engine {
 	 * @param array  $cfg  Config.
 	 * @return array{en:string, style:?string, shape:?string, colors:string[], groups:string[], subjects:string[], objects:string[], adjs:string[], unknown:string[]}
 	 */
-	public static function interpret( string $desc, array $cfg ): array {
+	public static function interpret( string $desc, array $cfg, string $lang = 'nl' ): array {
 		$g      = $cfg['glossary'] ?? array();
 		$lex    = self::lexicon( $cfg );
 		$stop   = array_flip( array_merge( $cfg['stopwords']['nl'] ?? array(), $cfg['stopwords']['fr'] ?? array(), self::VERBS ) );
@@ -292,7 +292,7 @@ final class Prompt_Engine {
 		foreach ( array( 'colors', 'groups', 'subjects', 'objects', 'adjs', 'unknown' ) as $k ) {
 			$out[ $k ] = array_values( array_unique( $out[ $k ] ) );
 		}
-		$out['en'] = self::tidy_gloss( $words, $out );
+		$out['en'] = self::tidy_gloss( $words, $out, 'fr' === $lang );
 		unset( $g );
 		return $out;
 	}
@@ -334,15 +334,15 @@ final class Prompt_Engine {
 		}
 
 		$seg       = self::shape_segments( $clean['text'], $cfg );
-		$ip        = self::interpret( $seg['text'], $cfg );
+		$ip        = self::interpret( $seg['text'], $cfg, $lang );
 		if ( null !== $seg['shape'] ) {
 			$ip['shape'] = $seg['shape'];
 		}
 		$technique = (string) ( $input['technique'] ?? 'embroidered' );
-		$technique = isset( $cfg['techniqueColors'][ $technique ] ) ? $technique : 'embroidered';
+		$technique = ( '_' !== substr( $technique, 0, 1 ) && isset( $cfg['techniqueColors'][ $technique ] ) ) ? $technique : 'embroidered';
 
 		// Style: explicit > word in description > hint from group > badge.
-		$style = (string) ( $input['style'] ?? 'auto' );
+		$style = ltrim( (string) ( $input['style'] ?? 'auto' ), '_' );
 		if ( ! isset( $cfg['styles'][ $style ] ) ) {
 			$style = $ip['style'] ?? '';
 			if ( '' === $style ) {
@@ -361,7 +361,7 @@ final class Prompt_Engine {
 		$st = $cfg['styles'][ $style ];
 
 		// Shape.
-		$shape = (string) ( $input['shape'] ?? 'auto' );
+		$shape = ltrim( (string) ( $input['shape'] ?? 'auto' ), '_' );
 		if ( ! isset( $cfg['shapes'][ $shape ] ) ) {
 			$shape = $ip['shape'] ?? (string) ( $st['shapeHint'] ?? 'circle' );
 			$shape = isset( $cfg['shapes'][ $shape ] ) ? $shape : 'circle';
@@ -370,7 +370,7 @@ final class Prompt_Engine {
 		// Colors.
 		$tc      = $cfg['techniqueColors'][ $technique ];
 		$colors  = $ip['colors'];
-		$max     = isset( $input['maxColors'] ) ? (int) $input['maxColors'] : max( (int) ( $st['defaultColors'] ?? $tc['default'] ), count( $colors ) );
+		$max     = isset( $input['maxColors'] ) ? (int) $input['maxColors'] : max( min( (int) ( $st['defaultColors'] ?? $tc['default'] ), (int) $tc['default'] ), count( $colors ) );
 		$max     = max( (int) ( $lim['minColors'] ?? 1 ), min( $max, (int) $tc['max'], (int) ( $lim['maxColorsAbsolute'] ?? 8 ) ) );
 		if ( count( $colors ) > $max ) {
 			$warnings[] = 'too_many_colors';
@@ -391,7 +391,7 @@ final class Prompt_Engine {
 		if ( ! in_array( $mode, array( 'studio', 'ai', 'none' ), true ) ) {
 			$mode = 'none';
 		}
-		$placement = (string) ( $input['textPlacement'] ?? ( $st['textPlacement'] ?? 'below' ) );
+		$placement = ltrim( (string) ( $input['textPlacement'] ?? ( $st['textPlacement'] ?? 'below' ) ), '_' );
 		$placement = isset( $cfg['textPlacements'][ $placement ] ) ? $placement : 'below';
 		if ( 'none' === $placement && 'none' !== $mode ) {
 			$placement = 'below';
@@ -401,7 +401,7 @@ final class Prompt_Engine {
 		}
 
 		// Background.
-		$bg     = (string) ( $input['background'] ?? 'transparent' );
+		$bg     = ltrim( (string) ( $input['background'] ?? 'transparent' ), '_' );
 		$bg     = isset( $cfg['backgrounds'][ $bg ] ) ? $bg : 'transparent';
 		$fabric = (string) ( $input['fabric'] ?? 'black' );
 		$fabric = isset( $cfg['fabricColors'][ $fabric ] ) ? $fabric : 'black';
@@ -415,7 +415,8 @@ final class Prompt_Engine {
 			$warnings[] = 'text_small_for_size';
 		}
 
-		$original = self::customer_words( $clean['text'] );
+		$meaningful = ! empty( $ip['subjects'] ) || ! empty( $ip['objects'] ) || ! empty( $ip['groups'] ) || ! empty( $ip['adjs'] ) || ! empty( $ip['unknown'] );
+		$original   = $meaningful ? self::customer_words( $clean['text'] ) : '';
 		return array(
 			'blocked'     => false,
 			'lang'        => $lang,
@@ -521,7 +522,7 @@ final class Prompt_Engine {
 		if ( ! $safe['ok'] ) {
 			return array( 'route' => 'blocked', 'code' => $safe['code'], 'message' => self::message( $safe['code'], $lang, $cfg ) );
 		}
-		$ip   = self::interpret( $clean['text'], $cfg );
+		$ip   = self::interpret( $clean['text'], $cfg, $lang );
 		$norm = ' ' . self::normalize( $clean['text'] ) . ' ';
 
 		if ( ! $forceAi ) {
@@ -673,37 +674,64 @@ final class Prompt_Engine {
 	 * @param array $ip    Interpretation so far.
 	 * @return string
 	 */
-	private static function tidy_gloss( array $words, array $ip ): string {
+	private static function tidy_gloss( array $words, array $ip, bool $postAdj = false ): string {
 		$colors = array_flip( $ip['colors'] );
 		$adjs   = array_flip( $ip['adjs'] );
-		$parts  = array();
+		$links  = array( 'with', 'for', 'and', 'on', 'in', 'above', 'below', 'behind', 'between', 'without', 'around' );
+		$parts  = array(); // Each: ['adj'=>[], 'noun'=>string, 'group'=>bool] or a link string.
 		$adjBuf = array();
 		foreach ( $words as $w ) {
 			if ( isset( $colors[ $w ] ) ) {
 				continue;
 			}
 			if ( isset( $adjs[ $w ] ) ) {
-				$adjBuf[] = $w;
+				$last = end( $parts );
+				if ( $postAdj && is_array( $last ) && empty( $adjBuf ) ) {
+					$parts[ key( $parts ) ]['adj'][] = $w; // French: adjective after the noun.
+				} else {
+					$adjBuf[] = $w;
+				}
 				continue;
 			}
-			if ( in_array( $w, array( 'with', 'for', 'and', 'on', 'in', 'above', 'below', 'behind', 'between', 'without' ), true ) ) {
-				if ( ! empty( $parts ) && ! in_array( end( $parts ), array( 'with', 'for', 'and', 'on', 'in', 'above', 'below', 'behind', 'between', 'without' ), true ) ) {
+			if ( in_array( $w, $links, true ) ) {
+				if ( ! empty( $parts ) && is_array( end( $parts ) ) ) {
 					$parts[] = $w;
 				}
 				continue;
 			}
-			$isGroup = in_array( $w, $ip['groups'], true );
-			$noun    = ( $isGroup ? 'a ' : self::article( $w ) ) . implode( ' ', array_merge( $adjBuf, array( $w ) ) );
-			if ( ! empty( $adjBuf ) ) {
-				$noun = self::article( $adjBuf[0] ) . implode( ' ', array_merge( $adjBuf, array( $w ) ) );
-			}
-			$parts[] = $noun;
+			$parts[] = array( 'adj' => $adjBuf, 'noun' => $w, 'group' => in_array( $w, $ip['groups'], true ) );
 			$adjBuf  = array();
 		}
-		while ( ! empty( $parts ) && in_array( end( $parts ), array( 'with', 'for', 'and', 'on', 'in', 'above', 'below', 'behind', 'between', 'without' ), true ) ) {
+		while ( ! empty( $parts ) && is_string( end( $parts ) ) ) {
 			array_pop( $parts );
 		}
-		$s = implode( ' ', $parts );
+		$out    = array();
+		$groups = array();
+		$prev   = null;
+		foreach ( $parts as $p ) {
+			if ( is_string( $p ) ) {
+				$out[] = $p;
+				$prev  = $p;
+				continue;
+			}
+			$pre  = array_values( array_filter( $p['adj'], static fn( $a ) => 0 !== strpos( $a, 'with ' ) ) );
+			$post = array_values( array_filter( $p['adj'], static fn( $a ) => 0 === strpos( $a, 'with ' ) ) );
+			$phrase = ( $p['group'] && empty( $pre ) ? 'a ' : self::article( $pre[0] ?? $p['noun'], $p['noun'] ) )
+				. implode( ' ', array_merge( $pre, array( $p['noun'] ) ) ) . ( empty( $post ) ? '' : ' ' . implode( ' ', $post ) );
+			if ( $p['group'] && ! is_string( $prev ) ) {
+				$groups[] = $phrase; // "scouts: een vos..." -> "... for a scout group".
+			} else {
+				$out[] = $phrase;
+			}
+			$prev = $p;
+		}
+		while ( ! empty( $out ) && in_array( end( $out ), $links, true ) ) {
+			array_pop( $out );
+		}
+		if ( ! empty( $groups ) ) {
+			$out[] = ( empty( $out ) ? '' : 'for ' ) . implode( ' and ', $groups );
+		}
+		$s = implode( ' ', $out );
 		if ( ! empty( $adjBuf ) ) {
 			$s = trim( $s . ( '' !== $s ? ', ' : '' ) . implode( ' and ', $adjBuf ) );
 		}
@@ -716,11 +744,12 @@ final class Prompt_Engine {
 	 * @param string $w First word.
 	 * @return string
 	 */
-	private static function article( string $w ): string {
-		if ( preg_match( '/(s|ies)$/', $w ) && ! preg_match( '/(ss|us|is|ass)$/', $w ) && ! in_array( $w, array( 'dice', 'fries' ), true ) ) {
+	private static function article( string $w, string $noun = '' ): string {
+		$noun = '' === $noun ? $w : $noun;
+		if ( in_array( $noun, array( 'dice', 'fries', 'grapes', 'playing cards', 'glasses', 'hands' ), true ) ) {
 			return '';
 		}
-		if ( in_array( $w, array( 'dice', 'fries', 'grapes', 'playing cards' ), true ) ) {
+		if ( preg_match( '/s$/', $noun ) && ! preg_match( '/(ss|us|is)$/', $noun ) ) {
 			return '';
 		}
 		return preg_match( '/^[aeiou]/', $w ) ? 'an ' : 'a ';

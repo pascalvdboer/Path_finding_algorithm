@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<g stroke="{{c1}}" stroke-width="{{sw}}" stroke-linejoin="round" stroke-linecap="round">
+<path d="M512 180 L596 380 L812 396 L648 536 L700 746 L512 632 L324 746 L376 536 L212 396 L428 380 Z" fill="{{c2}}"/>
+<path d="M512 300 L560 420 L688 430 L590 512 L622 640 L512 572 L402 640 L434 512 L336 430 L464 420 Z" fill="{{c3}}"/>
+<circle cx="512" cy="480" r="36" fill="{{c4}}"/>
+</g>
+</svg>

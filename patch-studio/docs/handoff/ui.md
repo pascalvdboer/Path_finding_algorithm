@@ -1,5 +1,7 @@
 # Handoff — ui
 
+> **Let op (v2, 18-11-2026):** de stappen-UI hieronder is vervangen door de ontwerpstudio (`ui/app.js`, `stage.js`, `panels.js`, `assistant.js`, `checkout.js`, `price.js`, `history.js`; `step-*.js` en `preview.js` bestaan niet meer). Panelen: design, text, shape, edge, colors, back, size (links / gsm-tabs) en advice, checkout (rechts). Zichtbare panelen staan in `data-bps-panels` op het root-element. E2E-hulpfuncties: `studio.show(page, id)`, `studio.panels(page)` in `tests/e2e/lib/harness.cjs`. Integratie met render v2: zie `docs/integratie.md`, sectie "Integratie v2".
+
 ## Gebouwd
 | Bestand | Inhoud |
 |---|---|

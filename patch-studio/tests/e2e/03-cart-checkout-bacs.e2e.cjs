@@ -21,10 +21,10 @@ t.run(async (keep) => {
   await studio.waitAnalysis(page);
   const tech = await studio.toSummary(page, { technique: 'embroidered', sizeCm: 8, qty: 10 });
   t.ok(tech === 'embroidered', 'technique embroidered selected', tech);
-  t.ok(/Overzicht/.test(await studio.currentStep(page)), 'step 5 "Overzicht" is current');
+  t.ok((await studio.panels(page)).includes('checkout'), 'overview ("Jouw patch") is shown next to the canvas', await studio.currentStep(page));
   const summary = await page.locator('.bps-summary').innerText();
   t.ok(/Geborduurd/.test(summary) && /8 cm/.test(summary) && /10/.test(summary), 'summary lists technique, size and quantity', summary.replace(/\n/g, ' | '));
-  t.ok(/digitale proef/i.test(await page.locator('.bps-step:visible').innerText()), '"Wat er nu gebeurt" mentions the digital proof');
+  t.ok(/digitale proef/i.test(await page.locator('.bps-checkout').innerText()), '"Wat er nu gebeurt" mentions the digital proof');
   const rights = page.locator('.bps-rights input[type=checkbox]');
   t.ok(!(await rights.isChecked()), 'rights checkbox is NOT pre-checked');
 

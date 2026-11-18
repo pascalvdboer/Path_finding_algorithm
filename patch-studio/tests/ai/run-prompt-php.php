@@ -28,7 +28,8 @@ $check = static function ( string $id, bool $ok, string $msg ) use ( &$fail, &$p
 };
 
 $invariants = static function ( string $id, string $prompt ) use ( $check ) {
-	foreach ( array( 'no gradients', 'at most', 'outlines', 'original', 'no watermark', 'margin' ) as $must ) {
+	$check( $id, false !== stripos( $prompt, 'at most' ) || false !== stripos( $prompt, 'one single dark color' ), 'prompt mist kleurlimiet' );
+	foreach ( array( 'no gradients', 'outlines', 'original', 'no watermark', 'margin' ) as $must ) {
 		$check( $id, false !== stripos( $prompt, $must ), "prompt mist regel '{$must}'" );
 	}
 	$check( $id, false === strpos( $prompt, '{' ), 'onvervangen placeholder in prompt' );

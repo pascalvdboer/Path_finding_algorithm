@@ -222,12 +222,14 @@ function money(text) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Studio helpers (selectors follow the ui module, see docs/handoff/ui.md) */
+/* Studio helpers (selectors follow the v2 studio UI: rail/tabs + panels, see docs/handoff/ui.md) */
 /* ------------------------------------------------------------------ */
+/** Phone tab that holds each studio panel (ui/app.js TABS). */
+const TAB_OF = { design: 'design', text: 'text', shape: 'shape', edge: 'shape', back: 'shape', colors: 'colors', advice: 'advice', size: 'price', checkout: 'price' };
 const studio = {
   async open(page, url = ENV.studio) {
     await page.goto(url, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.bps-studio .bps-empty, .bps-studio .bps-step', { timeout: 20000 });
+    await page.waitForSelector('.bps-studio .bps-empty, .bps-studio .bps-ws', { timeout: 20000 });
   },
   async upload(page, file) {
     await page.locator('.bps-studio input[type=file]').first().setInputFiles(file);
@@ -238,34 +240,68 @@ const studio = {
       return f && f.querySelector('.is-done') && !f.querySelector('.is-busy');
     }, null, { timeout });
   },
-  async currentStep(page) {
-    return (await page.locator('.bps-steps__item.is-current, .bps-steps [aria-current="step"]').first().innerText().catch(() => '')).replace(/\s+/g, ' ').trim();
+  /** Ids of the studio panels that are visible now (ui/app.js sets data-bps-panels on the root). */
+  async panels(page) {
+    const v = await page.locator('[data-bps-panels]').first().getAttribute('data-bps-panels').catch(() => '');
+    return String(v || '').split(/\s+/).filter(Boolean);
   },
-  /** Click the primary "next" button of the visible step. */
+  /** Kept for older scenarios: the visible panel titles (the studio has no numbered steps since v2). */
+  async currentStep(page) {
+    return (await page.locator('.bps-studio .bps-panel:visible .bps-panel__title').allInnerTexts().catch(() => [])).join(' | ').replace(/\s+/g, ' ').trim();
+  },
+  /**
+   * Open a studio panel the way a customer does: rail icon (desktop), tab + sub tab (phone),
+   * "Bestellen" in the action bar (overview), back arrow in the overview (advice on desktop).
+   */
+  async show(page, id) {
+    if ((await studio.panels(page)).includes(id)) return;
+    const mobile = await page.locator('.bps-tabs').isVisible().catch(() => false);
+    if (id === 'checkout') await page.locator('.bps-bar__btn').first().click();
+    else if (!mobile) {
+      if (id === 'advice') await page.locator('.bps-checkout .bps-panel__back').first().click();
+      else await page.locator(`.bps-rail__btn[data-panel="${id}"]`).first().click();
+    } else {
+      await page.locator(`.bps-tabs__btn[data-tab="${TAB_OF[id]}"]`).first().click();
+      await page.waitForTimeout(150);
+      if (!(await studio.panels(page)).includes(id)) await page.locator(`.bps-subnav__btn[data-panel="${id}"]`).first().click();
+    }
+    await page.waitForFunction((pid) => {
+      const el = document.querySelector('[data-bps-panels]');
+      return el && el.getAttribute('data-bps-panels').split(' ').includes(pid);
+    }, id, { timeout: 10000 });
+    await page.waitForTimeout(250);
+  },
+  /** Click the primary "next" button of the most recently opened panel (design → advice → size → edge → overview). */
   async next(page) {
-    const btn = page.locator('.bps-step:visible .bps-step__nav .bps-btn--primary').first();
-    await btn.click();
+    const order = ['design', 'advice', 'size', 'edge', 'checkout'];
+    const vis = await studio.panels(page);
+    const cur = order.filter((x) => vis.includes(x)).pop() || 'design';
+    await page.locator(`.bps-panel[data-panel="${cur}"] .bps-step__nav .bps-btn--primary`).first().click();
     await page.waitForTimeout(350);
   },
   async chooseTechnique(page, id) {
-    const input = page.locator(`.bps-step:visible input[data-fk="tech-${id}"]`).first();
-    await input.waitFor({ state: 'attached', timeout: 10000 });
-    const label = page.locator(`label[for="${await input.getAttribute('id')}"]`).first();
-    if (!(await label.isVisible().catch(() => false))) {
-      const more = page.locator('.bps-step:visible .bps-techs > .bps-btn--link').first();
+    await studio.show(page, 'advice');
+    const input = page.locator(`.bps-assist input[data-fk="tech-${id}"]`).first();
+    if (!(await input.count())) {
+      const more = page.locator('.bps-assist .bps-techs > .bps-btn--link').first();
       if (await more.count()) await more.click();
     }
+    await input.waitFor({ state: 'attached', timeout: 10000 });
+    const label = page.locator(`label[for="${await input.getAttribute('id')}"]`).first();
+    await label.scrollIntoViewIfNeeded().catch(() => {});
     await label.click();
     await page.waitForTimeout(400);
   },
   async pickSize(page, cm) {
+    await studio.show(page, 'size');
     await page.locator(`input[data-fk="size-${cm}"]`).first().check({ force: true });
     await page.waitForTimeout(250);
   },
   async pickQty(page, qty) {
+    await studio.show(page, 'size');
     const preset = page.locator(`button[data-fk="pr-${qty}"]`).first();
     if (await preset.count()) await preset.click();
-    else { await page.fill('.bps-qty__input', String(qty)); await page.locator('.bps-qty__input').blur(); }
+    else { const q = page.locator('.bps-panel:visible .bps-qty__input').first(); await q.fill(String(qty)); await q.blur(); }
     await page.waitForTimeout(250);
   },
   /**
@@ -273,13 +309,10 @@ const studio = {
    * Returns the technique id that ends up selected.
    */
   async toSummary(page, { technique, sizeCm, qty } = {}) {
-    await studio.next(page); // 1 -> 2
     if (technique) await studio.chooseTechnique(page, technique);
-    await studio.next(page); // 2 -> 3
     if (sizeCm) await studio.pickSize(page, sizeCm);
     if (qty) await studio.pickQty(page, qty);
-    await studio.next(page); // 3 -> 4
-    await studio.next(page); // 4 -> 5
+    await studio.show(page, 'checkout');
     await page.waitForSelector('.bps-rights input[type=checkbox]', { timeout: 10000 });
     return (await studio.state(page) || {}).technique;
   },

@@ -1,0 +1,169 @@
+{
+  "schema": 1,
+  "version": "2026-11-17.1",
+  "_doc": "Juridische klantteksten en standaardwaarden voor de AI-ontwerpstudio en diensten. Bron en uitleg: docs/ai/04-juridisch.md. 'version' wordt bewaard bij elke toestemming (_bps_ai_withdrawal_consent.v). Wijzig je een toestemmingstekst, verhoog dan de versie. Vakjes nooit vooraf aangevinkt. NL 'je', FR 'vous'.",
+  "defaults": {
+    "packValidityMonths": 24,
+    "packValidityMinMonths": 12,
+    "withdrawalDays": 14,
+    "refundUnusedOnWithdrawal": true,
+    "refundUnusedOnServiceStop": true,
+    "refusalCostsCredit": false,
+    "failedGenerationRefundsCredit": true,
+    "abusePauseRefusalsPerHour": 5,
+    "abusePauseMinutes": 60,
+    "sendSafetyIdentifier": false,
+    "safetyIdentifierAlgo": "hmac-sha256",
+    "providerModeration": "auto"
+  },
+  "retentionDays": {
+    "guestPromptsAndProposals": 30,
+    "accountDesignsAfterLastOpen": 365,
+    "orderDesignsAfterLastOrder": 1095,
+    "refusedPromptLog": 30,
+    "ledgerAndInvoices": 3650,
+    "costLog": null
+  },
+  "marking": {
+    "iptcDigitalSourceType": "http://cv.iptc.org/newscodes/digitalsourcetype/trainedAlgorithmicMedia",
+    "iptcDigitalSourceTypeHumanFinished": "http://cv.iptc.org/newscodes/digitalsourcetype/compositeWithTrainedAlgorithmicMedia",
+    "pngTextComment": "AI-generated (Patch Studio, {provider}/{model})",
+    "keepProviderC2pa": true
+  },
+  "consents": {
+    "aiPack": [
+      "legal.ai.pack_consent_start",
+      "legal.ai.pack_consent_ack"
+    ],
+    "services": [
+      "legal.svc.consent"
+    ]
+  },
+  "strings": {
+    "legal.ai.label": {
+      "place": "Op elke voorbeeldtegel",
+      "nl": "Gemaakt met AI",
+      "fr": "Créé avec l'IA"
+    },
+    "legal.ai.provider_notice": {
+      "place": "Onder de voorstellen",
+      "nl": "Deze voorstellen zijn gemaakt door een beeld-AI (beeldmodel van {provider}). Onze digitaliseerder kijkt je ontwerp na voor je proef.",
+      "fr": "Ces propositions ont été créées par une IA d'images (modèle d'image de {provider}). Notre digitaliseur vérifie votre design avant votre épreuve."
+    },
+    "legal.ai.chat_notice": {
+      "place": "Boven het verfijn-chatveld",
+      "nl": "Je praat met een AI-assistent, niet met een mens. Een echte ontwerper nodig? Kies \"Laat onze ontwerper dit afwerken\".",
+      "fr": "Vous échangez avec un assistant IA, pas avec une personne. Besoin d'un vrai graphiste ? Choisissez « Faites finaliser par notre graphiste »."
+    },
+    "legal.ai.cart_line": {
+      "place": "Winkelmandregel (label → waarde)",
+      "nl": "Ontwerp → Op basis van een AI-voorstel · nagekeken bij je proef",
+      "fr": "Design → Basé sur une proposition IA · vérifié lors de votre épreuve"
+    },
+    "legal.ai.rights_short": {
+      "place": "Uitklapper \"Mag ik dit ontwerp gebruiken?\" bij de voorstellen",
+      "nl": "Ja, je mag je ontwerp vrij gebruiken, ook voor je zaak of club. Wij claimen er geen rechten op. Een AI-voorstel is wel niet uniek: iemand anders kan iets gelijkaardigs krijgen, en auteursrecht is niet gegarandeerd. Wil je je logo beschermen? Denk aan een merkdepot.",
+      "fr": "Oui, vous pouvez utiliser librement votre design, aussi pour votre entreprise ou votre club. Nous ne revendiquons aucun droit. Une proposition IA n'est toutefois pas unique : quelqu'un d'autre peut obtenir quelque chose de similaire, et le droit d'auteur n'est pas garanti. Vous voulez protéger votre logo ? Pensez à un dépôt de marque."
+    },
+    "legal.ai.privacy_line": {
+      "place": "Onder het tekstvak",
+      "nl": "Zet geen namen, adressen of contactgegevens in je beschrijving. We sturen enkel je beschrijving naar de beeld-AI, nooit wie je bent. Meer info",
+      "fr": "N'indiquez pas de noms, adresses ou coordonnées dans votre description. Nous envoyons uniquement votre description à l'IA d'images, jamais votre identité. En savoir plus"
+    },
+    "legal.ai.privacy_hint": {
+      "place": "Bij het tekstveld \"Tekst op je patch\"",
+      "nl": "Tekst zoals je clubnaam zetten we er straks zelf op, netjes gespeld. Die gaat niet naar de AI.",
+      "fr": "Le texte, comme le nom de votre club, nous l'ajoutons ensuite nous-mêmes, sans faute. Il n'est pas envoyé à l'IA."
+    },
+    "legal.ai.own_logo_cta": {
+      "place": "Knop bij merk-/kopie-weigering",
+      "nl": "Mijn eigen logo opladen (gratis)",
+      "fr": "Importer mon propre logo (gratuit)"
+    },
+    "legal.ai.abuse_pause": {
+      "place": "Na herhaalde weigeringen",
+      "nl": "We pauzeren de AI-studio even voor je. Probeer het over een uur opnieuw, of vraag een gratis offerte aan: dan helpt onze ontwerper je verder.",
+      "fr": "Nous mettons le studio IA en pause pour vous. Réessayez dans une heure, ou demandez un devis gratuit : notre graphiste vous aidera."
+    },
+    "legal.ai.pack_info": {
+      "place": "Productpagina/aankoopscherm pakket",
+      "nl": "{n} rondes · € {prijs} incl. btw (€ {per} per ronde) · {m} maanden geldig · mislukte rondes krijg je terug. Je krijgt het bedrag terug als korting op je patches (vanaf € {min}, {k} maanden geldig).",
+      "fr": "{n} essais · {prijs} € TVA comprise ({per} € par essai) · valables {m} mois · les essais échoués vous sont recrédités. Le montant vous est rendu en réduction sur vos écussons (dès {min} €, valable {k} mois)."
+    },
+    "legal.ai.pack_consent_start": {
+      "place": "Kassa, vakje 1",
+      "nl": "Ik vraag uitdrukkelijk om meteen met mijn ontwerprondes te kunnen beginnen, binnen de herroepingstermijn van 14 dagen.",
+      "fr": "Je demande expressément de pouvoir commencer immédiatement à utiliser mes essais, pendant le délai de rétractation de 14 jours."
+    },
+    "legal.ai.pack_consent_ack": {
+      "place": "Kassa, vakje 2",
+      "nl": "Ik weet dat ik mijn herroepingsrecht verlies voor de rondes die ik gebruik.",
+      "fr": "Je reconnais perdre mon droit de rétractation pour les essais que j'utilise."
+    },
+    "legal.ai.pack_unused_refund": {
+      "place": "Kassa, onder de vakjes",
+      "nl": "Bedenk je je binnen 14 dagen na je aankoop? Dan betalen we de rondes die je nog niet gebruikte terug.",
+      "fr": "Vous changez d'avis dans les 14 jours suivant votre achat ? Nous vous remboursons les essais non utilisés."
+    },
+    "legal.ai.pack_no_consent": {
+      "place": "Kassa, als vakjes leeg blijven (info, geen fout)",
+      "nl": "Geen probleem: je kunt gewoon bestellen. Je rondes worden dan bruikbaar na 14 dagen, of meteen zodra je de twee vakjes alsnog aanvinkt in de AI-studio.",
+      "fr": "Pas de problème : vous pouvez commander. Vos essais seront alors disponibles après 14 jours, ou immédiatement dès que vous cochez les deux cases dans le studio IA."
+    },
+    "legal.ai.pack_consent_later": {
+      "place": "AI-studio, als rondes nog geblokkeerd zijn",
+      "nl": "Je rondes staan klaar. Wil je meteen beginnen? Vink dan beide vakjes aan.",
+      "fr": "Vos essais sont prêts. Vous voulez commencer tout de suite ? Cochez alors les deux cases."
+    },
+    "legal.ai.pack_email": {
+      "place": "Bevestigingsmail pakket",
+      "nl": "Je ontwerprondes. Je kocht {n} rondes, geldig tot {datum}. Je vroeg op {datum_toestemming} om {uur} om meteen te beginnen en erkende dat je je herroepingsrecht verliest voor de rondes die je gebruikt (tekstversie {v}). Bedenk je je vóór {datum_14}? Herroep dan via deze link: {link}. Ongebruikte rondes betalen we terug. Bestel je binnen {k} maanden patches voor minstens € {min}, dan krijg je € {bedrag} terug als korting. Voorwaarden: {av_link}",
+      "fr": "Vos essais de création. Vous avez acheté {n} essais, valables jusqu'au {datum}. Le {datum_toestemming} à {uur}, vous avez demandé à commencer immédiatement et reconnu perdre votre droit de rétractation pour les essais utilisés (version du texte {v}). Vous changez d'avis avant le {datum_14} ? Rétractez-vous via ce lien : {link}. Les essais non utilisés vous sont remboursés. Si vous commandez dans les {k} mois des écussons pour au moins {min} €, vous récupérez {bedrag} € en réduction. Conditions : {av_link}"
+    },
+    "legal.ai.withdraw_button": {
+      "place": "Mijn account / mail-link",
+      "nl": "Overeenkomst hier herroepen",
+      "fr": "Se rétracter du contrat ici"
+    },
+    "legal.ai.withdraw_summary": {
+      "place": "Bevestigingsscherm",
+      "nl": "Je herroept bestelling {nr}. Ongebruikte rondes: {u} van {n}. We betalen € {bedrag} terug binnen 14 dagen, via je oorspronkelijke betaalmethode. De korting op patches van dit pakket vervalt.",
+      "fr": "Vous vous rétractez de la commande {nr}. Essais non utilisés : {u} sur {n}. Nous remboursons {bedrag} € dans les 14 jours, via votre moyen de paiement initial. La réduction sur écussons liée à ce pack expire."
+    },
+    "legal.ai.withdraw_confirm": {
+      "place": "Knop bevestigingsscherm",
+      "nl": "Herroeping bevestigen",
+      "fr": "Confirmer la rétractation"
+    },
+    "legal.ai.withdraw_email": {
+      "place": "Mail na herroeping",
+      "nl": "We ontvingen je herroeping voor bestelling {nr} op {datum} om {uur}. Je krijgt € {bedrag} terug binnen 14 dagen.",
+      "fr": "Nous avons bien reçu votre rétractation pour la commande {nr} le {datum} à {uur}. Vous serez remboursé de {bedrag} € dans les 14 jours."
+    },
+    "legal.ai.expiry_notice": {
+      "place": "Saldo in AI-studio, 30 dagen voor vervaldatum",
+      "nl": "Je hebt nog {u} rondes, geldig tot {datum}.",
+      "fr": "Il vous reste {u} essais, valables jusqu'au {datum}."
+    },
+    "legal.ai.proof_line": {
+      "place": "Proefmail / factuurregel",
+      "nl": "Ontwerp op basis van een AI-voorstel, nagekeken en gedigitaliseerd door ons atelier.",
+      "fr": "Design basé sur une proposition IA, vérifié et digitalisé par notre atelier."
+    },
+    "legal.svc.consent": {
+      "place": "Kassa, als er een dienst in de mand zit",
+      "nl": "Start de dienst(en) meteen. Ik weet dat ik mijn herroepingsrecht verlies zodra de dienst volledig uitgevoerd is, en dat ik bij herroeping tijdens de uitvoering het al gedane werk betaal.",
+      "fr": "Démarrez le(s) service(s) immédiatement. Je reconnais perdre mon droit de rétractation dès que le service est entièrement exécuté, et payer le travail déjà effectué en cas de rétractation en cours d'exécution."
+    },
+    "legal.svc.no_consent": {
+      "place": "Kassa, als het vakje leeg blijft (info)",
+      "nl": "Je kunt gewoon bestellen. Zonder dit vakje starten we de dienst pas na de herroepingstermijn van 14 dagen, wat je levering vertraagt.",
+      "fr": "Vous pouvez commander. Sans cette case, nous ne démarrons le service qu'après le délai de rétractation de 14 jours, ce qui retarde votre livraison."
+    },
+    "legal.svc.info": {
+      "place": "Bij elke dienst (uitklapper \"Goed om te weten\")",
+      "nl": "Dit is werk van een echte ontwerper in ons atelier. Je krijgt het resultaat eerst te zien bij je digitale proef.",
+      "fr": "Ce travail est réalisé par un vrai graphiste de notre atelier. Vous voyez le résultat d'abord dans votre épreuve numérique."
+    }
+  }
+}

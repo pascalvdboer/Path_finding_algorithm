@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<g stroke="{{c1}}" stroke-width="{{sw}}" stroke-linejoin="round" stroke-linecap="round">
+<path d="M346 330 L392 176 L470 292 Z" fill="{{c2}}"/>
+<path d="M678 330 L632 176 L554 292 Z" fill="{{c2}}"/>
+<path d="M512 262 C612 262 690 312 700 392 L628 488 L566 628 L512 676 L458 628 L396 488 L324 392 C334 312 412 262 512 262 Z" fill="{{c2}}"/>
+<path d="M512 430 L566 540 L512 676 L458 540 Z" fill="{{c4}}"/>
+<path d="M420 404 L486 428 L424 446 Z" fill="{{c3}}"/>
+<path d="M604 404 L538 428 L600 446 Z" fill="{{c3}}"/>
+<path d="M486 622 L538 622 L512 654 Z" fill="{{c1}}"/>
+</g>
+</svg>

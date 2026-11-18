@@ -1,0 +1,1398 @@
+{
+ "_doc": "Voorbeeldontwerpen + fictieve catalogus (echte Woo-ID's en prijzen van 17-11-2026 voor de dragers; 9000x = producten die 'Maak ontbrekende producten aan' zou maken). Gebruikt door dev/crosssell.html en crosssell.test.js.",
+ "productLinks": {
+  "leather_keychain": [
+   90001
+  ],
+  "leather_bagtag": [
+   90005
+  ],
+  "pvc_keychain": [
+   90004
+  ],
+  "frame": {
+   "20x20": 90002,
+   "25x25": 90003
+  }
+ },
+ "catalog": {
+  "36262": {
+   "id": 36262,
+   "name": "FL6606RT Classic Retro Trucker",
+   "priceExcl": 14.96,
+   "variations": [
+    {
+     "id": 3626201,
+     "colorSlug": "black",
+     "colorName": "Zwart/wit",
+     "size": null,
+     "priceExcl": 14.96,
+     "inStock": true
+    },
+    {
+     "id": 3626202,
+     "colorSlug": "navy",
+     "colorName": "Navy/wit",
+     "size": null,
+     "priceExcl": 14.96,
+     "inStock": true
+    },
+    {
+     "id": 3626203,
+     "colorSlug": "grey",
+     "colorName": "Grijs/wit",
+     "size": null,
+     "priceExcl": 14.96,
+     "inStock": true
+    }
+   ]
+  },
+  "36278": {
+   "id": 36278,
+   "name": "FL6089MT Classic snapback",
+   "priceExcl": 14.96,
+   "variations": [
+    {
+     "id": 3627801,
+     "colorSlug": "black",
+     "colorName": "Zwart",
+     "size": null,
+     "priceExcl": 14.96,
+     "inStock": true
+    },
+    {
+     "id": 3627802,
+     "colorSlug": "navy",
+     "colorName": "Navy",
+     "size": null,
+     "priceExcl": 14.96,
+     "inStock": true
+    },
+    {
+     "id": 3627803,
+     "colorSlug": "grey",
+     "colorName": "Grijs",
+     "size": null,
+     "priceExcl": 14.96,
+     "inStock": true
+    },
+    {
+     "id": 3627804,
+     "colorSlug": "white",
+     "colorName": "Wit",
+     "size": null,
+     "priceExcl": 14.96,
+     "inStock": true
+    },
+    {
+     "id": 3627805,
+     "colorSlug": "red",
+     "colorName": "Rood",
+     "size": null,
+     "priceExcl": 14.96,
+     "inStock": true
+    },
+    {
+     "id": 3627806,
+     "colorSlug": "royal",
+     "colorName": "Kobaltblauw",
+     "size": null,
+     "priceExcl": 14.96,
+     "inStock": true
+    },
+    {
+     "id": 3627807,
+     "colorSlug": "olive",
+     "colorName": "Olijf",
+     "size": null,
+     "priceExcl": 14.96,
+     "inStock": true
+    },
+    {
+     "id": 3627808,
+     "colorSlug": "khaki",
+     "colorName": "Khaki",
+     "size": null,
+     "priceExcl": 14.96,
+     "inStock": true
+    }
+   ]
+  },
+  "36027": {
+   "id": 36027,
+   "name": "FL6277 Flexfit Wooly Combed",
+   "priceExcl": 14.96,
+   "variations": [
+    {
+     "id": 3602701,
+     "colorSlug": "black",
+     "colorName": "Zwart",
+     "size": "S/M",
+     "priceExcl": 14.96,
+     "inStock": true
+    },
+    {
+     "id": 3602702,
+     "colorSlug": "black",
+     "colorName": "Zwart",
+     "size": "L/XL",
+     "priceExcl": 14.96,
+     "inStock": true
+    },
+    {
+     "id": 3602703,
+     "colorSlug": "black",
+     "colorName": "Zwart",
+     "size": "XL/XXL",
+     "priceExcl": 14.96,
+     "inStock": true
+    },
+    {
+     "id": 3602704,
+     "colorSlug": "navy",
+     "colorName": "Navy",
+     "size": "S/M",
+     "priceExcl": 14.96,
+     "inStock": true
+    },
+    {
+     "id": 3602705,
+     "colorSlug": "navy",
+     "colorName": "Navy",
+     "size": "L/XL",
+     "priceExcl": 14.96,
+     "inStock": true
+    },
+    {
+     "id": 3602706,
+     "colorSlug": "navy",
+     "colorName": "Navy",
+     "size": "XL/XXL",
+     "priceExcl": 14.96,
+     "inStock": true
+    },
+    {
+     "id": 3602707,
+     "colorSlug": "grey",
+     "colorName": "Grijs",
+     "size": "S/M",
+     "priceExcl": 14.96,
+     "inStock": true
+    },
+    {
+     "id": 3602708,
+     "colorSlug": "grey",
+     "colorName": "Grijs",
+     "size": "L/XL",
+     "priceExcl": 14.96,
+     "inStock": true
+    },
+    {
+     "id": 3602709,
+     "colorSlug": "grey",
+     "colorName": "Grijs",
+     "size": "XL/XXL",
+     "priceExcl": 14.96,
+     "inStock": true
+    },
+    {
+     "id": 3602710,
+     "colorSlug": "white",
+     "colorName": "Wit",
+     "size": "S/M",
+     "priceExcl": 14.96,
+     "inStock": true
+    },
+    {
+     "id": 3602711,
+     "colorSlug": "white",
+     "colorName": "Wit",
+     "size": "L/XL",
+     "priceExcl": 14.96,
+     "inStock": true
+    },
+    {
+     "id": 3602712,
+     "colorSlug": "white",
+     "colorName": "Wit",
+     "size": "XL/XXL",
+     "priceExcl": 14.96,
+     "inStock": true
+    },
+    {
+     "id": 3602713,
+     "colorSlug": "red",
+     "colorName": "Rood",
+     "size": "S/M",
+     "priceExcl": 14.96,
+     "inStock": true
+    },
+    {
+     "id": 3602714,
+     "colorSlug": "red",
+     "colorName": "Rood",
+     "size": "L/XL",
+     "priceExcl": 14.96,
+     "inStock": true
+    },
+    {
+     "id": 3602715,
+     "colorSlug": "red",
+     "colorName": "Rood",
+     "size": "XL/XXL",
+     "priceExcl": 14.96,
+     "inStock": true
+    }
+   ]
+  },
+  "36247": {
+   "id": 36247,
+   "name": "KP908 Flexfit 5 panelen",
+   "priceExcl": 22.5,
+   "variations": [
+    {
+     "id": 3624701,
+     "colorSlug": "black",
+     "colorName": "Zwart",
+     "size": null,
+     "priceExcl": 22.5,
+     "inStock": true
+    },
+    {
+     "id": 3624702,
+     "colorSlug": "navy",
+     "colorName": "Navy",
+     "size": null,
+     "priceExcl": 22.5,
+     "inStock": true
+    },
+    {
+     "id": 3624703,
+     "colorSlug": "grey",
+     "colorName": "Grijs",
+     "size": null,
+     "priceExcl": 22.5,
+     "inStock": true
+    },
+    {
+     "id": 3624704,
+     "colorSlug": "white",
+     "colorName": "Wit",
+     "size": null,
+     "priceExcl": 22.5,
+     "inStock": true
+    }
+   ]
+  },
+  "36237": {
+   "id": 36237,
+   "name": "RC027 muts dubbel tricot",
+   "priceExcl": 3.8,
+   "variations": [
+    {
+     "id": 3623701,
+     "colorSlug": "black",
+     "colorName": "Zwart",
+     "size": null,
+     "priceExcl": 3.8,
+     "inStock": true
+    },
+    {
+     "id": 3623702,
+     "colorSlug": "navy",
+     "colorName": "Navy",
+     "size": null,
+     "priceExcl": 3.8,
+     "inStock": true
+    },
+    {
+     "id": 3623703,
+     "colorSlug": "grey",
+     "colorName": "Grijs",
+     "size": null,
+     "priceExcl": 3.8,
+     "inStock": true
+    },
+    {
+     "id": 3623704,
+     "colorSlug": "red",
+     "colorName": "Rood",
+     "size": null,
+     "priceExcl": 3.8,
+     "inStock": true
+    },
+    {
+     "id": 3623705,
+     "colorSlug": "royal",
+     "colorName": "Kobaltblauw",
+     "size": null,
+     "priceExcl": 3.8,
+     "inStock": true
+    },
+    {
+     "id": 3623706,
+     "colorSlug": "olive",
+     "colorName": "Olijf",
+     "size": null,
+     "priceExcl": 3.8,
+     "inStock": true
+    }
+   ]
+  },
+  "36225": {
+   "id": 36225,
+   "name": "RC133X Thinsulate-muts",
+   "priceExcl": 4.48,
+   "variations": [
+    {
+     "id": 3622501,
+     "colorSlug": "black",
+     "colorName": "Zwart",
+     "size": null,
+     "priceExcl": 4.48,
+     "inStock": true
+    },
+    {
+     "id": 3622502,
+     "colorSlug": "navy",
+     "colorName": "Navy",
+     "size": null,
+     "priceExcl": 4.48,
+     "inStock": true
+    },
+    {
+     "id": 3622503,
+     "colorSlug": "fluo-orange",
+     "colorName": "Fluo oranje",
+     "size": null,
+     "priceExcl": 4.48,
+     "inStock": true
+    },
+    {
+     "id": 3622504,
+     "colorSlug": "fluo-yellow",
+     "colorName": "Fluo geel",
+     "size": null,
+     "priceExcl": 4.48,
+     "inStock": true
+    }
+   ]
+  },
+  "36209": {
+   "id": 36209,
+   "name": "B447 Thinsulate-muts",
+   "priceExcl": 5.86,
+   "variations": [
+    {
+     "id": 3620901,
+     "colorSlug": "black",
+     "colorName": "Zwart",
+     "size": null,
+     "priceExcl": 5.86,
+     "inStock": true
+    },
+    {
+     "id": 3620902,
+     "colorSlug": "navy",
+     "colorName": "Navy",
+     "size": null,
+     "priceExcl": 5.86,
+     "inStock": true
+    },
+    {
+     "id": 3620903,
+     "colorSlug": "grey",
+     "colorName": "Grijs",
+     "size": null,
+     "priceExcl": 5.86,
+     "inStock": true
+    }
+   ]
+  },
+  "36178": {
+   "id": 36178,
+   "name": "KP884 fleece muts",
+   "priceExcl": 5.64,
+   "variations": [
+    {
+     "id": 3617801,
+     "colorSlug": "black",
+     "colorName": "Zwart",
+     "size": null,
+     "priceExcl": 5.64,
+     "inStock": true
+    },
+    {
+     "id": 3617802,
+     "colorSlug": "navy",
+     "colorName": "Navy",
+     "size": null,
+     "priceExcl": 5.64,
+     "inStock": true
+    }
+   ]
+  },
+  "15590": {
+   "id": 15590,
+   "name": "Unisex Hoodie Eco",
+   "priceExcl": 33.73,
+   "variations": [
+    {
+     "id": 1559001,
+     "colorSlug": "black",
+     "colorName": "Zwart",
+     "size": "XS",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559002,
+     "colorSlug": "black",
+     "colorName": "Zwart",
+     "size": "S",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559003,
+     "colorSlug": "black",
+     "colorName": "Zwart",
+     "size": "M",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559004,
+     "colorSlug": "black",
+     "colorName": "Zwart",
+     "size": "L",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559005,
+     "colorSlug": "black",
+     "colorName": "Zwart",
+     "size": "XL",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559006,
+     "colorSlug": "black",
+     "colorName": "Zwart",
+     "size": "XXL",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559007,
+     "colorSlug": "black",
+     "colorName": "Zwart",
+     "size": "3XL",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559008,
+     "colorSlug": "navy",
+     "colorName": "Navy",
+     "size": "XS",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559009,
+     "colorSlug": "navy",
+     "colorName": "Navy",
+     "size": "S",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559010,
+     "colorSlug": "navy",
+     "colorName": "Navy",
+     "size": "M",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559011,
+     "colorSlug": "navy",
+     "colorName": "Navy",
+     "size": "L",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559012,
+     "colorSlug": "navy",
+     "colorName": "Navy",
+     "size": "XL",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559013,
+     "colorSlug": "navy",
+     "colorName": "Navy",
+     "size": "XXL",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559014,
+     "colorSlug": "navy",
+     "colorName": "Navy",
+     "size": "3XL",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559015,
+     "colorSlug": "grey",
+     "colorName": "Grijs",
+     "size": "XS",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559016,
+     "colorSlug": "grey",
+     "colorName": "Grijs",
+     "size": "S",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559017,
+     "colorSlug": "grey",
+     "colorName": "Grijs",
+     "size": "M",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559018,
+     "colorSlug": "grey",
+     "colorName": "Grijs",
+     "size": "L",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559019,
+     "colorSlug": "grey",
+     "colorName": "Grijs",
+     "size": "XL",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559020,
+     "colorSlug": "grey",
+     "colorName": "Grijs",
+     "size": "XXL",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559021,
+     "colorSlug": "grey",
+     "colorName": "Grijs",
+     "size": "3XL",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559022,
+     "colorSlug": "white",
+     "colorName": "Wit",
+     "size": "XS",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559023,
+     "colorSlug": "white",
+     "colorName": "Wit",
+     "size": "S",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559024,
+     "colorSlug": "white",
+     "colorName": "Wit",
+     "size": "M",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559025,
+     "colorSlug": "white",
+     "colorName": "Wit",
+     "size": "L",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559026,
+     "colorSlug": "white",
+     "colorName": "Wit",
+     "size": "XL",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559027,
+     "colorSlug": "white",
+     "colorName": "Wit",
+     "size": "XXL",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559028,
+     "colorSlug": "white",
+     "colorName": "Wit",
+     "size": "3XL",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559029,
+     "colorSlug": "bottle-green",
+     "colorName": "Flessengroen",
+     "size": "XS",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559030,
+     "colorSlug": "bottle-green",
+     "colorName": "Flessengroen",
+     "size": "S",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559031,
+     "colorSlug": "bottle-green",
+     "colorName": "Flessengroen",
+     "size": "M",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559032,
+     "colorSlug": "bottle-green",
+     "colorName": "Flessengroen",
+     "size": "L",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559033,
+     "colorSlug": "bottle-green",
+     "colorName": "Flessengroen",
+     "size": "XL",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559034,
+     "colorSlug": "bottle-green",
+     "colorName": "Flessengroen",
+     "size": "XXL",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559035,
+     "colorSlug": "bottle-green",
+     "colorName": "Flessengroen",
+     "size": "3XL",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559036,
+     "colorSlug": "burgundy",
+     "colorName": "Bordeaux",
+     "size": "XS",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559037,
+     "colorSlug": "burgundy",
+     "colorName": "Bordeaux",
+     "size": "S",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559038,
+     "colorSlug": "burgundy",
+     "colorName": "Bordeaux",
+     "size": "M",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559039,
+     "colorSlug": "burgundy",
+     "colorName": "Bordeaux",
+     "size": "L",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559040,
+     "colorSlug": "burgundy",
+     "colorName": "Bordeaux",
+     "size": "XL",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559041,
+     "colorSlug": "burgundy",
+     "colorName": "Bordeaux",
+     "size": "XXL",
+     "priceExcl": 33.73,
+     "inStock": true
+    },
+    {
+     "id": 1559042,
+     "colorSlug": "burgundy",
+     "colorName": "Bordeaux",
+     "size": "3XL",
+     "priceExcl": 33.73,
+     "inStock": false
+    }
+   ]
+  },
+  "16400": {
+   "id": 16400,
+   "name": "Heren sweatshirt met capuchon",
+   "priceExcl": 33.69,
+   "variations": [
+    {
+     "id": 1640001,
+     "colorSlug": "black",
+     "colorName": "Zwart",
+     "size": "S",
+     "priceExcl": 33.69,
+     "inStock": true
+    },
+    {
+     "id": 1640002,
+     "colorSlug": "black",
+     "colorName": "Zwart",
+     "size": "M",
+     "priceExcl": 33.69,
+     "inStock": true
+    },
+    {
+     "id": 1640003,
+     "colorSlug": "black",
+     "colorName": "Zwart",
+     "size": "L",
+     "priceExcl": 33.69,
+     "inStock": true
+    },
+    {
+     "id": 1640004,
+     "colorSlug": "black",
+     "colorName": "Zwart",
+     "size": "XL",
+     "priceExcl": 33.69,
+     "inStock": true
+    },
+    {
+     "id": 1640005,
+     "colorSlug": "black",
+     "colorName": "Zwart",
+     "size": "XXL",
+     "priceExcl": 38.2,
+     "inStock": true
+    },
+    {
+     "id": 1640006,
+     "colorSlug": "black",
+     "colorName": "Zwart",
+     "size": "3XL",
+     "priceExcl": 44.61,
+     "inStock": true
+    },
+    {
+     "id": 1640007,
+     "colorSlug": "navy",
+     "colorName": "Navy",
+     "size": "S",
+     "priceExcl": 33.69,
+     "inStock": true
+    },
+    {
+     "id": 1640008,
+     "colorSlug": "navy",
+     "colorName": "Navy",
+     "size": "M",
+     "priceExcl": 33.69,
+     "inStock": true
+    },
+    {
+     "id": 1640009,
+     "colorSlug": "navy",
+     "colorName": "Navy",
+     "size": "L",
+     "priceExcl": 33.69,
+     "inStock": true
+    },
+    {
+     "id": 1640010,
+     "colorSlug": "navy",
+     "colorName": "Navy",
+     "size": "XL",
+     "priceExcl": 33.69,
+     "inStock": true
+    },
+    {
+     "id": 1640011,
+     "colorSlug": "navy",
+     "colorName": "Navy",
+     "size": "XXL",
+     "priceExcl": 38.2,
+     "inStock": true
+    },
+    {
+     "id": 1640012,
+     "colorSlug": "navy",
+     "colorName": "Navy",
+     "size": "3XL",
+     "priceExcl": 44.61,
+     "inStock": true
+    },
+    {
+     "id": 1640013,
+     "colorSlug": "grey",
+     "colorName": "Grijs",
+     "size": "S",
+     "priceExcl": 33.69,
+     "inStock": true
+    },
+    {
+     "id": 1640014,
+     "colorSlug": "grey",
+     "colorName": "Grijs",
+     "size": "M",
+     "priceExcl": 33.69,
+     "inStock": true
+    },
+    {
+     "id": 1640015,
+     "colorSlug": "grey",
+     "colorName": "Grijs",
+     "size": "L",
+     "priceExcl": 33.69,
+     "inStock": true
+    },
+    {
+     "id": 1640016,
+     "colorSlug": "grey",
+     "colorName": "Grijs",
+     "size": "XL",
+     "priceExcl": 33.69,
+     "inStock": true
+    },
+    {
+     "id": 1640017,
+     "colorSlug": "grey",
+     "colorName": "Grijs",
+     "size": "XXL",
+     "priceExcl": 38.2,
+     "inStock": true
+    },
+    {
+     "id": 1640018,
+     "colorSlug": "grey",
+     "colorName": "Grijs",
+     "size": "3XL",
+     "priceExcl": 44.61,
+     "inStock": true
+    }
+   ]
+  },
+  "15324": {
+   "id": 15324,
+   "name": "Unisex Hoodie met rits Eco",
+   "priceExcl": 39.73,
+   "variations": [
+    {
+     "id": 1532401,
+     "colorSlug": "black",
+     "colorName": "Zwart",
+     "size": "S",
+     "priceExcl": 39.73,
+     "inStock": true
+    },
+    {
+     "id": 1532402,
+     "colorSlug": "black",
+     "colorName": "Zwart",
+     "size": "M",
+     "priceExcl": 39.73,
+     "inStock": true
+    },
+    {
+     "id": 1532403,
+     "colorSlug": "black",
+     "colorName": "Zwart",
+     "size": "L",
+     "priceExcl": 39.73,
+     "inStock": true
+    },
+    {
+     "id": 1532404,
+     "colorSlug": "black",
+     "colorName": "Zwart",
+     "size": "XL",
+     "priceExcl": 39.73,
+     "inStock": true
+    },
+    {
+     "id": 1532405,
+     "colorSlug": "black",
+     "colorName": "Zwart",
+     "size": "XXL",
+     "priceExcl": 39.73,
+     "inStock": true
+    },
+    {
+     "id": 1532406,
+     "colorSlug": "black",
+     "colorName": "Zwart",
+     "size": "3XL",
+     "priceExcl": 41.5,
+     "inStock": true
+    },
+    {
+     "id": 1532407,
+     "colorSlug": "navy",
+     "colorName": "Navy",
+     "size": "S",
+     "priceExcl": 39.73,
+     "inStock": true
+    },
+    {
+     "id": 1532408,
+     "colorSlug": "navy",
+     "colorName": "Navy",
+     "size": "M",
+     "priceExcl": 39.73,
+     "inStock": true
+    },
+    {
+     "id": 1532409,
+     "colorSlug": "navy",
+     "colorName": "Navy",
+     "size": "L",
+     "priceExcl": 39.73,
+     "inStock": true
+    },
+    {
+     "id": 1532410,
+     "colorSlug": "navy",
+     "colorName": "Navy",
+     "size": "XL",
+     "priceExcl": 39.73,
+     "inStock": true
+    },
+    {
+     "id": 1532411,
+     "colorSlug": "navy",
+     "colorName": "Navy",
+     "size": "XXL",
+     "priceExcl": 39.73,
+     "inStock": true
+    },
+    {
+     "id": 1532412,
+     "colorSlug": "navy",
+     "colorName": "Navy",
+     "size": "3XL",
+     "priceExcl": 41.5,
+     "inStock": true
+    },
+    {
+     "id": 1532413,
+     "colorSlug": "grey",
+     "colorName": "Grijs",
+     "size": "S",
+     "priceExcl": 39.73,
+     "inStock": true
+    },
+    {
+     "id": 1532414,
+     "colorSlug": "grey",
+     "colorName": "Grijs",
+     "size": "M",
+     "priceExcl": 39.73,
+     "inStock": true
+    },
+    {
+     "id": 1532415,
+     "colorSlug": "grey",
+     "colorName": "Grijs",
+     "size": "L",
+     "priceExcl": 39.73,
+     "inStock": true
+    },
+    {
+     "id": 1532416,
+     "colorSlug": "grey",
+     "colorName": "Grijs",
+     "size": "XL",
+     "priceExcl": 39.73,
+     "inStock": true
+    },
+    {
+     "id": 1532417,
+     "colorSlug": "grey",
+     "colorName": "Grijs",
+     "size": "XXL",
+     "priceExcl": 39.73,
+     "inStock": true
+    },
+    {
+     "id": 1532418,
+     "colorSlug": "grey",
+     "colorName": "Grijs",
+     "size": "3XL",
+     "priceExcl": 41.5,
+     "inStock": true
+    }
+   ]
+  },
+  "90001": {
+   "id": 90001,
+   "name": "Lederen sleutelhanger (gelaserd)",
+   "priceExcl": 7.0,
+   "variations": []
+  },
+  "90002": {
+   "id": 90002,
+   "name": "Schaduwdoos 20 × 20 cm met plaatje",
+   "priceExcl": 24.75,
+   "variations": []
+  },
+  "90003": {
+   "id": 90003,
+   "name": "Schaduwdoos 25 × 25 cm met plaatje",
+   "priceExcl": 28.92,
+   "variations": []
+  },
+  "90004": {
+   "id": 90004,
+   "name": "PVC-sleutelhanger",
+   "priceExcl": 4.2,
+   "variations": []
+  },
+  "90005": {
+   "id": 90005,
+   "name": "Lederen tassenlabel",
+   "priceExcl": 9.5,
+   "variations": []
+  }
+ },
+ "designs": [
+  {
+   "id": "flat25",
+   "label": {
+    "nl": "Vlak logo · 8 cm · 25 stuks",
+    "fr": "Logo plat · 8 cm · 25 pièces"
+   },
+   "preview": "round",
+   "designId": 4201,
+   "ref": "PS-2026-0042",
+   "payload": {
+    "v": 1,
+    "locale": "nl-BE",
+    "technique": "embroidered",
+    "sizeCm": 8,
+    "widthMm": 80,
+    "heightMm": 80,
+    "shape": "circle",
+    "qty": 25,
+    "options": [
+     "cut_from_fabric",
+     "velcro_hook",
+     "velcro_black",
+     "thickness_normal"
+    ],
+    "fabric": {
+     "id": "navy",
+     "hex": "#1b2a4a",
+     "label": "Navy"
+    },
+    "edgeColor": {
+     "code": "1800",
+     "hex": "#1c1c1c",
+     "name": "Zwart"
+    },
+    "threads": [
+     {
+      "code": "1801",
+      "name": "Wit",
+      "hex": "#ffffff",
+      "share": 0.25
+     },
+     {
+      "code": "1855",
+      "name": "Goud",
+      "hex": "#d4a017",
+      "share": 0.12
+     },
+     {
+      "code": "1747",
+      "name": "Rood",
+      "hex": "#c1121f",
+      "share": 0.08
+     },
+     {
+      "code": "1640",
+      "name": "Zilvergrijs",
+      "hex": "#a7a9ac",
+      "share": 0.18
+     }
+    ],
+    "texts": [],
+    "analysis": {
+     "kind": "flat",
+     "hasSoftShading": false,
+     "colors": 6,
+     "fineLineMm": 2.0,
+     "minTextMm": 9,
+     "warnings": []
+    }
+   },
+   "expect": {
+    "ids": [
+     "cap",
+     "hoodie",
+     "beanie"
+    ]
+   }
+  },
+  {
+   "id": "photo1",
+   "label": {
+    "nl": "Foto · 6 cm · 1 stuk",
+    "fr": "Photo · 6 cm · 1 pièce"
+   },
+   "preview": "photo",
+   "designId": 4202,
+   "ref": "PS-2026-0043",
+   "payload": {
+    "v": 1,
+    "locale": "nl-BE",
+    "technique": "printed",
+    "sizeCm": 6,
+    "widthMm": 60,
+    "heightMm": 45,
+    "shape": "rounded_rect",
+    "qty": 1,
+    "options": [
+     "embroidered_border",
+     "sew_on"
+    ],
+    "fabric": {
+     "id": "white",
+     "hex": "#f4f4f2",
+     "label": "Wit"
+    },
+    "edgeColor": {
+     "code": "1800",
+     "hex": "#1c1c1c",
+     "name": "Zwart"
+    },
+    "threads": [
+     {
+      "code": "1800",
+      "name": "Zwart",
+      "hex": "#1c1c1c",
+      "share": 0.1
+     }
+    ],
+    "texts": [],
+    "analysis": {
+     "kind": "photo",
+     "hasSoftShading": true,
+     "colors": 24,
+     "fineLineMm": null,
+     "minTextMm": null,
+     "warnings": []
+    }
+   },
+   "expect": {
+    "ids": [
+     "frame",
+     "leather_keychain",
+     "cap"
+    ],
+    "notIds": [
+     "pvc_keychain"
+    ]
+   }
+  },
+  {
+   "id": "pvc50",
+   "label": {
+    "nl": "PVC · 4 cm · 50 stuks",
+    "fr": "PVC · 4 cm · 50 pièces"
+   },
+   "preview": "round",
+   "designId": 4203,
+   "ref": "PS-2026-0044",
+   "payload": {
+    "v": 1,
+    "locale": "nl-BE",
+    "technique": "pvc",
+    "sizeCm": 4,
+    "widthMm": 40,
+    "heightMm": 40,
+    "shape": "circle",
+    "qty": 50,
+    "options": [
+     "molded",
+     "velcro_hook"
+    ],
+    "fabric": {
+     "id": "black",
+     "hex": "#1c1c1c",
+     "label": "Zwart"
+    },
+    "edgeColor": {
+     "code": "1800",
+     "hex": "#1c1c1c",
+     "name": "Zwart"
+    },
+    "threads": [
+     {
+      "code": "1801",
+      "name": "Wit",
+      "hex": "#ffffff",
+      "share": 0.25
+     },
+     {
+      "code": "1855",
+      "name": "Goud",
+      "hex": "#d4a017",
+      "share": 0.12
+     },
+     {
+      "code": "1747",
+      "name": "Rood",
+      "hex": "#c1121f",
+      "share": 0.08
+     },
+     {
+      "code": "1640",
+      "name": "Zilvergrijs",
+      "hex": "#a7a9ac",
+      "share": 0.18
+     }
+    ],
+    "texts": [],
+    "analysis": {
+     "kind": "flat",
+     "hasSoftShading": false,
+     "colors": 5,
+     "fineLineMm": 1.2,
+     "minTextMm": 4.5,
+     "warnings": []
+    }
+   },
+   "expect": {
+    "ids": [
+     "cap",
+     "pvc_keychain",
+     "hoodie"
+    ]
+   }
+  },
+  {
+   "id": "illu12",
+   "label": {
+    "nl": "Illustratie · 10 cm · 12 stuks",
+    "fr": "Illustration · 10 cm · 12 pièces"
+   },
+   "preview": "art",
+   "designId": 4204,
+   "ref": "PS-2026-0045",
+   "payload": {
+    "v": 1,
+    "locale": "nl-BE",
+    "technique": "embroidered",
+    "sizeCm": 10,
+    "widthMm": 100,
+    "heightMm": 67,
+    "shape": "rect",
+    "qty": 12,
+    "options": [
+     "cut_from_fabric",
+     "iron_on",
+     "thickness_normal"
+    ],
+    "fabric": {
+     "id": "white",
+     "hex": "#f4f4f2",
+     "label": "Wit"
+    },
+    "edgeColor": {
+     "code": "1800",
+     "hex": "#1b2a4a",
+     "name": "Navy"
+    },
+    "threads": [
+     {
+      "code": "1800",
+      "name": "Navy",
+      "hex": "#1b2a4a",
+      "share": 0.3
+     },
+     {
+      "code": "1855",
+      "name": "Oker",
+      "hex": "#d4a017",
+      "share": 0.2
+     },
+     {
+      "code": "1747",
+      "name": "Rood",
+      "hex": "#c1121f",
+      "share": 0.15
+     }
+    ],
+    "texts": [],
+    "analysis": {
+     "kind": "illustration",
+     "hasSoftShading": false,
+     "colors": 7,
+     "fineLineMm": 1.8,
+     "minTextMm": null,
+     "warnings": []
+    }
+   },
+   "expect": {
+    "includes": [
+     "cap",
+     "hoodie"
+    ]
+   }
+  }
+ ]
+}

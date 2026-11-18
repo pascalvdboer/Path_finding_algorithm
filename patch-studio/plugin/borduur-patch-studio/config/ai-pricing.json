@@ -1,0 +1,51 @@
+{
+  "schema": 1,
+  "_doc": "Ontwerprondes, pakketten en verrekening (commerce, SPEC-AI-DIENSTEN §3.2, §11, §15). Prijzen EXCL. btw met 4 decimalen (net als de beheerpagina); incl. = excl × (1 + vatRate), half-up op de cent. Alles overschrijfbaar via optie bps_ai_settings (deep-merge). Klanttekst: 'ronde' / 'essai', nooit 'credits'. Geen secrets in dit bestand.",
+  "mode": "off",
+  "emailVerify": true,
+  "vatRate": 0.21,
+  "unitLabel": { "nl": "ronde", "fr": "essai" },
+  "free": { "anonymous": 1, "withEmail": 2, "perOrder": 5 },
+  "costs": { "generate": 1, "refine": 1, "useDesign": 0, "refundOnError": true },
+  "packs": [
+    {
+      "id": "ai_pack_10",
+      "rounds": 10,
+      "priceExcl": 4.0909,
+      "enabled": true,
+      "label": { "nl": "Ontwerppakket · 10 rondes", "fr": "Pack design · 10 essais" }
+    },
+    {
+      "id": "ai_pack_25",
+      "rounds": 25,
+      "priceExcl": 8.2231,
+      "enabled": true,
+      "label": { "nl": "Clubpakket · 25 rondes", "fr": "Pack club · 25 essais" }
+    }
+  ],
+  "validityMonths": 24,
+  "validityMinMonths": 12,
+  "freeAnonValidDays": 30,
+  "freeValidMonths": 12,
+  "refundUnusedDays": 14,
+  "refundUnused": true,
+  "orderCredit": { "percent": 100, "minArticleIncl": 50, "validMonths": 12, "stackable": false },
+  "limits": {
+    "dailyBudgetEur": 10,
+    "monthlyBudgetEur": 150,
+    "monthlyHardCapEur": 250,
+    "alertAtPercent": 80,
+    "perOwnerPerDay": 20,
+    "minSecondsBetween": 8,
+    "anonPerIpPerDay": 3,
+    "globalConcurrent": 4,
+    "jobTimeoutSec": 90,
+    "emailCodesPerIpPerHour": 5,
+    "emailCodesPerEmailPerHour": 3,
+    "emailCodeTries": 5,
+    "emailCodeMinutes": 15
+  },
+  "alerts": { "email": "" },
+  "usdToEur": 0.93,
+  "estCostPerRoundEur": 0.25
+}

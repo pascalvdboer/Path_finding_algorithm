@@ -125,14 +125,23 @@ export function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
  */
 export function softShadow(c, src, x, y, ox, oy, blurPx, alpha, rgb = '0,0,0') {
   const w = src.width, h = src.height;
-  const s = Math.max(1, Math.min(12, blurPx / 1.6));
+  if (blurPx < 10) {
+    // small blur: the native shadow is cheap and exact (thin rings would alias when downscaled)
+    c.save();
+    c.shadowColor = `rgba(${rgb},${alpha})`; c.shadowBlur = blurPx; c.shadowOffsetX = ox + 100000; c.shadowOffsetY = oy;
+    c.drawImage(src, x - 100000, y);
+    c.restore();
+    return;
+  }
+  // modest downscale (thin rings alias into streaks when shrunk too far) + one extra halving pass
+  const s = Math.max(1, Math.min(4, blurPx / 2));
   const sw = Math.max(2, Math.ceil(w / s) + 2), sh = Math.max(2, Math.ceil(h / s) + 2);
   const small = makeCanvas(sw, sh), sc = ctx2d(small);
   sc.imageSmoothingEnabled = true;
   sc.drawImage(src, 1, 1, sw - 2, sh - 2);
   sc.globalCompositeOperation = 'source-in';
   sc.fillStyle = `rgb(${rgb})`; sc.fillRect(0, 0, sw, sh);
-  if (s > 2.5) {
+  if (blurPx > 6) {
     // second pass: one more halving for a rounder falloff
     const s2 = makeCanvas(Math.max(2, sw >> 1), Math.max(2, sh >> 1)), c2 = ctx2d(s2);
     c2.imageSmoothingEnabled = true; c2.drawImage(small, 0, 0, s2.width, s2.height);
@@ -145,4 +154,27 @@ export function softShadow(c, src, x, y, ox, oy, blurPx, alpha, rgb = '0,0,0') {
   const kx = w / (sw - 2), ky = h / (sh - 2);
   c.drawImage(small, x + ox - kx, y + oy - ky, sw * kx, sh * ky);
   c.restore();
+}
+
+/** LRU bounded by total weight (e.g. pixels) instead of entry count. */
+export class WLru {
+  constructor(maxWeight, maxEntries = 64) { this.max = maxWeight; this.maxN = maxEntries; this.m = new Map(); this.total = 0; }
+  get(k) {
+    if (!this.m.has(k)) return undefined;
+    const e = this.m.get(k);
+    this.m.delete(k); this.m.set(k, e);
+    return e.v;
+  }
+  set(k, v, w = 1) {
+    if (this.m.has(k)) { this.total -= this.m.get(k).w; this.m.delete(k); }
+    this.m.set(k, { v, w });
+    this.total += w;
+    while ((this.total > this.max || this.m.size > this.maxN) && this.m.size > 1) {
+      const first = this.m.keys().next().value;
+      this.total -= this.m.get(first).w;
+      this.m.delete(first);
+    }
+    return v;
+  }
+  clear() { this.m.clear(); this.total = 0; }
 }

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Naamstroken — dev</title>
+<link rel="stylesheet" href="../plugin/borduur-patch-studio/assets/src/nametape/nametape.css">
+<style>
+  html, body { margin: 0; background: #fff; }
+  body { font-family: system-ui, sans-serif; }
+  .dev-bar { display: flex; gap: 12px; align-items: center; padding: 8px 16px; font-size: 13px; color: #555; border-bottom: 1px solid #eee; }
+  .dev-bar a { color: #0B74A6; }
+  .dev-wrap { padding: 24px 16px; }
+  @media (max-width: 899px) { .dev-bar { display: none; } .dev-wrap { padding: 0; } }
+</style>
+</head>
+<body>
+<div class="dev-bar">
+  <strong>Patch Studio · naamstroken (dev, bronmodules)</strong>
+  <a href="?lang=nl">NL</a> <a href="?lang=fr">FR</a> <a href="?rows=25">25 namen</a> <a href="?rows=25&amp;long=2">25 namen, 2 te lang</a>
+  <span id="dev-mode">offline (rest:null)</span>
+</div>
+<div class="dev-wrap">
+  <div class="bps-nametape" data-bps-nametape-root id="nt-root" lang="nl">
+    <div class="bps-nt-skeleton"><h2>Naamstroken met klittenband</h2><noscript>Deze ontwerptool heeft JavaScript nodig.</noscript></div>
+  </div>
+</div>
+<script type="module">
+  window.BPSNametapeNoAuto = true;
+  const q = new URLSearchParams(location.search);
+  const lang = q.get('lang') === 'fr' ? 'fr' : 'nl';
+  const base = '../plugin/borduur-patch-studio/';
+  const [nt, metrics, defaults] = await Promise.all(
+    ['config/nametape.json', 'config/nametape-metrics.json', 'config/defaults.json'].map((p) => fetch(base + p).then((r) => r.json()))
+  );
+  const { mount } = await import(base + 'assets/src/nametape/index.js');
+
+  // Zelfde vorm als Nametape\Config::public_config() (PHP).
+  const { woo, _doc, ...pub } = nt;
+  const cfg = {
+    ...pub,
+    metrics: metrics.fonts,
+    locale: lang === 'fr' ? 'fr-BE' : 'nl-BE',
+    vat: { rate: defaults.vat.rate },
+    tiers: { ...defaults.tiers, pooledWithPatches: nt.tiers.pooledWithPatches },
+    shipping: defaults.shipping,
+    legal: { rightsTextVersion: defaults.legal.rightsTextVersion },
+    rest: null,
+    assets: { fontsUrl: base + 'assets/fonts/' },
+    page: { editKey: '', studioUrl: '../dev/index.html', poolQty: Number(q.get('pool') || 0) },
+    strings: {},
+    quoteUrl: '#offerte',
+  };
+  if (q.has('proof')) cfg.promises = { ...cfg.promises, proof: true };
+  if (q.has('fee')) cfg.smallOrderFee = { ...cfg.smallOrderFee, enabled: true };
+
+  const root = document.getElementById('nt-root');
+  root.lang = lang;
+  if (!q.has('keep')) { try { sessionStorage.removeItem('bps:nt:v1'); } catch (e) {} }
+  const app = mount(root, cfg);
+  window.__nt = app;
+
+  // ?rows=25 → voorbeeldlijst (?long=2: twee namen te lang voor 10 × 2,5 cm)
+  const n = Number(q.get('rows') || 0);
+  if (n > 0 && app) {
+    const names = ['PEETERS J.', 'JANSSENS A.', 'MAES L.', 'JACOBS S.', 'MERTENS K.', 'WILLEMS T.', 'CLAES N.', 'GOOSSENS B.', 'WOUTERS E.', 'DE SMET R.',
+      'DUBOIS M.', 'LAMBERT C.', 'DUPONT F.', 'HERMANS P.', 'AERTS V.', 'MARTIN D.', 'SIMON G.', 'LEMAIRE H.', 'VERMEULEN I.', 'PEETERS K.',
+      'VAN DAMME O.', 'MICHIELS W.', 'DE BACKER Y.', 'STEVENS Z.', 'COOLS A.', 'BAUWENS L.', 'LEROY M.', 'DESMET Q.', 'SMETS U.', 'VERHAEGEN X.'];
+    const longs = ['VANDENBROUCKE-DESMEDT ALEX.', 'DE VLEESCHAUWER-VERSTRAETEN J.'];
+    const L = Number(q.get('long') || 0);
+    const rows = [];
+    for (let i = 0; i < n; i++) {
+      const name = i >= 3 && i < 3 + L ? longs[i - 3] : names[i % names.length];
+      rows.push({ id: 'r' + (i + 1), name, line2: '', blood: null, qty: 1 });
+    }
+    app.store.set({ rows, nextId: n + 1, mode: n > 1 ? 'list' : 'single', selected: 0 });
+    app.render();
+  }
+  document.getElementById('dev-mode').textContent = 'offline (rest:null) · ' + cfg.locale;
+</script>
+</body>
+</html>
