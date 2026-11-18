@@ -118,6 +118,10 @@ final class Rest {
 	 * @return array|WP_Error
 	 */
 	private static function batch_param( WP_REST_Request $r ) {
+		// JSON body (no multipart): bound the raw body too, not only a string field.
+		if ( strlen( (string) $r->get_body() ) > self::MAX_JSON + 4096 ) {
+			return self::error( 'bps_too_large', __( 'Je lijst is te groot om in één keer te versturen. Vraag gerust een offerte.', 'borduur-patch-studio' ), 413 );
+		}
 		$b = $r->get_param( 'batch' );
 		if ( is_string( $b ) ) {
 			if ( strlen( $b ) > self::MAX_JSON ) {

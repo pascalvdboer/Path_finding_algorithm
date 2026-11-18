@@ -240,3 +240,18 @@
 @media (prefers-reduced-motion: reduce) {
   .bps-nametape *, .bps-nametape *::before, .bps-nametape *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
 }
+
+/* Smalle gsm: mini-voorbeeld boven de tekst, zodat lange namen en foutmeldingen de volle breedte krijgen. */
+@media (max-width: 480px) {
+  .bps-nametape .bps-nt__rowMain { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .bps-nt__rowText { width: 100%; }
+}
+
+/* Gebruiksgemak-review (18-11): balk toont op scherm 3 wat nog ontbreekt; knop blijft aanraakbaar. */
+.bps-nt__barInfo.is-hint { white-space: normal; font-size: 14px; line-height: 1.25; color: var(--bps-bad); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.bps-nt__barInfo.is-hint .bps-nt__barCount { font-weight: 600; }
+.bps-nametape .bps-nt__cta[aria-disabled="true"] { background: #9DB3C2; }
+.bps-nametape .bps-nt__cta[aria-disabled="true"]:hover { background: #9DB3C2; }
+.bps-nt__why.is-flash { animation: bps-nt-flash .6s ease 2; }
+@keyframes bps-nt-flash { 50% { background: #FDECEC; } }
+@media (prefers-reduced-motion: reduce) { .bps-nt__why.is-flash { animation: none; font-weight: 700; } }

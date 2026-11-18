@@ -55,11 +55,7 @@
   </div>
 </div>
 
-<section class="demo-try" aria-labelledby="demo-try-title">
-  <h2 class="demo-try__title" id="demo-try-title" data-demo-t="tryTitle">Geen bestand bij de hand? Probeer een voorbeeld</h2>
-  <p class="demo-try__hint" data-demo-t="tryHint">Elk voorbeeld toont ander advies. Je eigen bestand uploaden kan ook, hieronder.</p>
-  <ul class="demo-try__list" id="demo-try"></ul>
-</section>
+<!-- Example files now live in the studio itself (start gallery, "Of test met een voorbeeldbestand"). -->
 
 <main class="demo-main">
   <div class="bps-studio" id="studio" data-bps-root data-bps-version="1.0.0" lang="nl-BE">
@@ -86,6 +82,7 @@
 
 <script type="application/json" id="demo-defaults">/*__DEFAULTS__*/</script>
 <script type="application/json" id="demo-palette">/*__PALETTE__*/</script>
+<script type="application/json" id="demo-polyneon">/*__POLYNEON__*/</script>
 <script type="application/json" id="demo-fonts">/*__FONTS__*/</script>
 <script type="application/json" id="demo-samples">/*__SAMPLES__*/</script>
 <script type="text/plain" id="demo-worker">/*__WORKER__*/</script>
@@ -150,47 +147,16 @@
     var config = BPS.buildPublicConfig(json('demo-defaults'), json('demo-palette'), {
       locale: locale,
       rest: null,
-      assets: { workerUrl: workerUrl, fontsUrl: '', version: 'demo' },
+      assets: { workerUrl: workerUrl, fontsUrl: '', version: 'demo', polyneon: json('demo-polyneon') },
       strings: strings,
-      page: { technique: '', sizeCm: null, qty: null, shape: 'auto', compact: false },
+      page: { technique: '', sizeCm: null, qty: null, shape: 'auto', compact: false,
+        samples: json('demo-samples').map(function (s) { return { file: s.file, type: s.type, data: s.data, label: fr ? s.fr : s.nl, hint: fr ? s.frHint : s.nlHint }; }) },
     });
     var app = BPS.mount(root, config);
     window.BPS_DEMO = { config: config, app: app };
     root.addEventListener('bps:quote', function (e) { window.BPS_DEMO.lastQuote = e.detail && e.detail.quote; });
     root.addEventListener('bps:advice', function (e) { window.BPS_DEMO.lastAdvice = e.detail && e.detail.advice; });
 
-    // Extra example files, loaded exactly as if the customer uploaded them.
-    var samples = json('demo-samples');
-    var list = document.getElementById('demo-try');
-    samples.forEach(function (s) {
-      var li = document.createElement('li');
-      var b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'demo-try__btn';
-      var img = document.createElement('img');
-      img.src = s.data; img.alt = ''; img.width = 36; img.height = 36;
-      var span = document.createElement('span');
-      span.textContent = fr ? s.fr : s.nl;
-      var small = document.createElement('small');
-      small.textContent = fr ? s.frHint : s.nlHint;
-      span.appendChild(small);
-      b.appendChild(img); b.appendChild(span);
-      b.addEventListener('click', function () { loadSample(s); });
-      li.appendChild(b); list.appendChild(li);
-    });
-
-    function loadSample(s) {
-      fetch(s.data).then(function (r) { return r.blob(); }).then(function (blob) {
-        var file = new File([blob], s.file, { type: s.type });
-        var input = root.querySelector('input[type=file]');
-        if (!input) return;
-        var dt = new DataTransfer();
-        dt.items.add(file);
-        input.files = dt.files;
-        input.dispatchEvent(new Event('change', { bubbles: true }));
-        root.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
-      }).catch(function (e) { console.warn('[demo] sample failed', e); });
-    }
   } catch (e) {
     var pre = document.createElement('pre');
     pre.className = 'demo-err';

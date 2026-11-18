@@ -1,0 +1,30 @@
+{
+  "_doc": "Gedeelde testvectoren voor de dienstregels (SPEC-AI-DIENSTEN §10.5). PHP: Services::evaluate() (tests/services/run-services-php.php). De JS-module assets/src/services/index.js (frontend) moet dezelfde uitkomst geven. Catalogus = config/ai-services.json met standaardinstellingen (D4/D5 uit). 'dismissed' = al afgewezen voor dit ontwerp.",
+  "vectors": [
+    { "name": "geen probleem bij analyse: niets", "signals": { "stage": "analysis", "analysis": { "minSidePx": 1200, "jpegNoise": 0.05 } }, "expect": null },
+    { "name": "klein bestand: hertekenen", "signals": { "stage": "analysis", "analysis": { "minSidePx": 220 } }, "expect": "d2_redraw" },
+    { "name": "foto van een logo: hertekenen", "signals": { "stage": "analysis", "analysis": { "minSidePx": 900, "photoOfLogo": true } }, "expect": "d2_redraw" },
+    { "name": "veel JPEG-ruis: hertekenen", "signals": { "stage": "analysis", "analysis": { "minSidePx": 900, "jpegNoise": 0.5 } }, "expect": "d2_redraw" },
+    { "name": "schets: hertekenen uitgebreid", "signals": { "stage": "analysis", "analysis": { "minSidePx": 1500, "sketch": true } }, "expect": "d2b_redraw_xl" },
+    { "name": "klein bestand maar al afgewezen, schets: volgende", "signals": { "stage": "analysis", "analysis": { "minSidePx": 200, "sketch": true } }, "dismissed": ["d2_redraw"], "expect": "d2b_redraw_xl" },
+    { "name": "klein bestand afgewezen: niets meer", "signals": { "stage": "analysis", "analysis": { "minSidePx": 200 } }, "dismissed": ["d2_redraw"], "expect": null },
+    { "name": "AI-ontwerp, check niet ok, geen autofix: afwerken", "signals": { "stage": "proposals", "isAi": true, "check": { "status": "warn", "autoFixAvailable": false } }, "expect": "d1_finish" },
+    { "name": "AI-ontwerp, check niet ok maar autofix kan: niets (gratis eerst)", "signals": { "stage": "proposals", "isAi": true, "check": { "status": "bad", "autoFixAvailable": true } }, "expect": null },
+    { "name": "AI-ontwerp, check ok: niets", "signals": { "stage": "proposals", "isAi": true, "check": { "status": "ok", "autoFixAvailable": false } }, "expect": null },
+    { "name": "geen AI, check niet ok: geen afwerkdienst", "signals": { "stage": "proposals", "isAi": false, "check": { "status": "warn", "autoFixAvailable": false } }, "expect": null },
+    { "name": "AI-ontwerp klein: nooit hertekenen (wij maakten het)", "signals": { "stage": "analysis", "isAi": true, "analysis": { "minSidePx": 200 } }, "expect": null },
+    { "name": "50 stuks: staal", "signals": { "stage": "price", "qty": 50, "totalIncl": 180, "technique": "embroidered" }, "expect": "d6_sample" },
+    { "name": "groot bedrag: staal", "signals": { "stage": "price", "qty": 20, "totalIncl": 260, "technique": "embroidered" }, "expect": "d6_sample" },
+    { "name": "pvc: staal", "signals": { "stage": "price", "qty": 10, "totalIncl": 90, "technique": "pvc" }, "expect": "d6_sample" },
+    { "name": "kleine bestelling: niets", "signals": { "stage": "price", "qty": 10, "totalIncl": 90, "technique": "embroidered" }, "expect": null },
+    { "name": "zelf borduren: borduurbestand", "signals": { "stage": "price", "qty": 10, "selfEmbroider": true }, "expect": "d3_file" },
+    { "name": "bedankpagina: borduurbestand als extra", "signals": { "stage": "thanks" }, "expect": "d3b_file_addon" },
+    { "name": "spoed staat standaard uit", "signals": { "stage": "price", "qty": 10, "totalIncl": 100, "technique": "embroidered", "neededBy": "2026-12-01", "normalDate": "2026-12-08", "rushDate": "2026-11-30" }, "expect": null },
+    { "name": "onbekende fase: niets", "signals": { "stage": "checkout", "qty": 10 }, "expect": null }
+  ],
+  "rushEnabled": [
+    { "name": "spoed aan, nodig vóór normale datum, haalbaar", "signals": { "stage": "price", "qty": 10, "totalIncl": 100, "technique": "embroidered", "neededBy": "2026-12-01", "normalDate": "2026-12-08", "rushDate": "2026-11-30" }, "expect": "d4_rush", "priceIncl": 25 },
+    { "name": "spoed aan, maar zelfs spoed is te laat: niets", "signals": { "stage": "price", "qty": 10, "totalIncl": 100, "technique": "embroidered", "neededBy": "2026-12-01", "normalDate": "2026-12-08", "rushDate": "2026-12-03" }, "expect": null },
+    { "name": "spoed aan, pvc niet mogelijk", "signals": { "stage": "price", "qty": 10, "totalIncl": 60, "technique": "pvc", "neededBy": "2026-12-01", "normalDate": "2026-12-08", "rushDate": "2026-11-30" }, "expect": "d6_sample" }
+  ]
+}

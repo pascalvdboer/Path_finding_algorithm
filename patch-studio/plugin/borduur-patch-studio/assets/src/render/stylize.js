@@ -92,7 +92,8 @@ export function chooseModes(comps, mmPerLabelPx, satinMaxMm = 7) {
     if (aMm2 < 2.5 && tMm <= satinMaxMm) {
       // tiny specks: one calm common direction instead of a noisy mix of angles
       comps.mode[c] = 0; comps.cos[c] = 0.8776; comps.sin[c] = -0.4794;
-    } else comps.mode[c] = tMm > satinMaxMm ? 2 : comps.ring[c] ? 1 : 0;
+    } else if (tMm > satinMaxMm || (aMm2 > 60 && tMm > 1.8)) comps.mode[c] = 2; // wide or large (ground with holes): tatami fill
+    else comps.mode[c] = comps.ring[c] ? 1 : 0;
   }
   return comps;
 }

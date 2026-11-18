@@ -21,6 +21,13 @@ final class Products {
 	private static $cache = array();
 
 	/**
+	 * Cache leegmaken (na het opslaan van instellingen).
+	 */
+	public static function flush(): void {
+		self::$cache = array();
+	}
+
+	/**
 	 * Alle product-ID's die de config gebruikt.
 	 *
 	 * @param array|null $cfg Config.

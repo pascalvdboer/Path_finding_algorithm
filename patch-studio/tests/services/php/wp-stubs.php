@@ -112,3 +112,74 @@ if ( ! function_exists( 'wc_add_notice' ) ) {
 if ( ! function_exists( 'wp_date' ) ) {
 	function wp_date( $fmt, $ts = null ) { return gmdate( $fmt, $ts ?? time() ); }
 }
+
+// --- Extra stubs for the order/account/admin classes (commerce tests). ---
+if ( ! function_exists( 'sanitize_textarea_field' ) ) {
+	function sanitize_textarea_field( $s ) { return trim( strip_tags( (string) $s ) ); }
+}
+if ( ! function_exists( 'sanitize_title' ) ) {
+	function sanitize_title( $s ) { return trim( preg_replace( '/[^a-z0-9]+/', '-', strtolower( (string) $s ) ), '-' ); }
+}
+if ( ! function_exists( 'home_url' ) ) {
+	function home_url( $p = '' ) { return 'https://shop.test' . $p; }
+}
+if ( ! function_exists( 'add_query_arg' ) ) {
+	function add_query_arg( $k, $v = null, $url = '' ) {
+		if ( is_array( $k ) ) { $url = (string) $v; $args = $k; } else { $args = array( $k => $v ); }
+		return $url . ( false === strpos( $url, '?' ) ? '?' : '&' ) . http_build_query( $args );
+	}
+	function remove_query_arg( $k, $url = '' ) { return (string) $url; }
+}
+if ( ! function_exists( 'wp_parse_url' ) ) {
+	function wp_parse_url( $u, $c = -1 ) { return parse_url( $u, $c ); }
+}
+if ( ! function_exists( 'absint' ) ) {
+	function absint( $v ) { return abs( (int) $v ); }
+}
+if ( ! function_exists( 'wc_format_decimal' ) ) {
+	function wc_format_decimal( $v, $dp = 2 ) { return number_format( (float) $v, $dp, '.', '' ); }
+}
+if ( ! function_exists( 'wp_strip_all_tags' ) ) {
+	function wp_strip_all_tags( $s ) { return strip_tags( (string) $s ); }
+	function wpautop( $s ) { return '<p>' . $s . '</p>'; }
+}
+if ( ! function_exists( 'is_admin' ) ) {
+	function is_admin() { return false; }
+	function wp_doing_ajax() { return false; }
+}
+if ( ! function_exists( 'current_user_can' ) ) {
+	function current_user_can( $cap ) { return ! empty( $GLOBALS['bps_t']['can'] ); }
+}
+if ( ! function_exists( 'get_permalink' ) ) {
+	function get_permalink( $id ) { return 'https://shop.test/?p=' . (int) $id; }
+}
+if ( ! function_exists( 'wc_get_account_endpoint_url' ) ) {
+	function wc_get_account_endpoint_url( $e ) { return 'https://shop.test/mijn-account/' . $e . '/'; }
+}
+if ( ! function_exists( 'wc_terms_and_conditions_page_id' ) ) {
+	function wc_terms_and_conditions_page_id() { return 0; }
+}
+if ( ! function_exists( '__' ) ) {
+	function __( $s, $d = null ) { return $s; }
+	function esc_html__( $s, $d = null ) { return $s; }
+}
+if ( ! class_exists( 'WP_REST_Request' ) ) {
+	class WP_REST_Request {
+		public $method; public $route; public $headers = array(); public $json = array(); public $params = array();
+		public function __construct( $m = 'GET', $route = '' ) { $this->method = $m; $this->route = $route; }
+		public function get_header( $k ) { return $this->headers[ strtolower( $k ) ] ?? null; }
+		public function get_route() { return $this->route; }
+		public function get_json_params() { return $this->json; }
+		public function get_body_params() { return array(); }
+		public function get_param( $k ) { return $this->params[ $k ] ?? ( $this->json[ $k ] ?? null ); }
+	}
+	class WP_REST_Response {
+		public $data; public $status; public $headers = array();
+		public function __construct( $d = null, $s = 200 ) { $this->data = $d; $this->status = $s; }
+		public function header( $k, $v ) { $this->headers[ $k ] = $v; }
+		public function get_status() { return $this->status; }
+	}
+}
+if ( ! function_exists( 'is_user_logged_in' ) ) {
+	function is_user_logged_in() { return $GLOBALS['bps_t']['user'] > 0; }
+}

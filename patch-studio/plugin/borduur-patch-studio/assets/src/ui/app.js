@@ -15,7 +15,7 @@ import { messages as pricingMessages } from '../pricing/index.js';
 import uiMessages from './messages.js';
 import { h, text, icon, debounce, uid } from './dom.js';
 import { createStore, initialState, sanitizeState, normalizeQty, reconcileOptions, persist, loadPersisted, clearPersisted } from './state.js';
-import { derive, fabricList } from './derive.js';
+import { derive, fabricList, placeText, fitHeight } from './derive.js';
 import { createApi } from './api.js';
 import { createStage } from './stage.js';
 import { emptyState, createPanels } from './panels.js';
@@ -24,6 +24,8 @@ import { createCheckout } from './checkout.js';
 import { createPriceCard, createBar, createQty } from './price.js';
 import { createFlows } from './flows.js';
 import { createHistory } from './history.js';
+import { createColorPicker } from './colorpicker.js';
+import { templateState } from './templates.js';
 
 /** Tool panels in the left dock (desktop) and their rail icons. */
 const DOCK = [['design', 'image'], ['text', 'type'], ['shape', 'shape'], ['edge', 'edge'], ['colors', 'colors'], ['back', 'back'], ['size', 'ruler']];
@@ -61,7 +63,7 @@ export function createApp(root, config) {
     dragTarget: null,
     busy: false,
     inStudio: false,
-    ui: { exclVat: false, showAllTech: false, showChanges: false, rights: false, device: false, qtyAdjustedFrom: null, dock: 'design', side: 'advice', mob: 'design', sheetMin: false },
+    ui: { exclVat: false, showAllTech: false, showChanges: false, rights: false, device: false, qtyAdjustedFrom: null, dock: 'design', side: 'advice', mob: 'design', sheetMin: false, sideMin: false },
     derived: null,
     L: (o) => label(o, locale),
     fmt: (x) => formatMoney(x, moneyLocale),
@@ -99,6 +101,7 @@ export function createApp(root, config) {
   Object.assign(ctx, createFlows(ctx));
   ctx.priceCard = createPriceCard(ctx);
   ctx.qtyControl = (where) => createQty(ctx, where);
+  ctx.picker = createColorPicker(ctx);
   const empty = emptyState(ctx);
   const panels = createPanels(ctx);
   const assistant = createAssistant(ctx);
@@ -125,6 +128,9 @@ export function createApp(root, config) {
   const rail = h('nav.bps-rail', { 'aria-label': t('ui.rail.label') }, railBtns);
   const dock = h('div.bps-dock', { id: ctx.uidBase + '-dock' }, DOCK.map(([id]) => panels[id].el));
   const side = h('aside.bps-side', { 'aria-label': t('ui.panel.advice') }, assistant.el, checkout.el);
+  // Desktop: the assistant column can be folded away so the canvas gets the full width (critique-1 #1).
+  ctx.toggleSide = (on) => { ctx.ui.sideMin = on == null ? !ctx.ui.sideMin : !on; ctx.refresh(); };
+  const sideOpen = h('button.bps-sideopen', { type: 'button', hidden: true, 'aria-label': t('ui.side.open'), onclick: () => ctx.toggleSide(true) }, icon('spark'), h('span', t('ui.side.openShort')));
   const subnav = h('div.bps-subnav', { hidden: true });
   const grab = h('button.bps-grab', { type: 'button', 'aria-expanded': 'true', 'aria-label': t('ui.sheet.toggle'), onclick: () => { ctx.ui.sheetMin = !ctx.ui.sheetMin; ctx.refresh(); } }, h('span', { 'aria-hidden': 'true' }));
 
@@ -133,7 +139,7 @@ export function createApp(root, config) {
     icon(ic), h('span', t('ui.tab.' + id))));
   const tabs = h('nav.bps-tabs', { 'aria-label': t('ui.rail.label') }, tabBtns);
 
-  const ws = h('div.bps-ws', { hidden: true }, top, rail, dock, h('div.bps-stagehost', stage.el), side, h('div.bps-sheetbar', grab, subnav), bar.el, tabs);
+  const ws = h('div.bps-ws', { hidden: true }, top, rail, dock, h('div.bps-stagehost', stage.el, sideOpen), side, h('div.bps-sheetbar', grab, subnav), bar.el, tabs);
   const help = (() => {
     const c = config.contact || {};
     return h('p.bps-helpline', icon('chat'), ' ',
@@ -152,7 +158,7 @@ export function createApp(root, config) {
   const groupOf = (id) => (TABS.find(([, , g]) => g.includes(id)) || TABS[0]);
   ctx.openPanel = (id, { focus = false } = {}) => {
     if (!all[id]) return;
-    if (DOCK.some(([d]) => d === id)) ctx.ui.dock = id; else ctx.ui.side = id;
+    if (DOCK.some(([d]) => d === id)) ctx.ui.dock = id; else { ctx.ui.side = id; ctx.ui.sideMin = false; }
     ctx.ui.mob = id;
     ctx.ui.sheetMin = false;
     render();
@@ -264,6 +270,9 @@ export function createApp(root, config) {
     root.classList.toggle('is-mobile', mob);
     root.classList.toggle('is-sheetmin', open && mob && ctx.ui.sheetMin);
     root.classList.toggle('is-dockclosed', !ctx.ui.dock);
+    root.classList.toggle('is-sidemin', open && !mob && !!ctx.ui.sideMin);
+    root.classList.toggle('is-pickcolor', open && (mob ? ctx.ui.mob === 'colors' && !ctx.ui.sheetMin : ctx.ui.dock === 'colors'));
+    sideOpen.hidden = !(open && !mob && ctx.ui.sideMin);
     root.dataset.step = open ? '1' : '0';
     lock(open && mob);
     let resume = landing.querySelector('.bps-resume');
@@ -283,6 +292,8 @@ export function createApp(root, config) {
       }
       // Visible panels as a stable hook for tests and analytics (e.g. data-bps-panels="design advice").
       root.setAttribute('data-bps-panels', Object.keys(all).filter((id) => !all[id].el.hidden).join(' '));
+      // One primary action at a time: while the order overview is open, its own button is the primary one.
+      root.classList.toggle('is-checkout', !all.checkout.el.hidden && !(mob ? ctx.ui.sheetMin : ctx.ui.sideMin));
       const inDock = (id) => DOCK.some(([x]) => x === id);
       dock.hidden = mob ? !inDock(ctx.ui.mob) : !ctx.ui.dock;
       side.hidden = mob && inDock(ctx.ui.mob);
@@ -332,6 +343,25 @@ export function createApp(root, config) {
   ctx.openSheet = () => {
     bar.refreshSheet(store.get(), ctx.derived);
     if (bar.sheet.showModal) bar.sheet.showModal(); else bar.sheet.setAttribute('open', '');
+  };
+  /** Pick another Polyneon thread for one colour of the design (from the colours panel or a click in the canvas). */
+  ctx.openThreadFor = (pi, back) => {
+    const d = ctx.derived, a = ctx.analysis;
+    if (!d || !a || !d.reduced || !d.useThreads) return false;
+    const ci = d.reduced.map[pi];
+    const c = d.reducedColors[ci];
+    const th = c && d.threadOf(c);
+    if (!th) return false;
+    ctx.ui.hiPi = pi;
+    ctx.refresh();
+    ctx.picker.open({
+      title: t('ui.cp.designTitle'),
+      sub: t('ui.cp.designSub', { code: th.code, name: ctx.L(th.name) }),
+      current: th.code, returnFocus: back,
+      onPick: (x) => store.set({ threadOverrides: { ...store.get().threadOverrides, [pi]: x.code } }),
+      onClose: () => { ctx.ui.hiPi = null; ctx.refresh(); },
+    });
+    return true;
   };
   ctx.setDragTarget = (id) => { if (ctx.dragTarget !== id) { ctx.dragTarget = id; ctx.refresh(); } };
 
@@ -386,7 +416,7 @@ export function createApp(root, config) {
     const font = ((config.fonts || [])[0] || {}).id || 'Sora';
     const first = !s.texts.length;
     const arc = first && !ctx.analysis && (s.shape === 'circle' || s.shape === 'oval');
-    const layer = {
+    let layer = {
       id: 't' + Date.now().toString(36) + s.texts.length,
       text: t('ui.text.default'),
       font,
@@ -397,7 +427,17 @@ export function createApp(root, config) {
       angleDeg: 0,
       insetMm: 0,
       letterSpacing: 0.05,
+      outline: 'auto',
+      autoFit: true,
+      autoPlace: true,
     };
+    // New text is placed in the quietest free spot, fitted inside the border, readable from the first moment
+    // (critique-1 #3): below/above the design, along the edge of a round patch, or centred on an empty patch.
+    try {
+      const d = ctx.derived || derive(s, ctx.analysis, config, ctx.tweaks);
+      if (ctx.analysis || !arc) layer = { ...layer, ...placeText(s, d, config, layer) };
+      else layer.heightMm = fitHeight(layer, d.layout, config, layer.heightMm);
+    } catch (e) { /* keep the defaults */ }
     store.set({ texts: [...s.texts, layer] });
     ctx.dragTarget = layer.id;
     ctx.openPanel('text');
@@ -406,6 +446,26 @@ export function createApp(root, config) {
       const inp = root.querySelector(`[data-layer="${layer.id}"] input[type=text]`);
       if (inp) { inp.focus(); inp.select(); }
     }));
+  };
+  /** Change the words of a layer; a layer that was fitted automatically keeps fitting inside the border. */
+  ctx.setLayerText = (id, value) => {
+    const s = store.get();
+    const max = (config.text && config.text.maxChars) || 60;
+    const v = String(value).slice(0, max);
+    store.set({ texts: s.texts.map((l) => {
+      if (l.id !== id) return l;
+      let nl = { ...l, text: v };
+      if (l.autoPlace && ctx.derived && v.trim()) {
+        // not moved by hand yet: the best spot for these words (a long line may fit better elsewhere)
+        try { nl = { ...nl, ...placeText(s, ctx.derived, config, nl) }; return nl; } catch (e) { /* fall through */ }
+      }
+      if (l.autoFit && ctx.derived) {
+        const want = Math.max(l.heightMm, l.fitFrom || 0) || (config.text && config.text.defaultHeightMm) || 6;
+        nl.heightMm = fitHeight(nl, ctx.derived.layout, config, want);
+        nl.fitFrom = want;
+      }
+      return nl;
+    }) });
   };
   ctx.removeText = (id) => {
     const s = store.get();
@@ -437,6 +497,23 @@ export function createApp(root, config) {
     enterStudio('text');
     history.reset();
     ctx.addText();
+  };
+
+  /** Start from a gallery template: a complete patch with editable text layers (critique-1 #4). */
+  ctx.startTemplate = (tpl) => {
+    ctx.file = null;
+    ctx.analysis = null;
+    ctx.tweaks = null;
+    ctx.analysisState = { status: 'idle', stage: null, message: '' };
+    const tt = (k, p, fb) => { const v = t(k, p); return v === k ? fb : v; };
+    const st = templateState(config, tpl, tt);
+    store.set({ ...st, locale: store.get().locale });
+    st.texts.forEach((l) => ctx.loadFont(l.font));
+    ctx.dragTarget = st.texts[0] ? st.texts[0].id : null;
+    emit(root, EV.DESIGN_START, { mode: 'template', template: tpl.id });
+    ctx.track('design_start', { mode: 'template', template: tpl.id });
+    enterStudio('text');
+    history.reset();
   };
 
   ctx.reset = () => {

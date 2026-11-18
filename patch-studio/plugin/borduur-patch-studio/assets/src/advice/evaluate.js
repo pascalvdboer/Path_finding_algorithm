@@ -131,6 +131,11 @@ function suggestThreadColors(analysis, config, nPalette) {
     // "natural" merge (same thread or similar colour). What is left is the honest number of thread colours.
     const r = reducePalette(pal, 1, { prepared, config });
     const natural = Math.max(1, pal.length - (r.merges || []).filter((m) => m.reason !== 'forced').length);
+    // One number for the advice text, the "simplify" button and the slider (critique-1 #12): a design with more
+    // colours than the smallest choice is never advised below that choice (a grey ground and a beige cape stay two
+    // thread colours instead of folding into white/black, critique-1 #2).
+    const floor = choices[0] || fallback;
+    if (natural < floor && pal.length > floor) { kCache.set(analysis, { config, k: floor }); return floor; }
     k = natural <= (choices[0] || fallback) ? natural : (choices.find((c) => c >= natural) || choices[choices.length - 1] || fallback);
   }
   kCache.set(analysis, { config, k });
@@ -692,7 +697,8 @@ function colorsAdvice(env) {
   const choices = ((config.advice && config.advice.threadColorChoices) || [6, 8, 10, 12]).slice().sort((a, b) => a - b);
   const n = cc.n;
   if (kind === 'gradient' || isShaded(analysis, kind) || n > k) {
-    return { maxThreadColors: choices.find((c) => c >= k) || k, reason: ctx.m('advice.colors.reduce', { k: String(k) }) };
+    // One number everywhere (critique-1 #12): the advice text, the "simplify" button and the slider all use k.
+    return { maxThreadColors: k < (choices[0] || k) ? k : choices.find((c) => c >= k) || k, reason: ctx.m('advice.colors.reduce', { k: String(k) }) };
   }
   return { maxThreadColors: choices.find((c) => c >= n) || choices[choices.length - 1] || n, reason: ctx.m('advice.colors.keep', { n }) };
 }

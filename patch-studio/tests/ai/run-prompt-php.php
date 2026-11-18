@@ -9,8 +9,10 @@
 define( 'BPS_TESTING', true );
 $plugin = dirname( __DIR__, 2 ) . '/plugin/borduur-patch-studio';
 require_once $plugin . '/includes/ai/class-ai-prompt-engine.php';
+require_once $plugin . '/includes/ai/class-prompt-adapter.php';
 
 use BorduurPatchStudio\AI\Prompt_Engine as E;
+use BorduurPatchStudio\AI\Prompt_Adapter as A;
 
 $cfg      = E::load_config();
 $defaults = json_decode( (string) file_get_contents( $plugin . '/config/defaults.json' ), true );
@@ -42,7 +44,9 @@ $invariants = static function ( string $id, string $prompt ) use ( $check ) {
 $briefs = array();
 foreach ( $vectors['translations'] as $v ) {
 	$id = $v['id'];
-	$b  = E::brief( $v['input'], $cfg, $defaults );
+	// "adapter": true = the real REST path (Prompt_Adapter::input() first), as Jobs::generate() does it.
+	$in = empty( $v['adapter'] ) ? $v['input'] : A::input( $v['input'], (array) ( $v['context'] ?? array() ), $defaults, $cfg );
+	$b  = E::brief( $in, $cfg, $defaults );
 	$check( $id, empty( $b['blocked'] ), 'onverwacht geblokkeerd: ' . ( $b['code'] ?? '' ) );
 	if ( ! empty( $b['blocked'] ) ) {
 		continue;
@@ -67,6 +71,10 @@ foreach ( $vectors['translations'] as $v ) {
 				foreach ( $want as $w ) {
 					$check( $id, false === strpos( $prompt, $w ), "prompt bevat '{$w}'" );
 				}
+				break;
+			case 'understoodSummary':
+				$u = A::understood( $b, $b['lang'], $cfg );
+				$check( $id, $u['summary'] === $want, "understood.summary: verwacht '{$want}', kreeg '{$u['summary']}'" );
 				break;
 			case 'warnings':
 				foreach ( $want as $w ) {

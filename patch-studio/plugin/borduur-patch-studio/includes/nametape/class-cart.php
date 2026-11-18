@@ -117,32 +117,7 @@ final class Cart {
 	 * @param array $nt Cart data.
 	 */
 	public static function batch_from_data( array $nt ): array {
-		$rows = array();
-		foreach ( (array) ( $nt['rows'] ?? array() ) as $r ) {
-			$rows[] = array(
-				'name'  => (string) ( $r['n'] ?? '' ),
-				'line2' => (string) ( $r['l2'] ?? '' ),
-				'blood' => '' !== (string) ( $r['b'] ?? '' ) ? Validator::parse_blood( (string) $r['b'] ) : null,
-				'qty'   => (int) ( $r['q'] ?? 1 ),
-			);
-		}
-		return array(
-			'v'           => 1,
-			'locale'      => (string) ( $nt['locale'] ?? 'nl-BE' ),
-			'format'      => (string) ( $nt['format'] ?? '' ),
-			'custom'      => $nt['custom'] ?? null,
-			'fabric'      => (string) ( $nt['fabric'] ?? '' ),
-			'letter'      => (string) ( $nt['letter'] ?? '' ),
-			'border'      => (string) ( $nt['border'] ?? '' ),
-			'borderColor' => $nt['borderColor'] ?? null,
-			'font'        => (string) ( $nt['font'] ?? '' ),
-			'uppercase'   => ! isset( $nt['uppercase'] ) || (bool) $nt['uppercase'],
-			'backing'     => (string) ( $nt['backing'] ?? '' ),
-			'loop'        => ! empty( $nt['loop'] ),
-			'bloodMode'   => $nt['bloodMode'] ?? null,
-			'rows'        => $rows,
-			'orgNote'     => (string) ( $nt['org_note'] ?? '' ),
-		);
+		return Production::batch_from_data( $nt );
 	}
 
 	/* ---------------------------------------------------------------------
@@ -269,12 +244,12 @@ final class Cart {
 		}
 		$cart  = WC()->cart;
 		$items = $cart->get_cart();
-		if ( '' !== $replace && ! empty( $items[ $replace ][ self::KEY ] ) ) {
-			$cart->remove_cart_item( $replace );
-			$items = $cart->get_cart();
+		if ( '' !== $replace && empty( $items[ $replace ][ self::KEY ] ) ) {
+			$replace = '';
 		}
 		$b     = $check['batch'];
-		$quote = Pricing::quote( $b, self::context( $items, '', $b['locale'] ), Config::get() );
+		// The old line is left out of the context and only removed after the new one was added (never lose a list).
+		$quote = Pricing::quote( $b, self::context( $items, $replace, $b['locale'] ), Config::get() );
 		if ( empty( $quote['ok'] ) ) {
 			return new WP_Error( 'bps_nt_invalid', __( 'Deze lijst kunnen we zo niet bestellen. Kijk de namen en het formaat even na.', 'borduur-patch-studio' ), array( 'status' => 400 ) );
 		}
@@ -294,6 +269,9 @@ final class Cart {
 				wc_clear_notices();
 			}
 			return new WP_Error( 'bps_cart', __( 'Toevoegen aan je winkelmand is niet gelukt. Probeer het nog eens.', 'borduur-patch-studio' ), array( 'status' => 400 ) );
+		}
+		if ( '' !== $replace && (string) $key !== $replace ) {
+			$cart->remove_cart_item( $replace );
 		}
 		$cart->calculate_totals();
 		do_action( 'bps_nametape_added', (string) $key, $b );
@@ -436,11 +414,21 @@ final class Cart {
 		if ( ! function_exists( 'WC' ) || ! WC()->cart ) {
 			return;
 		}
-		foreach ( WC()->cart->get_cart() as $key => $item ) {
+		$items = WC()->cart->get_cart();
+		foreach ( $items as $key => $item ) {
 			if ( empty( $item[ self::KEY ] ) ) {
 				continue;
 			}
 			$r = Validator::validate( self::batch_from_data( $item[ self::KEY ] ), Config::get(), Config::metrics(), true );
+			if ( $r['ok'] ) {
+				// A list that validates but cannot be priced would cost € 0 (set_prices): never let that reach checkout.
+				$q = self::computed_quote( (string) $key );
+				if ( null === $q ) {
+					$nt = $item[ self::KEY ];
+					$q  = Pricing::quote( self::batch_from_data( $nt ), self::context( $items, (string) $key, (string) ( $nt['locale'] ?? 'nl-BE' ) ), Config::get() );
+				}
+				$r['ok'] = ! empty( $q['ok'] ) && (float) ( $q['lineExcl'] ?? 0 ) > 0;
+			}
 			if ( ! $r['ok'] ) {
 				$url = add_query_arg( 'bps_nt_edit', rawurlencode( (string) $key ), Config::page_url() ? Config::page_url() : home_url( '/' ) );
 				wc_add_notice(
@@ -566,7 +554,11 @@ final class Cart {
 			$bl = ( $where[ $mode ] ?? '' ) . ' (' . $blood . '×)';
 		}
 		return array(
-			'summary' => sprintf( $fr ? '%1$d bandes nominatives · %2$s' : '%1$d naamstroken · %2$s', $main, $format ),
+			'summary' => sprintf(
+				1 === $main ? ( $fr ? '%1$d bande nominative · %2$s' : '%1$d naamstrook · %2$s' ) : ( $fr ? '%1$d bandes nominatives · %2$s' : '%1$d naamstroken · %2$s' ),
+				$main,
+				$format
+			),
 			'style'   => $style,
 			'backing' => $back,
 			'names'   => implode( ', ', $shown ) . ( $more > 0 ? ' … (+' . $more . ')' : '' ),
@@ -713,6 +705,10 @@ final class Cart {
 		}
 		$item->add_meta_data( '_bps_nt_batch', wp_json_encode( $nt ), true );
 		$q = self::computed_quote( (string) $key );
+		if ( null === $q && function_exists( 'WC' ) && WC()->cart ) {
+			$q = self::line_quote( (string) $key );
+		}
+		$q = ! empty( $q['ok'] ) ? $q : null;
 		$item->add_meta_data( '_bps_nt_unit_excl', $q ? (float) $q['mainUnitExcl'] : 0, true );
 		$item->add_meta_data( '_bps_nt_line_excl', $q ? (float) $q['lineExcl'] : 0, true );
 		$item->add_meta_data( '_bps_nt_review', ! empty( $nt['review'] ) ? 1 : 0, true );

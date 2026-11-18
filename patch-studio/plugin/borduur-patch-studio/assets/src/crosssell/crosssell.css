@@ -29,6 +29,8 @@
   font-size: 16px;
 }
 .bps-cs *, .bps-cs *::before, .bps-cs *::after { box-sizing: border-box; }
+/* Het hidden-attribuut wint altijd van display:flex/grid hieronder (knoppen, bewerkblok, "Toegevoegd"). */
+.bps-cs [hidden] { display: none !important; }
 
 /* ------------------------------------------------------------------ dialog */
 html.bps-cs-open { overflow: hidden; }

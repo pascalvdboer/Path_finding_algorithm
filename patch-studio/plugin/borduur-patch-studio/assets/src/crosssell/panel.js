@@ -105,7 +105,7 @@ export function renderPanel(container, offers, env) {
     const canvas = el('canvas', { class: 'bps-cs__canvas', role: 'img', width: 480, height: 360 });
     const fig = el('figure', { class: 'bps-cs__fig' }, canvas, el('figcaption', { class: 'bps-cs__caption', text: tr('cs.mockup') }));
     const priceStrong = el('strong', { class: 'bps-cs__amount' });
-    const priceLine = el('p', { class: 'bps-cs__price' }, priceStrong, ' ', el('span', { class: 'bps-cs__per' }), el('span', { class: 'bps-cs__incl', text: card.kind === 'laser' || card.kind === 'pvc' ? tr('cs.inclVat') : tr('cs.inclAll') }));
+    const priceLine = el('p', { class: 'bps-cs__price' }, priceStrong, ' ', el('span', { class: 'bps-cs__per' }), el('span', { class: 'bps-cs__incl', text: card.kind === 'laser' || card.kind === 'pvc' ? tr('cs.inclVat') : card.kind === 'frame' ? tr('cs.inclFrame') : tr('cs.inclAll') }));
     const breakdown = el('p', { class: 'bps-cs__breakdown' });
     const total = el('p', { class: 'bps-cs__total', hidden: true });
     const err = el('p', { class: 'bps-cs__err', role: 'alert', hidden: true });
@@ -165,6 +165,11 @@ export function renderPanel(container, offers, env) {
       total.hidden = !showTotal;
       if (showTotal) total.textContent = tr('cs.total', { price: money(lineTotal + fee) }) + (fee > 0 ? ' (' + q.fees.map((f) => f.label).join(', ') + ')' : '');
       addBtn.disabled = card.needsSize && editorBuilt && !edit.hidden && effectiveQty() < 1;
+      // Gebruiksgemak: de knop zegt hoeveel stuks er in de winkelmand gaan (geen verrassing van 25 petten).
+      if (addBtn.textContent !== tr('cs.adding') && (!needsSecond || !edit.hidden)) {
+        const n = effectiveQty();
+        addBtn.textContent = n > 1 ? tr('cs.addN', { n }) : tr('cs.add');
+      }
     }
 
     function mockupKind() {

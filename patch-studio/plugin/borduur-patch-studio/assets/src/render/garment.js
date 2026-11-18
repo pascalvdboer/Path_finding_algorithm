@@ -187,10 +187,13 @@ function jacket(A, Hc, hex, s) {
   K.rim(body, 120, 1.3);
   K.dome(null, 0, 330, 420, 0.8);
   for (const k of [1, -1]) { K.dome(null, k * 390, 420, 140, 0.9); K.dome(null, k * 410, 650, 120, 0.8); }
-  // collar band
-  const collar = [['M', -94, -16], ['Q', 0, -6, 94, -16], ['L', 98, -60], ['Q', 0, -48, -98, -60], ['Z']];
-  A.save(); A.shadowColor = 'rgba(0,0,0,0.45)'; A.shadowBlur = 10 * s; A.shadowOffsetY = 4 * s; K.fill(collar, -0.12); A.restore();
-  path(Hc, collar); Hc.fillStyle = 'rgba(255,255,255,0.4)'; Hc.fill();
+  // ribbed bomber collar (stands up at the back of the neck)
+  const collar = [['M', -112, -12], ['Q', 0, 2, 112, -12], ['L', 118, -74], ['Q', 0, -58, -118, -74], ['Z']];
+  A.save(); A.shadowColor = 'rgba(0,0,0,0.45)'; A.shadowBlur = 10 * s; A.shadowOffsetY = 4 * s; K.fill(collar, -0.16); A.restore();
+  path(Hc, collar); Hc.fillStyle = 'rgba(255,255,255,0.45)'; Hc.fill();
+  A.save(); path(A, collar); A.clip(); A.strokeStyle = rgba('#000000', 0.22); A.lineWidth = 1.4;
+  for (let x = -120; x <= 120; x += 4.5) { A.beginPath(); A.moveTo(x, -78); A.lineTo(x * 0.97, 4); A.stroke(); }
+  A.restore();
   K.seam([['M', -96, -26], ['Q', 0, -15, 96, -26]]);
   // yoke + raglan seams + hem band + cuffs
   K.seam([['M', -262, 150], ['Q', 0, 126, 262, 150]]);
@@ -332,8 +335,12 @@ export function drawGarment(c, W, H, id, config, o = {}) {
   const refMm = Number(mk.scaleRefMm) || def.ref;
   const k = refMm / def.ref; // garment drawn at real scale for this reference width
   const [vx, vy, vw, vh] = def.view;
-  const zoom = o.zoom || 1;
-  const pxPerMm = Math.min(W / (vw * k), H / (vh * k)) * zoom;
+  // frame 'patch' (default in the studio): zoom in until the patch is ±35 % of the view, the garment may run out of
+  // the picture; frame 'garment' shows the whole piece (critique-1 #10)
+  const fit1 = Math.min(W / (vw * k), H / (vh * k));
+  const auto = o.frame === 'patch' && o.patchMm > 0 ? Math.max(1, (0.35 * Math.min(W, H)) / (o.patchMm * fit1)) : 1;
+  const zoom = (o.zoom || 1) * auto;
+  const pxPerMm = fit1 * zoom;
   const off = Array.isArray(mk.patchCenterMm) ? mk.patchCenterMm : [0, 0];
   const ax = def.anchor[0] * k + (Number(off[0]) || 0), ay = def.anchor[1] * k + (Number(off[1]) || 0);
   const vcx = (vx + vw / 2) * k, vcy = (vy + vh / 2) * k;

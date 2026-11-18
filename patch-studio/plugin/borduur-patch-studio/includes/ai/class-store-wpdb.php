@@ -102,7 +102,7 @@ final class Store_Wpdb implements Store {
 
 	public function job_blocked_with_input( string $before, int $limit ): array {
 		$t    = Schema::table( 'jobs' );
-		$rows = $this->db()->get_results( $this->db()->prepare( "SELECT * FROM {$t} WHERE status = 'blocked' AND created_at < %s AND input LIKE %s LIMIT %d", $before, '%"description":"%', $limit ), ARRAY_A );
+		$rows = $this->db()->get_results( $this->db()->prepare( "SELECT * FROM {$t} WHERE status = 'blocked' AND created_at < %s AND ( input LIKE %s OR input LIKE %s ) LIMIT %d", $before, '%"description":"%', '%"instruction":"%', $limit ), ARRAY_A );
 		return is_array( $rows ) ? $rows : array();
 	}
 

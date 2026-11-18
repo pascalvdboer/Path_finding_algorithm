@@ -137,7 +137,8 @@ export function parseList(text, opt = {}) {
   const cfg = opt.config || {};
   const maxRows = Number(cfg.maxRows) || 250;
   const warnings = [];
-  const raw = String(text == null ? '' : text);
+  // Bulk-invoer begrenzen: 250 rijen passen ruim in 512 kB; een reuzenplak bevriest de pagina niet.
+  const raw = String(text == null ? '' : text).slice(0, 524288);
 
   if ((opt.fileName && /\.xlsx?$/i.test(opt.fileName)) || raw.slice(0, 4) === 'PK\u0003\u0004') {
     return { rows: [], header: null, delimiter: null, warnings: [{ key: 'nt.parse.xlsx', params: {} }], truncated: false, bloodOnly: false, duplicates: [] };

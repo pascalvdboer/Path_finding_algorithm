@@ -10,7 +10,7 @@
 define( 'BPS_TESTING', true );
 $plugin = dirname( __DIR__, 2 ) . '/plugin/borduur-patch-studio/';
 require_once $plugin . 'includes/class-pricing.php';
-foreach ( array( 'fit', 'rules', 'pricing', 'messages', 'offers' ) as $f ) {
+foreach ( array( 'fit', 'rules', 'pricing', 'messages', 'offers', 'lines' ) as $f ) {
 	require_once $plugin . 'includes/crosssell/class-' . $f . '.php';
 }
 
@@ -19,6 +19,7 @@ use BorduurPatchStudio\Crosssell\Rules;
 use BorduurPatchStudio\Crosssell\Pricing as CsPricing;
 use BorduurPatchStudio\Crosssell\Offers;
 use BorduurPatchStudio\Crosssell\Messages;
+use BorduurPatchStudio\Crosssell\Lines;
 use BorduurPatchStudio\Pricing;
 
 /**
@@ -217,6 +218,98 @@ foreach ( $samples['designs'] as $s ) {
 		$check( in_array( $n, $ids, true ), "kaarten {$s['id']} mist $n" );
 	}
 }
+
+// ---- Lines: verzoek normaliseren tegen de server-kaart, mandcontext, eigen fees (SPEC-EXTRA §2.6–2.7) ----
+$build = static function ( string $sid, array $cart = array() ) use ( $samples, $linked, $main, $catalog, $patch_unit ): array {
+	foreach ( $samples['designs'] as $s ) {
+		if ( $s['id'] === $sid ) {
+			return Offers::build(
+				array( 'payload' => $s['payload'] ),
+				array( 'cfg' => $linked, 'main' => $main, 'catalog' => $catalog, 'patch_unit' => $patch_unit, 'locale' => 'nl-BE', 'month' => 6, 'cart' => $cart )
+			);
+		}
+	}
+	return array();
+};
+$card_of = static function ( array $o, string $id ): ?array {
+	foreach ( $o['cards'] as $c ) {
+		if ( $c['id'] === $id ) {
+			return $c;
+		}
+	}
+	return null;
+};
+$o25  = $build( 'flat25' );
+$cap  = $card_of( $o25, 'cap' );
+$hood = $card_of( $o25, 'hoodie' );
+$n    = Lines::normalize( array( 'lines' => array( array( 'productId' => $cap['defaultProductId'], 'variationId' => $cap['defaultVariationId'], 'qty' => 25 ) ) ), $cap );
+$check( $n['ok'] && 1 === count( $n['lines'] ) && 'front' === $n['placement'], 'lines: pet één klik is geldig' );
+$check( ! Lines::normalize( array( 'lines' => array( array( 'productId' => 999, 'variationId' => 0, 'qty' => 1 ) ) ), $cap )['ok'], 'lines: vreemd product geweigerd' );
+$check( in_array( 'variation', Lines::normalize( array( 'lines' => array( array( 'productId' => $cap['defaultProductId'], 'variationId' => 1, 'qty' => 1 ) ) ), $cap )['errors'], true ), 'lines: vreemde variatie geweigerd' );
+$check( in_array( 'qty', Lines::normalize( array( 'lines' => array( array( 'productId' => $cap['defaultProductId'], 'variationId' => $cap['defaultVariationId'], 'qty' => 0 ) ) ), $cap )['errors'], true ), 'lines: aantal 0 geweigerd' );
+$two = array( array( 'productId' => $cap['defaultProductId'], 'variationId' => $cap['defaultVariationId'], 'qty' => 1 ), array( 'productId' => $cap['defaultProductId'], 'variationId' => $cap['defaultVariationId'], 'qty' => 1 ) );
+$check( ! Lines::normalize( array( 'lines' => $two ), $cap )['ok'], 'lines: pet = één regel' );
+$check( in_array( 'option', Lines::normalize( array( 'lines' => array( $two[0] ), 'options' => array( 'gratis' ) ), $cap )['errors'], true ), 'lines: onbekende optie geweigerd' );
+$check( in_array( 'placement', Lines::normalize( array( 'lines' => array( $two[0] ), 'placement' => 'back' ), $cap )['errors'], true ), 'lines: rug kan niet op een pet' );
+$sizes = array_values( array_filter( $hood['variations'], static fn( $v ) => $v['productId'] === $hood['defaultProductId'] && $v['inStock'] ) );
+$hl    = array(
+	array( 'productId' => $hood['defaultProductId'], 'variationId' => $sizes[0]['id'], 'qty' => 10 ),
+	array( 'productId' => $hood['defaultProductId'], 'variationId' => $sizes[1]['id'], 'qty' => 15 ),
+);
+$check( Lines::normalize( array( 'lines' => $hl ), $hood )['ok'], 'lines: hoodie mag meerdere maatregels' );
+$check( ! Lines::normalize( array( 'lines' => array( $hl[0], $hl[0] ) ), $hood )['ok'], 'lines: dubbele maatregel geweigerd' );
+
+$op   = $build( 'photo1' );
+$fr   = $card_of( $op, 'frame' );
+$fl   = array( array( 'productId' => $fr['defaultProductId'], 'variationId' => 0, 'qty' => 1 ) );
+$fn   = Lines::normalize( array( 'lines' => $fl, 'plate' => array( 'l1' => "<b>Bram</b>\u{202E} & Lotte", 'l2' => str_repeat( 'x', 60 ) ) ), $fr );
+$check( $fn['ok'] && 'Bram & Lotte' === $fn['plate']['l1'] && 28 === mb_strlen( $fn['plate']['l2'] ), 'lines: plaatje opgekuist en max. 28 tekens' );
+$lk   = $card_of( $op, 'leather_keychain' );
+$ll   = array( array( 'productId' => $lk['defaultProductId'], 'variationId' => 0, 'qty' => 2 ) );
+$check( Lines::normalize( array( 'lines' => $ll, 'options' => array( 'name_back' ), 'names' => array( 'Lien', ' Bram ' ) ), $lk )['names'] === array( 'Lien', 'Bram' ), 'lines: namen achterop' );
+$check( in_array( 'names_qty', Lines::normalize( array( 'lines' => $ll, 'options' => array( 'name_back' ), 'names' => array( 'Lien' ) ), $lk )['errors'], true ), 'lines: aantal = aantal namen' );
+$check( in_array( 'names_qty', Lines::normalize( array( 'lines' => $ll, 'options' => array( 'name_back' ), 'names' => array( 'Lien', 'Bram', 'Noor' ) ), $lk )['errors'], true ), 'lines: te veel namen geweigerd' );
+
+$opv  = $build( 'pvc50' );
+$pvc  = $card_of( $opv, 'pvc_keychain' );
+$pl   = static fn( $q ) => array( 'lines' => array( array( 'productId' => $pvc['defaultProductId'], 'variationId' => 0, 'qty' => $q ) ) );
+$check( Lines::normalize( $pl( 60 ), $pvc )['ok'], 'lines: PVC 60 stuks ok' );
+$check( in_array( 'qty_rule', Lines::normalize( $pl( 40 ), $pvc )['errors'], true ), 'lines: PVC onder het minimum geweigerd' );
+$check( in_array( 'qty_rule', Lines::normalize( $pl( 55 ), $pvc )['errors'], true ), 'lines: PVC buiten de stappen geweigerd' );
+
+// Mandcontext en pool.
+$bps  = static fn( $id, $t, $q ) => array( 'quantity' => $q, 'product_id' => 1, 'bps' => array( 'design_id' => $id, 'technique' => $t, 'ref' => 'PS-' . $id ) );
+$csl  = static fn( $id, $item, $type, $t, $q ) => array( 'quantity' => $q, 'product_id' => 2, 'bps_cs' => array( 'design_id' => $id, 'item' => $item, 'type' => $type, 'technique' => $t, 'ref' => 'PS-' . $id ) );
+$cart = array( $bps( 7, 'embroidered', 25 ), $csl( 7, 'cap', 'patch_on_blank', 'embroidered', 25 ), $csl( 7, 'leather_keychain', 'laser', 'embroidered', 3 ), $bps( 8, 'woven', 10 ) );
+$ctx  = Lines::context( $cart, 7, $main );
+$check( 25 === $ctx['qtyOfDesign'] && 50 === $ctx['poolQty'] && array( 'embroidery' ) === $ctx['feeGroups'], 'context: aantal van het ontwerp, pool met patches op dragers, betaalde groepen' );
+$check( null === Lines::context( $cart, 99, $main )['qtyOfDesign'], 'context: ontwerp niet in de mand' );
+$check( 8 === Lines::last_design_id( $cart ), 'context: laatste ontwerp' );
+
+// Fees: borduurkaart enkel als er geen patchregel van die groep meer is; nooit dubbel; PVC-mal één keer.
+$check( array() === Lines::fees( $cart, $main, $linked, array(), 'nl' ), 'fees: patchregel betaalt al de borduurkaart' );
+$only = array( $csl( 7, 'cap', 'patch_on_blank', 'embroidered', 25 ), $csl( 7, 'beanie', 'patch_on_blank', 'embroidered', 10 ) );
+$f    = Lines::fees( $only, $main, $linked, array(), 'nl' );
+$check( 1 === count( $f ) && 'bps-fee-embroidery' === $f[0]['id'] && 45.0 === $f[0]['excl'], 'fees: patch enkel op dragers → één borduurkaart (zelfde id als woo)' );
+$check( array() === Lines::fees( $only, $main, $linked, array( 'embroidery' ), 'nl' ), 'fees: oud product rekent de kaart al aan' );
+$mdes = bps_cs_merge( $main, array( 'fees' => array( 'scope' => 'design' ) ) );
+$fd   = Lines::fees( array_merge( $only, array( $csl( 9, 'cap', 'patch_on_blank', 'embroidered', 5 ) ) ), $mdes, $linked, array(), 'nl' );
+$check( array( 'bps-fee-embroidery-7', 'bps-fee-embroidery-9' ) === array_column( $fd, 'id' ), 'fees: scope design → per ontwerp' );
+$pv   = array( $csl( 7, 'pvc_keychain', 'pvc', 'pvc', 50 ), $csl( 7, 'pvc_keychain', 'pvc', 'pvc', 10 ) );
+$fp   = Lines::fees( $pv, $main, $linked, array(), 'nl' );
+$check( 1 === count( $fp ) && Lines::MOLD_FEE_ID === $fp[0]['id'] && 80.0 === $fp[0]['excl'], 'fees: PVC-mal één keer' );
+$pvb  = array_merge( $pv, array( $bps( 7, 'pvc', 50 ) ) );
+$check( 1 === count( Lines::fees( $pvb, $main, $linked, array(), 'nl' ) ), 'fees: PVC-patch in de mand deelt de mal NIET zonder sharedMold' );
+$sh   = $linked;
+foreach ( $sh['items'] as &$i ) {
+	if ( 'pvc_keychain' === $i['id'] ) {
+		$i['sharedMold'] = true;
+	}
+}
+unset( $i );
+$check( array() === Lines::fees( $pvb, $main, $sh, array(), 'nl' ), 'fees: gedeelde mal enkel met sharedMold + PVC-patch van hetzelfde ontwerp' );
+$check( 'Met patch PS-7 (6 cm, geborduurd), op het voorpaneel genaaid' === Lines::patch_text( array( 'type' => 'patch_on_blank', 'ref' => 'PS-7', 'patch_size_cm' => 6, 'placement' => 'front' ), 'geborduurd', 'nl' ), 'tekst: mandregel NL' );
+$check( 'Avec écusson PS-7 (7,5 cm, brodé), cousu dans le dos' === Lines::patch_text( array( 'type' => 'patch_on_blank', 'ref' => 'PS-7', 'patch_size_cm' => 7.5, 'placement' => 'back' ), 'brodé', 'fr' ), 'tekst: mandregel FR' );
 
 // Geldnotatie zoals Intl in de browser.
 $check( Messages::money( 96.8, 'nl-BE' ) === "€\u{00A0}96,80", 'geld nl' );

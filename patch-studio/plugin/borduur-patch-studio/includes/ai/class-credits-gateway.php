@@ -150,6 +150,11 @@ final class Credits_Gateway {
 		if ( 'commerce' !== $this->kind || 'anon' !== Identity::kind( $owner ) ) {
 			return 0;
 		}
+		if ( method_exists( $this->backend, 'grant_free_anon' ) ) {
+			// Commerce owns the once-per-owner and per-IP rules (Credits::grant_free_anon).
+			$res = $this->call( 'grant_free_anon', $owner, $ip_hash );
+			return is_numeric( $res ) ? max( 0, (int) $res ) : 0;
+		}
 		$rounds = (int) AI_Settings::path( 'free.anonymous', 1 );
 		if ( $rounds <= 0 ) {
 			return 0;
@@ -174,10 +179,6 @@ final class Credits_Gateway {
 			)
 		);
 		set_transient( $key, $cnt + 1, DAY_IN_SECONDS + HOUR_IN_SECONDS );
-		if ( method_exists( $this->backend, 'grant_free_anon' ) ) {
-			$res = $this->call( 'grant_free_anon', $owner, $ip_hash );
-			return is_numeric( $res ) ? (int) $res : $rounds;
-		}
 		$res = $this->call( 'grant', $owner, 'free_anon', $rounds, array( 'ip_hash' => $ip_hash ) );
 		return false === $res || null === $res ? 0 : $rounds;
 	}

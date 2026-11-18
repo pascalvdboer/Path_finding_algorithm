@@ -1,5 +1,5 @@
 {
-  "_doc": "Testvectoren voor includes/ai/class-ai-prompt-engine.php (tests/ai/run-prompt-php.php). Dezelfde 20 vertalingen staan uitgelegd in docs/ai/02-prompting.md §6. 'expect' vergelijkt alleen de genoemde velden; 'subjectContains' / 'promptContains' zijn deelstrings.",
+  "_doc": "Testvectoren voor includes/ai/class-ai-prompt-engine.php (tests/ai/run-prompt-php.php). T01–T20 staan uitgelegd in docs/ai/02-prompting.md §8.2; T21–T30 zijn 10 extra Franse klantvragen (SPEC-AI-DIENSTEN §7) die via Prompt_Adapter::input() lopen (adapter: true) en ook de samenvatting «Zo begrepen we je» controleren (understoodSummary). Samen de testset van 30 klantvragen. 'expect' vergelijkt alleen de genoemde velden; 'subjectContains' / 'promptContains' zijn deelstrings.",
   "translations": [
     { "id": "T01", "input": { "lang": "nl", "description": "een wolf met een bijl voor onze motorclub, rond, zwart-rood" },
       "expect": { "style": "club", "shape": "circle", "colors": ["black", "red"], "textMode": "none", "subjectContains": ["wolf", "axe", "motorcycle club"] } },
@@ -40,7 +40,27 @@
     { "id": "T19", "input": { "lang": "fr", "description": "une abeille souriante pour notre miel, jaune et noir", "technique": "leather" },
       "expect": { "maxColors": 1, "subjectContains": ["smiling bee", "honey jar"], "promptContains": ["one single dark color"] } },
     { "id": "T20", "input": { "lang": "nl", "description": "fietsclub: een fiets met vleugels, retro", "text": "De Trappers", "textMode": "studio" },
-      "expect": { "style": "vintage", "textMode": "studio", "subjectContains": ["bicycle", "wings", "cycling club"], "promptContains": ["for text that will be added later"], "promptNotContains": ["Trappers"] } }
+      "expect": { "style": "vintage", "textMode": "studio", "subjectContains": ["bicycle", "wings", "cycling club"], "promptContains": ["for text that will be added later"], "promptNotContains": ["Trappers"] } },
+    { "id": "T21", "adapter": true, "input": { "lang": "fr", "description": "un renard qui dort sous la lune, style minimaliste, bleu nuit et orange" },
+      "expect": {"style": "minimal", "shape": "circle", "colors": ["navy blue", "orange"], "textMode": "none", "subjectContains": ["sleeping fox", "moon"], "understoodSummary": "renard qui dort sous la lune · rond · bleu marine et orange · style minimaliste"} },
+    { "id": "T22", "adapter": true, "input": { "lang": "fr", "description": "écusson rond pour notre club de tennis avec deux raquettes croisées, vert et blanc" },
+      "expect": {"style": "badge", "shape": "circle", "colors": ["green", "white"], "subjectContains": ["two crossed tennis rackets", "tennis club"], "promptNotContains": ["SUBJECT: with"], "understoodSummary": "club de tennis avec deux raquettes croisées · rond · vert et blanc · style badge / emblème"} },
+    { "id": "T23", "adapter": true, "input": { "lang": "fr", "description": "une abeille souriante pour l'association des apiculteurs, jaune et noir, texte : Les Butineurs" },
+      "expect": {"style": "badge", "colors": ["yellow", "black"], "text": "Les Butineurs", "textMode": "studio", "subjectContains": ["smiling bee", "for a beekeepers association"], "promptNotContains": ["Butineurs", "a association"]} },
+    { "id": "T24", "adapter": true, "input": { "lang": "fr", "description": "un dragon qui crache du feu, mascotte, rouge et or" },
+      "expect": {"style": "mascot", "shape": "contour", "colors": ["red", "gold-yellow"], "subjectContains": ["fire-breathing dragon"]} },
+    { "id": "T25", "adapter": true, "input": { "lang": "fr", "description": "un phare avec des vagues, bleu marine et blanc, ovale" },
+      "expect": {"style": "badge", "shape": "oval", "colors": ["navy blue", "white"], "subjectContains": ["lighthouse with waves"], "understoodSummary": "phare avec des vagues · ovale · bleu marine et blanc · style badge / emblème"} },
+    { "id": "T26", "adapter": true, "input": { "lang": "fr", "description": "écusson militaire avec un hibou et des flèches, kaki" },
+      "expect": {"style": "military", "shape": "shield", "colors": ["khaki"], "subjectContains": ["owl", "arrows"]} },
+    { "id": "T27", "adapter": true, "input": { "lang": "fr", "description": "un chevalier avec une épée et un bouclier, blason, argent et bleu roi" },
+      "expect": {"shape": "shield", "colors": ["silver grey", "royal blue"], "subjectContains": ["knight with a sword and a shield"]} },
+    { "id": "T28", "adapter": true, "input": { "lang": "fr", "description": "logo pour une brasserie artisanale : une chope de bière et du houblon, style vintage, marron et crème" },
+      "expect": {"style": "vintage", "shape": "oval", "colors": ["brown", "cream"], "subjectContains": ["beer mug", "hop cone", "craft brewery"]} },
+    { "id": "T29", "adapter": true, "input": { "lang": "fr", "description": "un vélo de course avec des montagnes, pour notre club cycliste", "text": "Les Grimpeurs" },
+      "expect": {"style": "badge", "textMode": "studio", "subjectContains": ["racing bicycle", "mountains", "cycling club"], "promptNotContains": ["Grimpeurs"]} },
+    { "id": "T30", "adapter": true, "input": { "lang": "fr", "description": "une fleur de lys stylisée, une seule couleur, doré" },
+      "expect": {"maxColors": 1, "colors": ["gold-yellow"], "subjectContains": ["stylized fleur-de-lis"], "promptContains": ["one single dark color"], "understoodSummary": "fleur de lys stylisée · rond · jaune doré · style badge / emblème"} }
   ],
   "safety": [
     { "id": "S01", "input": { "lang": "nl", "description": "het logo van Nike met onze clubnaam" }, "expect": { "code": "brand" } },
@@ -54,7 +74,11 @@
     { "id": "S09", "input": { "lang": "nl", "description": "een puma, het logo van het merk" }, "expect": { "code": "brand" } },
     { "id": "S10", "input": { "lang": "nl", "description": "  " }, "expect": { "code": "empty" } },
     { "id": "S11", "input": { "lang": "nl", "description": "een tattoo-stijl zwaluw in de stijl van de jaren 50" }, "expect": { "ok": true } },
-    { "id": "S12", "input": { "lang": "nl", "description": "een portret van mijn hond" }, "expect": { "ok": true } }
+    { "id": "S12", "input": { "lang": "nl", "description": "een portret van mijn hond" }, "expect": { "ok": true } },
+    { "id": "S13", "input": { "lang": "fr", "description": "un portrait de Stromae" }, "expect": { "code": "person" } },
+    { "id": "S14", "input": { "lang": "fr", "description": "une feuille de cannabis rasta" }, "expect": { "code": "drugs" } },
+    { "id": "S15", "input": { "lang": "fr", "description": "insigne de la police belge avec une étoile" }, "expect": { "code": "official" } },
+    { "id": "S16", "input": { "lang": "fr", "description": "un portrait de mon chien avec une couronne" }, "expect": { "ok": true } }
   ],
   "refine": [
     { "id": "R01", "base": "T01", "instruction": "maak de wolf bozer", "expect": { "route": "ai_edit", "promptContains": ["CHANGE ONLY THIS: make the wolf angrier", "the color palette"] } },
@@ -68,6 +92,10 @@
     { "id": "R09", "base": "T01", "instruction": "maak de vlammen groter", "expect": { "route": "ai_edit", "promptContains": ["make the flames larger"] } },
     { "id": "R10", "base": "T07", "instruction": "fais-le en forme ronde", "expect": { "route": "local", "action": "open_shape" } },
     { "id": "R11", "base": "T01", "instruction": "maak de wolf blauw", "forceAi": true, "expect": { "route": "ai_edit", "promptContains": ["make the wolf blue"], "promptNotContains": ["the color palette"] } },
-    { "id": "R12", "base": "T01", "instruction": "maak er het Harley-Davidson logo van", "expect": { "route": "blocked", "code": "brand" } }
+    { "id": "R12", "base": "T01", "instruction": "maak er het Harley-Davidson logo van", "expect": { "route": "blocked", "code": "brand" } },
+    { "id": "R13", "base": "T26", "instruction": "mets l'écusson en carré", "expect": {"route": "local", "action": "open_shape", "shape": "rect"} },
+    { "id": "R14", "base": "T26", "instruction": "déplace-le un peu", "expect": {"route": "local", "action": "open_arrange"} },
+    { "id": "R15", "base": "T26", "instruction": "rends le hibou plus méchant", "expect": {"route": "ai_edit", "promptContains": ["CHANGE ONLY THIS: make the owl fiercer", "French"]} },
+    { "id": "R16", "base": "T27", "instruction": "en bleu roi et blanc", "expect": {"route": "local", "action": "open_colors", "colors": ["royal blue", "white"]} }
   ]
 }

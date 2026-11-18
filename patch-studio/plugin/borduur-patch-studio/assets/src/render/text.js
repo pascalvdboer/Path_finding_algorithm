@@ -103,13 +103,20 @@ export function drawTextLayer(c, layer, g) {
   const widths = chars.map((ch) => c.measureText(ch).width);
   const total = widths.reduce((a, b) => a + b, 0) + spacing * Math.max(0, chars.length - 1);
   const path = layer.path || 'straight';
+  // optional outline (contour) in a contrasting thread: stroked first for every letter, then the letters on top
+  const ol = g.outline && g.outline.hex && g.outline.mm > 0 ? g.outline : null;
+  const passes = ol ? ['stroke', 'fill'] : ['fill'];
+  if (ol) { c.lineJoin = 'round'; c.miterLimit = 2; c.lineWidth = 2 * ol.mm * g.ppm; c.strokeStyle = ol.hex; }
+  const put = (pass, ch, x, y) => (pass === 'stroke' ? c.strokeText(ch, x, y) : c.fillText(ch, x, y));
   if (path === 'straight' || !g.poly || g.poly.length < 3) {
     const off = layer.offsetMm || { x: 0, y: 0 };
     const x = g.cx + (Number(off.x) || 0) * g.ppm, y = g.cy + (Number(off.y) || 0) * g.ppm + (capMm * g.ppm) / 2;
-    if (!spacing) c.fillText(text, x, y);
-    else {
-      let acc = x - total / 2;
-      chars.forEach((ch, i) => { c.fillText(ch, acc + widths[i] / 2, y); acc += widths[i] + spacing; });
+    for (const pass of passes) {
+      if (!spacing) put(pass, text, x, y);
+      else {
+        let acc = x - total / 2;
+        chars.forEach((ch, i) => { put(pass, ch, acc + widths[i] / 2, y); acc += widths[i] + spacing; });
+      }
     }
     return { mode: 0, cos: Math.cos(0.3), sin: Math.sin(0.3), cx: x, cy: y, r: 1 };
   }
@@ -120,19 +127,21 @@ export function drawTextLayer(c, layer, g) {
   const m = measure(base);
   const ang = ((top ? -90 : 90) + (Number(layer.angleDeg) || 0)) * Math.PI / 180;
   const s0 = rayArcLength(base, m, g.cx, g.cy, ang);
-  let acc = 0;
-  chars.forEach((ch, i) => {
-    const mid = acc + widths[i] / 2;
-    acc += widths[i] + spacing;
-    const s = top ? s0 - total / 2 + mid : s0 + total / 2 - mid;
-    const q = pointAt(base, m, s);
-    const rot = top ? Math.atan2(q.ty, q.tx) : Math.atan2(-q.ty, -q.tx);
-    c.save();
-    c.translate(q.x, q.y);
-    c.rotate(rot);
-    c.fillText(ch, 0, 0);
-    c.restore();
-  });
+  for (const pass of passes) {
+    let acc = 0;
+    chars.forEach((ch, i) => {
+      const mid = acc + widths[i] / 2;
+      acc += widths[i] + spacing;
+      const s = top ? s0 - total / 2 + mid : s0 + total / 2 - mid;
+      const q = pointAt(base, m, s);
+      const rot = top ? Math.atan2(q.ty, q.tx) : Math.atan2(-q.ty, -q.tx);
+      c.save();
+      c.translate(q.x, q.y);
+      c.rotate(rot);
+      put(pass, ch, 0, 0);
+      c.restore();
+    });
+  }
   // radial stitches around the patch centre (threads perpendicular to the baseline)
   return { mode: 1, cos: 1, sin: 0, cx: g.cx, cy: g.cy, r: Math.max(4, m.total / (2 * Math.PI)) };
 }

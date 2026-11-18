@@ -578,6 +578,7 @@ final class Services {
 		$keys[] = Service_Status::STATUS_META;
 		$keys[] = Service_Status::READY_META;
 		$keys[] = Service_Status::NOTE_META;
+		$keys[] = Service_Status::LOG_META;
 		$keys[] = '_bps_ai_pack';
 		$keys[] = '_bps_ai_coupon';
 		$keys[] = '_bps_ai_fulfilled';

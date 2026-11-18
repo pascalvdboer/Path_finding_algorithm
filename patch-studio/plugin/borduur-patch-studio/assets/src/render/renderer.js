@@ -285,8 +285,9 @@ function artLayer(art, look, rect, ppm, o) {
     const useLabels = LABEL_LOOKS[look] && art.labels && art.labels.width > 0 && art.labels.data;
     // PVC is moulded in flat colour levels: smooth the regions harder than thread looks
     const tc = now();
-    let clean = useLabels ? cleanFor(art.labels, look === 'pvc' ? 5 : 2) : null;
-    if (clean) clean = islandsFor(clean, (look === 'pvc' ? 1.2 : 0.7) / Math.pow(rect.w / clean.width, 2));
+    let clean = useLabels ? cleanFor(art.labels, look === 'pvc' ? 5 : look === 'embroidered' ? 3 : 2) : null;
+    // islands smaller than a stitchable area (mm²) melt into their neighbour: no digitiser stitches 1 mm² specks
+    if (clean) clean = islandsFor(clean, (look === 'pvc' ? 1.2 : look === 'embroidered' ? 1.6 : 0.7) / Math.pow(rect.w / clean.width, 2));
     c.drawImage(useLabels ? recolored(art, ck, clean) : art.image, 0, 0, lw, lh);
     const img = c.getImageData(0, 0, lw, lh);
     let comps = null;
@@ -322,12 +323,13 @@ function textLayer(layer, look, g, o) {
   const f = fontFor(layer, o.config);
   const ready = fontReady(f);
   const fast = o.quality === 'fast';
-  const key = [textsKey([layer]), look, g.W, g.H, g.ppm.toFixed(3), g.polyKey, o.hex, o.edgeMm, ready ? 1 : 0, look === 'leather' ? o.engraveHex : '', o.relief, o.pvcDepth, o.light.key].join('#');
+  const ol = o.outline || null;
+  const key = [textsKey([layer]), look, g.W, g.H, g.ppm.toFixed(3), g.polyKey, o.hex, ol ? ol.hex + ':' + ol.mm : '', o.edgeMm, ready ? 1 : 0, look === 'leather' ? o.engraveHex : '', o.relief, o.pvcDepth, o.light.key].join('#');
   const hit = textCache.get(key);
   if (hit) return hit;
   // crop to the text: the stylize pass only runs over the letters
   const cv = makeCanvas(g.W, g.H), c = ctx2d(cv, { willReadFrequently: !fast });
-  drawTextLayer(c, layer, { poly: g.poly, shape: g.shape, cx: g.cx, cy: g.cy, ppm: g.ppm, edgeMm: o.edgeMm, config: o.config, hex: o.hex });
+  drawTextLayer(c, layer, { poly: g.poly, shape: g.shape, cx: g.cx, cy: g.cy, ppm: g.ppm, edgeMm: o.edgeMm, config: o.config, hex: o.hex, outline: ol });
   if (fast) return { canvas: cv, ready, pad: 0, x: 0, y: 0 }; // plain text while dragging, not cached
   const full = c.getImageData(0, 0, g.W, g.H).data;
   let x0 = g.W, y0 = g.H, x1 = -1, y1 = -1;
@@ -525,7 +527,18 @@ export function paintPatch(c, o, g) {
     const L = artLayer(art, look, layout.artRectMm, ppm, { reduced: o.reduced !== false, quality: o.quality, engraveHex, light, relief, pvcDepth });
     const sx = rectL.w / L.w, sy = rectL.h / L.h;
     const r = { x: fx + rectL.x - L.pad * sx, y: fy + rectL.y - L.pad * sy, w: rectL.w + 2 * L.pad * sx, h: rectL.h + 2 * L.pad * sy };
+    const clip = art.clip && art.clip.inset > 0 ? art.clip : null;
+    if (clip) {
+      // mask the photographed rim of a patch-like design (round → ellipse, other shapes → inset rectangle)
+      c.save();
+      const ix = rectL.w * clip.inset, iy = rectL.h * clip.inset;
+      c.beginPath();
+      if (clip.shape === 'circle' || clip.shape === 'oval') c.ellipse(fx + rectL.x + rectL.w / 2, fy + rectL.y + rectL.h / 2, rectL.w / 2 - ix, rectL.h / 2 - iy, 0, 0, Math.PI * 2);
+      else c.rect(fx + rectL.x + ix, fy + rectL.y + iy, rectL.w - 2 * ix, rectL.h - 2 * iy);
+      c.clip();
+    }
     drawArtImage(c, null, r, design && design.art ? design.art.rotation : 0, L.canvas);
+    if (clip) c.restore();
     PT('artTotal', tal);
   }
   const texts = (design && design.texts || []).filter((t) => t && String(t.text || '').trim());
@@ -533,7 +546,7 @@ export function paintPatch(c, o, g) {
     const tg = { W, H, ppm, poly, shape: layout.shape, cx: lx + (layout.patchWmm / 2) * ppm, cy: ly + (layout.patchHmm / 2) * ppm, polyKey: g.polyKey };
     for (const t of texts) {
       const hex = (o.textHex && o.textHex[t.id]) || (lum(baseHex) < 128 ? '#ffffff' : '#151515');
-      const tl = textLayer(t, look, tg, { config, hex, edgeMm: edgeCoverMm(edge), quality: o.quality, engraveHex, light, relief, pvcDepth });
+      const tl = textLayer(t, look, tg, { config, hex, outline: (o.textOutline && o.textOutline[t.id]) || null, edgeMm: edgeCoverMm(edge), quality: o.quality, engraveHex, light, relief, pvcDepth });
       if (!tl.ready) g.pendingFonts.push(fontFor(t, config));
       c.drawImage(tl.canvas, fx + (tl.x || 0) - tl.pad, fy + (tl.y || 0) - tl.pad);
     }
@@ -600,7 +613,8 @@ export function drawScene(c, W, H, opts, config, pendingFonts) {
 
   if (view === 'garment') {
     const garment = opts.garment || (P.design.mockup && P.design.mockup !== 'none' ? P.design.mockup : 'polo_chest');
-    const place = drawGarment(c, W, H, garment, config, { garmentHex: opts.garmentHex, transparent: opts.transparent, zoom: opts.zoom, light, quality: opts.quality });
+    const place = drawGarment(c, W, H, garment, config, { garmentHex: opts.garmentHex, transparent: opts.transparent, zoom: opts.zoom, light, quality: opts.quality,
+      frame: opts.frame || 'garment', patchMm: Math.max(bw, bh) });
     const ppm = place.pxPerMm;
     // render the patch at garment scale (2× supersampled when tiny) into its own canvas
     const ss = ppm < 3 ? 3 : ppm < 6 ? 2 : 1;

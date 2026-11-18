@@ -159,6 +159,14 @@ final class Text {
 			'nl' => 'We vonden je ontwerprondes niet. Herlaad de pagina en probeer opnieuw.',
 			'fr' => 'Nous ne trouvons pas vos essais. Rechargez la page et réessayez.',
 		),
+		'err.session'            => array(
+			'nl' => 'Je sessie is verlopen. Herlaad de pagina en probeer het opnieuw.',
+			'fr' => 'Votre session a expiré. Rechargez la page et réessayez.',
+		),
+		'err.origin'             => array(
+			'nl' => 'Deze aanvraag komt niet van onze website.',
+			'fr' => 'Cette demande ne provient pas de notre site.',
+		),
 		'err.invalid'            => array(
 			'nl' => 'Er ontbreekt iets in je aanvraag.',
 			'fr' => 'Il manque quelque chose dans votre demande.',
@@ -292,6 +300,46 @@ final class Text {
 		'account.buy_btn'        => array(
 			'nl' => '{n} rondes · {price}',
 			'fr' => '{n} essais · {price}',
+		),
+		'account.pack_refund'    => array(
+			'nl' => 'Je krijgt het bedrag terug als korting op je patches (vanaf {min}, {months} maanden geldig).',
+			'fr' => 'Le montant vous est rendu en réduction sur vos écussons (dès {min}, valable {months} mois).',
+		),
+		'account.credit_title'   => array(
+			'nl' => 'Je korting op patches',
+			'fr' => 'Votre réduction sur écussons',
+		),
+		'account.withdraw_error' => array(
+			'nl' => 'Je herroeping is goed ontvangen. We betalen {amount} manueel terug binnen 14 dagen; je krijgt een mail zodra het gebeurd is.',
+			'fr' => 'Votre rétractation a bien été reçue. Nous remboursons {amount} manuellement dans les 14 jours ; vous recevrez un e-mail dès que c\'est fait.',
+		),
+		'account.guest_title'    => array(
+			'nl' => 'Je ontwerppakket herroepen',
+			'fr' => 'Vous rétracter de votre pack design',
+		),
+		'account.link_invalid'   => array(
+			'nl' => 'Deze link is verlopen of klopt niet. Log in op je account of antwoord op je bevestigingsmail, dan helpen we je verder.',
+			'fr' => 'Ce lien a expiré ou n\'est pas valide. Connectez-vous à votre compte ou répondez à votre e-mail de confirmation, nous vous aiderons.',
+		),
+		'account.credit_none_used' => array(
+			'nl' => 'De korting van dit pakket werd al gebruikt, dus het pakket kan niet meer herroepen worden.',
+			'fr' => 'La réduction liée à ce pack a déjà été utilisée : le pack ne peut plus faire l\'objet d\'une rétractation.',
+		),
+		'account.services_intro' => array(
+			'nl' => 'Hier volg je het werk van onze ontwerpers. Je krijgt ook een mail bij elke stap.',
+			'fr' => 'Suivez ici le travail de nos graphistes. Vous recevez aussi un e-mail à chaque étape.',
+		),
+		'consent.saved'          => array(
+			'nl' => 'Je rondes zijn meteen bruikbaar.',
+			'fr' => 'Vos essais sont utilisables immédiatement.',
+		),
+		'consent.both'           => array(
+			'nl' => 'Vink beide vakjes aan om meteen te beginnen.',
+			'fr' => 'Cochez les deux cases pour commencer tout de suite.',
+		),
+		'svc.dismissed'          => array(
+			'nl' => 'Begrepen, we vragen het niet meer voor dit ontwerp.',
+			'fr' => 'Compris, nous ne le proposerons plus pour ce design.',
 		),
 
 		// Service statuses (customer view).

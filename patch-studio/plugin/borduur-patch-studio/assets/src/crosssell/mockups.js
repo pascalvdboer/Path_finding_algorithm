@@ -76,7 +76,7 @@ const monoCache = new WeakMap();
 export function monochrome(img, engraveHex, baseHex) {
   if (!img) return null;
   const cached = monoCache.get(img);
-  if (cached && cached.key === engraveHex + baseHex) return cached.canvas;
+  if (cached && cached.key === engraveHex) return cached.canvas; // baseHex beïnvloedt de gravure niet
   const iw = img.naturalWidth || img.width;
   const ih = img.naturalHeight || img.height;
   const k = Math.min(1, 320 / Math.max(iw, ih));
@@ -107,7 +107,7 @@ export function monochrome(img, engraveHex, baseHex) {
     g.drawImage(img, 0, 0, w, h);
     g.filter = 'none';
   }
-  monoCache.set(img, { key: engraveHex + baseHex, canvas: c });
+  monoCache.set(img, { key: engraveHex, canvas: c });
   return c;
 }
 
@@ -684,7 +684,11 @@ export function loadImage(url) {
       if (new URL(url, location.href).origin !== location.origin) img.crossOrigin = 'anonymous';
     } catch (e) { /* relatieve of data-URL */ }
     img.decoding = 'async';
-    img.onload = () => resolve(img);
+    // Decoderen vóór het paneel opent: de eerste drawImage van een grote JPEG kost anders tientallen ms (budget 25 ms/kaart).
+    img.onload = () => {
+      if (typeof img.decode === 'function') img.decode().then(() => resolve(img), () => resolve(img));
+      else resolve(img);
+    };
     img.onerror = () => resolve(null);
     img.src = url;
   });

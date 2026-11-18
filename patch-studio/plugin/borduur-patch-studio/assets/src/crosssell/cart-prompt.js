@@ -27,12 +27,13 @@ export function bindCartPrompts(openFromCart, doc = document) {
   nodes.forEach((n) => {
     if (n.dataset.bpsCsBound) return;
     n.dataset.bpsCsBound = '1';
-    if (isDeclined()) {
+    const btn = n.querySelector('button');
+    // De server rendert de regel verborgen: zonder JS zou de knop niets doen.
+    if (isDeclined() || !btn) {
       n.hidden = true;
       return;
     }
-    const btn = n.querySelector('button');
-    if (!btn) return;
+    n.hidden = false;
     btn.addEventListener('click', async () => {
       const r = await openFromCart({ opener: btn });
       if (r === 'declined' || r === 'none') n.hidden = true;

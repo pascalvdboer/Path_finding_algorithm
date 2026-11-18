@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cross-sell — dev</title>
+<link rel="stylesheet" href="../plugin/borduur-patch-studio/assets/src/crosssell/crosssell.css">
+<style>
+  html, body { margin: 0; background: #f6f7f8; color: #1d2327; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .dev-bar { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 10px 16px; font-size: 13px; color: #555; background: #fff; border-bottom: 1px solid #e3e5e8; }
+  .dev-bar strong { color: #1d2327; }
+  .dev-bar select, .dev-bar button { font: inherit; min-height: 36px; padding: 0 10px; border: 1px solid #c3c4c7; border-radius: 6px; background: #fff; }
+  .dev-bar button { cursor: pointer; }
+  .dev-wrap { max-width: 1100px; margin: 0 auto; padding: 20px 16px 40px; box-sizing: border-box; }
+  .dev-fake { background: #fff; border: 1px solid #e3e5e8; border-radius: 10px; padding: 16px; margin-bottom: 16px; display: flex; gap: 14px; align-items: center; }
+  .dev-fake img { width: 64px; height: 64px; object-fit: contain; border-radius: 8px; background: #eee; }
+  .dev-fake p { margin: 0; font-size: 14px; }
+  .dev-fake button { margin-left: auto; min-height: 44px; padding: 0 18px; border-radius: 8px; border: 0; background: #0B74A6; color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+  #dev-out { white-space: pre-wrap; font: 12px/1.45 ui-monospace, Menlo, monospace; background: #1d2327; color: #e8f1f5; padding: 12px; border-radius: 8px; max-height: 260px; overflow: auto; }
+  #dev-out:empty { display: none; }
+  #inline-root { background: #fff; border: 1px solid #e3e5e8; border-radius: 12px; }
+  @media (max-width: 699px) {
+    .dev-bar { padding: 8px 12px; }
+    .dev-bar .dev-hide-sm { display: none; }
+    .dev-wrap { padding: 12px 12px 32px; }
+  }
+</style>
+</head>
+<body>
+<div class="dev-bar">
+  <strong>Patch Studio · cross-sell (dev, bronmodules, offline)</strong>
+  <label>Ontwerp <select id="dev-design"></select></label>
+  <label class="dev-hide-sm">Taal <select id="dev-lang"><option value="nl">NL</option><option value="fr">FR</option></select></label>
+  <label class="dev-hide-sm">Weergave <select id="dev-view"><option value="dialog">Paneel (na "In winkelmand")</option><option value="inline">Inline</option></select></label>
+  <label class="dev-hide-sm">Maand <select id="dev-month"></select></label>
+  <span id="dev-stat" aria-live="polite"></span>
+</div>
+<div class="dev-wrap">
+  <div class="dev-fake" id="dev-fake">
+    <img id="dev-thumb" alt="">
+    <p id="dev-desc"></p>
+    <button type="button" id="dev-open">In winkelmand</button>
+  </div>
+  <div id="inline-root" hidden></div>
+  <h2 style="font-size:15px;margin:20px 0 8px">Payload die "Toevoegen" naar <code>POST /crosssell/cart</code> zou sturen</h2>
+  <div id="dev-out"></div>
+</div>
+<script type="module">
+  window.BPS_CS_NO_AUTOLISTEN = true;
+  const q = new URLSearchParams(location.search);
+  const base = '../plugin/borduur-patch-studio/';
+  const [cs, main, samples] = await Promise.all(
+    [base + 'config/crosssell.json', base + 'config/defaults.json', '../tests/crosssell/samples.json'].map((p) => fetch(p).then((r) => r.json()))
+  );
+  const { mount } = await import(base + 'assets/src/crosssell/index.js');
+  const { linkProducts } = await import(base + 'assets/src/crosssell/offers.js');
+  const { quote } = await import(base + 'assets/src/pricing/index.js');
+
+  // Zelfde rol als Pricing::cart_unit_excl() op de server: de echte patchprijs-engine.
+  const patchUnit = (technique, sizeCm, options, qty, poolQty) => quote({ technique, sizeCm, qty, options, poolQty, withLadder: false }, main).unitExcl;
+  const cfg = linkProducts(cs, samples.productLinks);
+  const previews = { round: '../reference/eigenaar-ronde-patch.png', photo: '../reference/eigenaar-foto-patch.jpg', art: '../reference/testbeelden/abstract-geometric-art.webp' };
+
+  const $ = (id) => document.getElementById(id);
+  const selDesign = $('dev-design'), selLang = $('dev-lang'), selView = $('dev-view'), selMonth = $('dev-month');
+  for (const d of samples.designs) selDesign.append(new Option(d.label.nl, d.id));
+  ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'].forEach((m, i) => selMonth.append(new Option(m, i + 1)));
+  selDesign.value = q.get('design') || 'flat25';
+  selLang.value = q.get('lang') === 'fr' ? 'fr' : 'nl';
+  selView.value = q.get('view') === 'inline' ? 'inline' : 'dialog';
+  selMonth.value = q.get('month') || '6';
+
+  let keyN = 0;
+  function ctxFor(s) {
+    const lang = selLang.value;
+    return {
+      design: { payload: s.payload, previewUrl: previews[s.preview] || '', designId: s.designId, ref: s.ref },
+      cfg, main, catalog: samples.catalog, patchUnit,
+      cart: { feeGroups: q.has('fee') ? ['embroidery'] : [], poolQty: s.payload.qty },
+      locale: lang === 'fr' ? 'fr-BE' : 'nl-BE',
+      month: Number(selMonth.value),
+      onAdd: async (card, body) => {
+        const payload = Object.assign({ designId: s.designId, token: '<ontwerp-token>' }, body);
+        $('dev-out').textContent = JSON.stringify(payload, null, 2);
+        await new Promise((r) => setTimeout(r, 250));
+        return { ok: true, keys: body.lines.map(() => 'dev' + ++keyN) };
+      },
+      onUndo: async (key) => { $('dev-out').textContent = 'POST /crosssell/undo ' + JSON.stringify({ key }); },
+      onDecline: () => { $('dev-stat').textContent = 'Nee, bedankt'; },
+    };
+  }
+
+  async function render() {
+    const s = samples.designs.find((d) => d.id === selDesign.value) || samples.designs[0];
+    const lang = selLang.value;
+    document.documentElement.lang = lang;
+    $('dev-thumb').src = previews[s.preview] || '';
+    $('dev-desc').textContent = s.label[lang] + ' · ' + s.ref;
+    $('dev-open').textContent = lang === 'fr' ? 'Ajouter au panier' : 'In winkelmand';
+    $('dev-out').textContent = '';
+    const inline = selView.value === 'inline';
+    $('inline-root').hidden = !inline;
+    if (inline) {
+      const t0 = performance.now();
+      const view = await mount($('inline-root'), ctxFor(s));
+      const cards = view.offers.cards.map((c) => c.id);
+      $('dev-stat').textContent = 'kaarten: ' + cards.join(', ') + ' · ' + Math.round(performance.now() - t0) + ' ms';
+      document.body.dataset.cards = cards.join(',');
+    }
+  }
+
+  $('dev-open').addEventListener('click', async () => {
+    const s = samples.designs.find((d) => d.id === selDesign.value) || samples.designs[0];
+    const r = await mount(null, Object.assign(ctxFor(s), { dialog: true, opener: $('dev-open') }));
+    $('dev-stat').textContent = 'resultaat: ' + r;
+    document.body.dataset.result = r;
+  });
+  for (const el of [selDesign, selLang, selView, selMonth]) el.addEventListener('change', render);
+  await render();
+  if (q.has('open') && selView.value === 'dialog') $('dev-open').click();
+  document.body.dataset.ready = '1';
+</script>
+</body>
+</html>

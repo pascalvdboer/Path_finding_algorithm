@@ -7,6 +7,7 @@ import { parseList } from './parse.js';
 import { fitText, checkRow } from './fit.js';
 import { quote } from './pricing.js';
 import { drawTape, toBlob } from './render.js';
+import { renderPrint } from './print.js';
 
 export const version = '1.0.0';
 const apps = new WeakMap();
@@ -45,8 +46,14 @@ export function mount(el, cfg) {
 }
 
 export function mountAll() {
+  // Productielijst / proef in het beheer (admin-post bps_nt_print): zelfde renderer, geen app.
+  document.querySelectorAll('[data-bps-nt-print]').forEach((el) => {
+    try { renderPrint(el); } catch (e) { /* lijst blijft leesbaar zonder tekening */ }
+  });
   return Array.from(document.querySelectorAll('[data-bps-nametape-root]')).map((el) => mount(el));
 }
+
+export { renderPrint };
 
 export const _test = { parseList, fitText, checkRow, quote, drawTape, toBlob };
 

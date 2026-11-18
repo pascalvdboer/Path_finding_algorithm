@@ -24,8 +24,10 @@ const dev = args.has('--dev') || args.has('--watch');
  * Waarom 125: de v2-ontwerpstudio (canvas, panelen, assistent) en render v2 (belichte materialen, 4 kledingstukken,
  * techniekvergelijker; render ±19 → ±32 kB) brengen de bundel op ±119 kB. Ook met de FR-catalogi via config.strings
  * (±13 kB) blijft hij boven 100 kB. Het script laadt alleen op de pagina met de studio. Zie docs/integratie.md.
+ * 125 → 135 kB (critique-1): Polyneon-kleurkiezer, startgalerij met sjablonen, tekstplaatsing en suggesties (±10 kB).
+ * De volledige kleurenkaart (411 kleuren) zit NIET in de bundel: die laadt pas bij "Toon alle" (assets/data/polyneon.json).
  */
-const BUDGET = { 'patch-studio.js': 125 * 1024, 'patch-studio-worker.js': 25 * 1024, 'patch-studio-admin.js': 15 * 1024 };
+const BUDGET = { 'patch-studio.js': 135 * 1024, 'patch-studio-worker.js': 25 * 1024, 'patch-studio-admin.js': 15 * 1024 };
 
 const entries = [
   { in: 'main.js', out: 'patch-studio.js', globalName: 'BPS' },

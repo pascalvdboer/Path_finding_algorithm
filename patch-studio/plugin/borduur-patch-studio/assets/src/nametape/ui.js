@@ -260,7 +260,34 @@ export function createApp(root, cfg) {
 
   /* ------------------------------------------------------------------ balk + stappen */
 
-  function canLeave1(s, all) { return all.batch.rows.some((r) => cleanText(r.name) !== ''); }
+  function canLeave1(s, all) { return all.batch.rows.some((r) => cleanText(r.name) !== '') || pasteWaiting(s); }
+
+  /** Getypte (nog niet overgenomen) namen in het lijstveld tellen ook: "Verder" neemt ze eerst over. */
+  function pasteWaiting(s) { return !!(s.showPaste && s.pasteText && s.pasteText.trim()); }
+
+  /** De knop blijft aanraakbaar (aria-disabled): een tik toont wat nog ontbreekt in plaats van niets te doen. */
+  function ctaBlocked() { return el.cta.disabled || el.cta.getAttribute('aria-disabled') === 'true'; }
+
+  /** Tik op een geblokkeerde knop: breng de klant naar wat er nog moet gebeuren. */
+  function showWhatsMissing() {
+    const s = store.get();
+    let target = null;
+    if (s.step === 1) target = el.main.querySelector('[data-bind="name"], [data-fk="pastearea"]');
+    else if (s.step === 3) {
+      target = el.main.querySelector('.bps-nt__row.is-error [data-act="rowfix"], [data-act="fix"], .bps-nt__row.is-error .bps-nt__rowMain');
+      if (!target && !s.rights) target = el.main.querySelector('[data-act="rights"]');
+    }
+    if (!target) return;
+    // Alleen het paneel scrollen (op gsm moet het voorbeeld bovenaan blijven staan, pagina-scrollTop 0).
+    const m = el.main;
+    if (m.scrollHeight > m.clientHeight + 1) {
+      const dy = target.getBoundingClientRect().top - m.getBoundingClientRect().top - m.clientHeight / 2;
+      m.scrollTop += dy;
+    } else target.scrollIntoView({ block: 'center' });
+    target.focus({ preventScroll: true });
+    const why = el.main.querySelector('.bps-nt__why');
+    if (why) { why.classList.remove('is-flash'); void why.offsetWidth; why.classList.add('is-flash'); }
+  }
 
   function blockers(s, all) {
     const out = [];
@@ -275,22 +302,34 @@ export function createApp(root, cfg) {
   function renderBar(all) {
     const s = store.get();
     const q = all.quote;
-    if (!all.batch.rows.length) {
+    const waiting = pasteWaiting(s);
+    let hint = '';
+    if (!all.batch.rows.length && !waiting) {
       el.count.textContent = t('nt.bar.needName');
+      el.price.textContent = '';
+    } else if (waiting && s.step === 1) {
+      el.count.textContent = t('nt.bar.pasteWaiting');
       el.price.textContent = '';
     } else {
       el.count.textContent = t('nt.bar.count', { n: q.pieces });
-      el.price.textContent = q.ok ? ' · ' + t('nt.bar.perPiece', { price: money(q.unitIncl) }) : '';
+      el.price.textContent = q.ok ? ' · ' + (s.step === 3 ? t('nt.bar.total', { price: money(q.totalIncl) }) : t('nt.bar.perPiece', { price: money(q.unitIncl) })) : '';
     }
-    let label = t('nt.next'), disabled = false;
-    if (s.step === 1) disabled = !canLeave1(s, all);
+    let label = t('nt.next'), blocked = false, busy = false;
+    if (s.step === 1) blocked = !canLeave1(s, all);
     if (s.step === 3) {
       label = s.status === 'busy' ? t('nt.busy') : s.editKey ? t('nt.update') : t('nt.addToCart');
-      disabled = s.status === 'busy' || blockers(s, all).length > 0;
+      busy = s.status === 'busy';
+      const why = blockers(s, all);
+      blocked = why.length > 0;
+      if (blocked && !busy) hint = why[0];
     }
-    if (s.status === 'added') { label = t('nt.toCart'); disabled = false; }
+    if (s.status === 'added') { label = t('nt.toCart'); blocked = false; busy = false; hint = ''; }
+    // Op scherm 3 toont de balk wat er nog ontbreekt (staat anders onderaan, buiten beeld op gsm).
+    el.count.parentNode.classList.toggle('is-hint', !!hint);
+    if (hint) { el.count.textContent = hint; el.price.textContent = ''; }
     el.cta.textContent = label;
-    el.cta.disabled = disabled;
+    el.cta.disabled = busy;
+    if (blocked) el.cta.setAttribute('aria-disabled', 'true'); else el.cta.removeAttribute('aria-disabled');
     el.cta.setAttribute('aria-describedby', id + '-why');
     clearTimeout(liveTimer);
     liveTimer = setTimeout(() => {
@@ -384,10 +423,11 @@ export function createApp(root, cfg) {
     }
     html += `
       <details class="bps-nt__details bps-nt__paste" data-fk="paste" ${s.showPaste ? 'open' : ''}>
-        <summary>${esc(t('nt.s1.paste'))}</summary>
+        <summary>${esc(t(list ? 'nt.s1.pasteMore' : 'nt.s1.paste'))}</summary>
         <label for="${id}-paste" class="bps-nt__label">${esc(t('nt.s1.pasteLabel'))}</label>
         <p class="bps-nt__hint" id="${id}-paste-help">${esc(t('nt.s1.pasteHelp'))}</p>
-        <textarea id="${id}-paste" class="bps-nt__input bps-nt__textarea" rows="8" data-fk="pastearea" aria-describedby="${id}-paste-help" spellcheck="false">${esc(s.pasteText)}</textarea>
+        <textarea id="${id}-paste" class="bps-nt__input bps-nt__textarea" rows="8" data-fk="pastearea" aria-describedby="${id}-paste-help" spellcheck="false" autocapitalize="characters" autocomplete="off">${esc(s.pasteText)}</textarea>
+        <p class="bps-nt__row-actions"><button type="button" class="bps-nt__btn bps-nt__btn--primary" data-act="apply-paste">${esc(t('nt.s1.pasteApply'))}</button></p>
         <label class="bps-nt__btn bps-nt__file"><input type="file" accept=".csv,.txt,text/csv,text/plain" data-act="csv">${esc(t('nt.s1.csv'))}</label>
       </details>`;
     if (list) html += `<p class="bps-nt__row-actions"><button type="button" class="bps-nt__link" data-act="single">${esc(t('nt.s1.single'))}</button></p>`;
@@ -883,6 +923,13 @@ export function createApp(root, cfg) {
     applyParsed(res, 'replace');
   }
 
+  /** Getypte of geplakte lijst overnemen (knop "Gebruik deze namen" of "Verder"). */
+  function applyTypedList() {
+    const s = store.get();
+    clearTimeout(pasteTimer);
+    if (s.pasteText && s.pasteText.trim()) handleParsed(parseList(s.pasteText, { source: 'paste', config: cfg }));
+  }
+
   async function readFile(file) {
     if (!file) return;
     if (/\.xlsx?$/i.test(file.name)) { handleParsed(parseList('', { fileName: file.name })); return; }
@@ -1027,9 +1074,11 @@ export function createApp(root, cfg) {
         if (mini) drawMini(mini);
       }
     } else if (n.dataset.fk === 'pastearea') {
+      // Typen = de klant maakt zelf een lijst: niets overnemen of dichtklappen tijdens het typen
+      // (anders verdwijnt het veld na de eerste naam). Plakken neemt meteen over (zie 'paste').
       store.set({ pasteText: n.value });
       clearTimeout(pasteTimer);
-      pasteTimer = setTimeout(() => { if (n.value.trim()) handleParsed(parseList(n.value, { source: 'paste', config: cfg })); }, 400);
+      renderBar(computeAll());
     } else if (n.dataset.act === 'orgnote') {
       store.set({ orgNote: n.value.slice(0, 200) });
     } else if (n.dataset.act === 'custom-w') {
@@ -1083,8 +1132,15 @@ export function createApp(root, cfg) {
     const fk = d.dataset.fk;
     if (fk === 'extra') store.set({ showExtra: d.open });
     else if (fk === 'paste') {
-      store.set({ showPaste: d.open });
-      if (d.open) { const ta = d.querySelector('textarea'); if (ta && !mq.matches) ta.focus(); }
+      const s = store.get();
+      const r0 = s.rows[0] || {};
+      // Al een naam getypt? Zet die al als eerste regel, dan typ je gewoon verder.
+      const prefill = d.open && s.mode !== 'list' && !s.pasteText && cleanText(r0.name) ? r0.name + '\n' : null;
+      store.set(prefill ? { showPaste: d.open, pasteText: prefill } : { showPaste: d.open });
+      const ta = d.querySelector('textarea');
+      if (ta && prefill) ta.value = prefill;
+      if (d.open && ta && !mq.matches) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+      renderBar(computeAll());
     } else if (fk === 'more') store.set({ moreOpen: d.open });
   }, true);
 
@@ -1097,8 +1153,14 @@ export function createApp(root, cfg) {
     switch (act) {
       case 'cta':
         if (s.status === 'added') { const u = (cfg.rest && cfg.rest.cartUrl) || ''; if (u) window.location.href = u; return; }
+        if (ctaBlocked()) { showWhatsMissing(); return; }
+        if (s.step === 1 && pasteWaiting(s)) {
+          applyTypedList();
+          if (store.get().pending) return; // eerst kiezen: vervangen of toevoegen
+        }
         if (s.step < 3) goStep(s.step + 1); else addToCart();
         break;
+      case 'apply-paste': applyTypedList(); break;
       case 'prev': store.set({ selected: Math.max(0, s.selected - 1) }); drawPreview(); markSelected(); break;
       case 'next': store.set({ selected: Math.min(activeRows(s).length - 1, s.selected + 1) }); drawPreview(); markSelected(); break;
       case 'select': store.set({ selected: Number(b.dataset.i) }); drawPreview(); markSelected(); break;
@@ -1147,7 +1209,7 @@ export function createApp(root, cfg) {
   app.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && e.target && e.target.dataset && e.target.dataset.bind === 'name') {
       e.preventDefault();
-      if (!el.cta.disabled) goStep(2);
+      if (!ctaBlocked()) goStep(2);
     }
   });
   app.addEventListener('focusin', () => setTimeout(layout, 50));

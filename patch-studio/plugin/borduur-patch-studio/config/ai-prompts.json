@@ -286,7 +286,7 @@
     },
     "shape": {
       "patterns": [
-        "\\b(vorm|rond|ronde|ovaal|schild|rechthoek|vierkant|forme|ovale|écusson|rectangle|carré)\\b"
+        "\\b(vorm|rond|ronde|ovaal|schild|rechthoek|vierkant|forme|ovale|ecusson|rectangle|carre)\\b"
       ],
       "action": "open_shape",
       "message": {
@@ -296,7 +296,7 @@
     },
     "move": {
       "patterns": [
-        "\\b(verschuif|verplaats|links|rechts|hoger|lager|déplace|gauche|droite|plus haut|plus bas)\\b"
+        "\\b(verschuif|verplaats|links|rechts|hoger|lager|deplace|gauche|droite|plus haut|plus bas)\\b"
       ],
       "action": "open_arrange",
       "message": {
@@ -526,7 +526,8 @@
     ],
     "person": [
       "\\b(lijkt op|gelijkend op|ressemble a|ressemblant a|ressemblant|bekende vlaming|beroemdheid|celebrite|celebrity|koning filip|roi philippe|koningin mathilde|trump|biden|poetin|putin|elon musk|messi|ronaldo|taylor swift)\\b",
-      "\\b(portret|portrait|gezicht|visage|foto|photo|karikatuur|caricature)\\s+(van|de|d)\\s+(een\\s+|mijn\\s+|onze\\s+|ma\\s+|mon\\s+|notre\\s+|un\\s+|une\\s+)?(persoon|man|vrouw|jongen|meisje|vader|moeder|papa|mama|opa|oma|vriend|vriendin|zoon|dochter|broer|zus|collega|leraar|juf|meester|coach|trainer|personne|homme|femme|garcon|fille|pere|mere|ami|amie|fils|frere|soeur|collegue|prof)\\b"
+      "\\b(portret|portrait|gezicht|visage|foto|photo|karikatuur|caricature)\\s+(van|de|d)\\s+(een\\s+|mijn\\s+|onze\\s+|ma\\s+|mon\\s+|notre\\s+|un\\s+|une\\s+)?(persoon|man|vrouw|jongen|meisje|vader|moeder|papa|mama|opa|oma|vriend|vriendin|zoon|dochter|broer|zus|collega|leraar|juf|meester|coach|trainer|personne|homme|femme|garcon|fille|pere|mere|ami|amie|fils|frere|soeur|collegue|prof)\\b",
+      "\\b(portret|portrait|karikatuur|caricature)\\s+(van|de|d)\\s+(?!(een|mijn|onze|ons|ma|mon|notre|nos|un|une|le|la|les|l|des|het|de|du|our|my|a)\\b)[a-z]+"
     ],
     "styleOfArtist": [
       "\\b(in de stijl van|dans le style de|a la maniere de)\\s+(?!(een|de|het|un|une|le|la|les|des|oude|old|jaren|annees|tattoo|tatoeage|tatouage|stripverhalen|bd|graffiti|japanse|japonais|amerikaanse|americain|militaire|vintage|retro)\\b)[a-z]+"
@@ -542,7 +543,7 @@
       "\\b(onthoofd|decapite|gore|bloederig|sanglant|lijk|cadavre|zelfmoord|suicide|bomaanslag|attentat|terrorist|terroriste|school shooting|mass shooting|bloedbad|massacre)\\b"
     ],
     "drugs": [
-      "\\b(cocaine|coke lijn|heroine|crystal meth|xtc pil)\\b"
+      "\\b(cocaine|coke lijn|heroine|crystal meth|xtc pil|cannabis|cannabisblad|wietblad|wietplant|marihuana|marijuana|hasj|haschich|haschisch|mdma|ecstasy|lsd|amfetamine|amphetamine)\\b"
     ],
     "messages": {
       "brand": {
@@ -616,9 +617,13 @@
       "is",
       "je",
       "jouw",
+      "kleur",
+      "kleuren",
       "leuk",
       "leuke",
+      "logo",
       "maak",
+      "maar",
       "maken",
       "mijn",
       "mooi",
@@ -656,6 +661,8 @@
       "belle",
       "chose",
       "cool",
+      "couleur",
+      "couleurs",
       "d",
       "de",
       "des",
@@ -676,6 +683,7 @@
       "le",
       "les",
       "leur",
+      "logo",
       "ma",
       "mes",
       "moi",
@@ -692,6 +700,8 @@
       "qui",
       "sa",
       "ses",
+      "seul",
+      "seule",
       "seulement",
       "son",
       "stp",
@@ -855,7 +865,22 @@
       "zwaluw": "swallow bird",
       "hirondelle": "swallow bird",
       "mus": "sparrow",
-      "moineau": "sparrow"
+      "moineau": "sparrow",
+      "husky": "husky dog",
+      "motard": "biker",
+      "motorrijder": "biker",
+      "biker": "biker",
+      "kampioen": "champion",
+      "champion": "champion",
+      "winnaar": "winner",
+      "gagnant": "winner",
+      "huisdier": "pet",
+      "huisdieren": "pets",
+      "animal de compagnie": "pet",
+      "dier": "animal",
+      "dieren": "animals",
+      "animal": "animal",
+      "animaux": "animals"
     },
     "object": {
       "bijl": "axe",
@@ -1054,7 +1079,46 @@
       "ballon de rugby": "rugby ball",
       "rugbybal": "rugby ball",
       "ballon de foot": "football (soccer ball)",
-      "ballon de basket": "basketball"
+      "ballon de basket": "basketball",
+      "raquette": "tennis racket",
+      "raquettes": "tennis rackets",
+      "raquette de tennis": "tennis racket",
+      "tennisracket": "tennis racket",
+      "tennisrackets": "tennis rackets",
+      "mer": "sea",
+      "zee": "sea",
+      "chope": "beer mug",
+      "chope de biere": "beer mug",
+      "bierpul": "beer mug",
+      "bierpot": "beer mug",
+      "velo de course": "racing bicycle",
+      "racefiets": "racing bicycle",
+      "koersfiets": "racing bicycle",
+      "tulipe": "tulip",
+      "tulp": "tulip",
+      "tulpen": "tulips",
+      "tulipes": "tulips",
+      "cle anglaise": "wrench",
+      "moulin": "windmill",
+      "moulin a vent": "windmill",
+      "molen": "windmill",
+      "windmolen": "windmill",
+      "pootafdruk": "paw print",
+      "pootafdrukken": "paw prints",
+      "pootje": "paw print",
+      "poot": "paw",
+      "patte": "paw",
+      "empreinte de patte": "paw print",
+      "empreinte": "paw print",
+      "navire": "ship",
+      "schip": "ship",
+      "zeilschip": "ship",
+      "woud": "forest",
+      "foret": "forest",
+      "trofee": "trophy",
+      "trophee": "trophy",
+      "beker": "trophy cup",
+      "coupe": "trophy cup"
     },
     "group": {
       "motorclub": "motorcycle club",
@@ -1123,7 +1187,14 @@
       "anniversaire": "birthday",
       "imkers": "beekeepers",
       "apiculteurs": "beekeepers",
-      "imkersvereniging": "beekeepers association"
+      "imkersvereniging": "beekeepers association",
+      "club de tennis": "tennis club",
+      "association des apiculteurs": "beekeepers association",
+      "club de football": "football club",
+      "club de velo": "cycling club",
+      "club de cyclisme": "cycling club",
+      "rockband": "rock band",
+      "groupe de rock": "rock band"
     },
     "adj": {
       "boos": "angry",
@@ -1270,7 +1341,25 @@
       "zwemt": "swimming",
       "nage": "swimming",
       "dort": "sleeping",
-      "slaapt": "sleeping"
+      "slaapt": "sleeping",
+      "crache du feu": "fire-breathing",
+      "crachant du feu": "fire-breathing",
+      "vuurspuwende": "fire-breathing",
+      "vuurspuwend": "fire-breathing",
+      "stylise": "stylized",
+      "stylisee": "stylized",
+      "gestileerd": "stylized",
+      "gestileerde": "stylized",
+      "artisanal": "craft",
+      "artisanale": "craft",
+      "ambachtelijk": "craft",
+      "ambachtelijke": "craft",
+      "croisee": "crossed",
+      "croisees": "crossed",
+      "deux": "two",
+      "twee": "two",
+      "trois": "three",
+      "drie": "three"
     },
     "color": {
       "zwart": "black",
@@ -1356,7 +1445,15 @@
       "roest": "rust",
       "rouille": "rust",
       "teal": "teal",
-      "petrol": "teal"
+      "petrol": "teal",
+      "bleu nuit": "navy blue",
+      "nachtblauw": "navy blue",
+      "bleu roi": "royal blue",
+      "koningsblauw": "royal blue",
+      "roux": "rust",
+      "rousse": "rust",
+      "roestbruin": "rust",
+      "roestkleurig": "rust"
     },
     "shape": {
       "rond": "circle",
@@ -1490,6 +1587,277 @@
         "haar"
       ],
       "en": "around"
+    }
+  },
+  "fabricAliases": {
+    "_doc": "Stofkleur-id's van de studio (defaults.json fabrics) die anders heten in fabricColors. Gebruikt door Prompt_Adapter.",
+    "bottle": "green",
+    "sand": "beige",
+    "royal_blue": "royal",
+    "navy_blue": "navy",
+    "marine": "navy"
+  },
+  "colorNames": {
+    "_doc": "Menselijke labels (nl/fr) en hex per Engelse kleurnaam uit glossary.color, voor 'Zo begrepen we je' (Prompt_Adapter::understood). Hex = config/ai-mock.json colorHex waar die bestaat (test bewaakt dat).",
+    "black": {
+      "nl": "zwart",
+      "fr": "noir",
+      "hex": "#1b1b1b"
+    },
+    "white": {
+      "nl": "wit",
+      "fr": "blanc",
+      "hex": "#ffffff"
+    },
+    "red": {
+      "nl": "rood",
+      "fr": "rouge",
+      "hex": "#c62828"
+    },
+    "dark red": {
+      "nl": "donkerrood",
+      "fr": "rouge foncé",
+      "hex": "#8e1b1b"
+    },
+    "burgundy": {
+      "nl": "bordeaux",
+      "fr": "bordeaux",
+      "hex": "#6d1f2c"
+    },
+    "blue": {
+      "nl": "blauw",
+      "fr": "bleu",
+      "hex": "#1f5fbf"
+    },
+    "navy blue": {
+      "nl": "marineblauw",
+      "fr": "bleu marine",
+      "hex": "#1c2a4a"
+    },
+    "light blue": {
+      "nl": "lichtblauw",
+      "fr": "bleu clair",
+      "hex": "#7fb3e6"
+    },
+    "sky blue": {
+      "nl": "hemelsblauw",
+      "fr": "bleu ciel",
+      "hex": "#6ec6f1"
+    },
+    "royal blue": {
+      "nl": "koningsblauw",
+      "fr": "bleu roi",
+      "hex": "#2244aa"
+    },
+    "green": {
+      "nl": "groen",
+      "fr": "vert",
+      "hex": "#2e7d32"
+    },
+    "dark green": {
+      "nl": "donkergroen",
+      "fr": "vert foncé",
+      "hex": "#1b4d2a"
+    },
+    "light green": {
+      "nl": "lichtgroen",
+      "fr": "vert clair",
+      "hex": "#8bc34a"
+    },
+    "khaki": {
+      "nl": "kaki",
+      "fr": "kaki",
+      "hex": "#b8a56a"
+    },
+    "olive green": {
+      "nl": "olijfgroen",
+      "fr": "vert olive",
+      "hex": "#5b6236"
+    },
+    "yellow": {
+      "nl": "geel",
+      "fr": "jaune",
+      "hex": "#f7c600"
+    },
+    "mustard yellow": {
+      "nl": "mosterdgeel",
+      "fr": "jaune moutarde",
+      "hex": "#d4a72c"
+    },
+    "orange": {
+      "nl": "oranje",
+      "fr": "orange",
+      "hex": "#ef6c00"
+    },
+    "gold-yellow": {
+      "nl": "goudgeel",
+      "fr": "jaune doré",
+      "hex": "#d4a017"
+    },
+    "silver grey": {
+      "nl": "zilvergrijs",
+      "fr": "gris argent",
+      "hex": "#b0b4b8"
+    },
+    "grey": {
+      "nl": "grijs",
+      "fr": "gris",
+      "hex": "#8a8f94"
+    },
+    "charcoal grey": {
+      "nl": "antraciet",
+      "fr": "gris anthracite",
+      "hex": "#3c4043"
+    },
+    "brown": {
+      "nl": "bruin",
+      "fr": "brun",
+      "hex": "#6d4c2f"
+    },
+    "rust": {
+      "nl": "roestbruin",
+      "fr": "roux",
+      "hex": "#a0451f"
+    },
+    "beige": {
+      "nl": "beige",
+      "fr": "beige",
+      "hex": "#e6d5b0"
+    },
+    "cream": {
+      "nl": "crème",
+      "fr": "crème",
+      "hex": "#f3ead2"
+    },
+    "pink": {
+      "nl": "roze",
+      "fr": "rose",
+      "hex": "#ef7fa8"
+    },
+    "fuchsia": {
+      "nl": "fuchsia",
+      "fr": "fuchsia",
+      "hex": "#c2185b"
+    },
+    "purple": {
+      "nl": "paars",
+      "fr": "violet",
+      "hex": "#6a3d9a"
+    },
+    "violet": {
+      "nl": "violet",
+      "fr": "violet",
+      "hex": "#7e57c2"
+    },
+    "lilac": {
+      "nl": "lila",
+      "fr": "lilas",
+      "hex": "#b39ddb"
+    },
+    "turquoise": {
+      "nl": "turquoise",
+      "fr": "turquoise",
+      "hex": "#1aa6a6"
+    },
+    "teal": {
+      "nl": "petrol",
+      "fr": "bleu canard",
+      "hex": "#00796b"
+    }
+  },
+  "understoodLabels": {
+    "_doc": "Klantteksten voor Prompt_Adapter::understood() (chips 'Zo begrepen we je') en de alt-tekst van voorstellen. Vlaams NL (je) en FR (vous).",
+    "shapes": {
+      "circle": {
+        "nl": "rond",
+        "fr": "rond"
+      },
+      "oval": {
+        "nl": "ovaal",
+        "fr": "ovale"
+      },
+      "rect": {
+        "nl": "rechthoekig",
+        "fr": "rectangulaire"
+      },
+      "rounded": {
+        "nl": "afgeronde hoeken",
+        "fr": "coins arrondis"
+      },
+      "shield": {
+        "nl": "schild",
+        "fr": "blason"
+      },
+      "contour": {
+        "nl": "op de vorm uitgesneden",
+        "fr": "découpé à la forme"
+      }
+    },
+    "stylePrefix": {
+      "nl": "stijl",
+      "fr": "style"
+    },
+    "colorsJoin": {
+      "nl": "en",
+      "fr": "et"
+    },
+    "colorsAuto": {
+      "nl": "kleuren: wij kiezen",
+      "fr": "couleurs : à notre choix"
+    },
+    "maxColors": {
+      "nl": "max. {n} kleuren",
+      "fr": "max. {n} couleurs"
+    },
+    "maxColorsOne": {
+      "nl": "1 kleur",
+      "fr": "1 couleur"
+    },
+    "textAi": {
+      "nl": "tekst in het ontwerp: «{text}»",
+      "fr": "texte dans le design : « {text} »"
+    },
+    "textStudio": {
+      "nl": "tekst «{text}» zet je in de studio",
+      "fr": "texte « {text} » ajouté dans le studio"
+    },
+    "textReserve": {
+      "nl": "ruimte vrij voor tekst",
+      "fr": "espace libre pour un texte"
+    },
+    "subjectFallback": {
+      "nl": "eigen ontwerp",
+      "fr": "design personnalisé"
+    },
+    "typographic": {
+      "nl": "enkel tekst",
+      "fr": "texte seul"
+    },
+    "alt": {
+      "nl": "Voorstel {i}: {summary}",
+      "fr": "Proposition {i} : {summary}"
+    },
+    "warnings": {
+      "personal_data_removed": {
+        "nl": "We hebben persoonlijke gegevens uit je beschrijving gehaald. Die zijn niet nodig voor het ontwerp.",
+        "fr": "Nous avons retiré des données personnelles de votre description. Elles ne sont pas nécessaires pour le design."
+      },
+      "text_too_long_for_ai": {
+        "nl": "Lange tekst zetten we in de studio, dan is hij zeker juist gespeld.",
+        "fr": "Un texte long est ajouté dans le studio, pour qu'il soit sûrement bien orthographié."
+      },
+      "ai_text_missing": {
+        "nl": "Er is geen tekst om in het ontwerp te zetten. Je kan later tekst toevoegen in de studio.",
+        "fr": "Il n'y a pas de texte à mettre dans le design. Vous pourrez en ajouter plus tard dans le studio."
+      },
+      "too_many_colors": {
+        "nl": "Te veel kleuren voor een mooie patch: we houden de eerste en jij kan ze later gratis aanpassen.",
+        "fr": "Trop de couleurs pour un bel écusson : nous gardons les premières, vous pourrez les changer gratuitement ensuite."
+      },
+      "text_small_for_size": {
+        "nl": "Op deze maat wordt tekst in het ontwerp klein. Tekst in de studio blijft beter leesbaar.",
+        "fr": "À cette taille, le texte dans le design sera petit. Un texte ajouté dans le studio reste plus lisible."
+      }
     }
   }
 }

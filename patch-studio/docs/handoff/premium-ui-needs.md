@@ -44,3 +44,35 @@
 - **i18n-a11y-9 (bedragen):** de server formatteert bedragen voortaan volgens de WooCommerce-instellingen. Komen ze in `public_config` (bv. `currency: {symbol, position, decimals, decimalSep, thousandSep}`), formatteer dan in de studio daarmee (of met `Intl.NumberFormat(locale, {style:'currency', currency})`) zodat studio, winkelmand en mail hetzelfde tonen. fr-BE: "1 234,56 €" met een smalle vaste spatie.
 - **i18n-a11y-13 (terminologie FR):** woordenlijst NL→FR voor studio én mails: ontwerp = **design**, patch = **écusson**, proef = **épreuve (numérique)**, klittenband = **velcro**, borduurkaart = **carte de broderie**, garen = **fil**. De studio gebruikt al "design". Hou dat zo, de .po wordt erop afgestemd.
 - **i18n-a11y-11 (RTL):** gebruik in nieuwe CSS logische eigenschappen (`margin-inline-start`, `text-align: start`, `inset-inline-*`). Zet `dir` op de studio-root naast de `lang` die de shortcode al meegeeft.
+
+## Van auditor "productisering" (18-11-2026), zie docs/premium/audit-productisering.md
+- **productisering-4 (geen vaste merkgegevens):** haal de fallback `'Kalmthout'` weg uit `assets/src/ui/assistant.js:42` en `assets/src/ui/panels.js:65`. Is `config.contact.city` leeg, gebruik dan een zin zonder plaatsnaam (bv. "Vanaf 1 stuk, gemaakt op eigen machines." / "Dès 1 pièce, fabriqué sur nos propres machines."). Toon "WhatsApp" of "bel ons" alleen als `contact.whatsapp` of `contact.phone` ingevuld is. Zijn beide leeg, toon dan een link naar `contact.quoteUrl` ("Stel je vraag" / "Posez votre question"). Hetzelfde geldt voor `nt.error.generic` in `assets/src/nametape/messages.js`.
+- **productisering-5 (huisstijl instelbaar):** de server zet straks CSS-variabelen inline op de studio-root (`--bps-accent`, `--bps-cta`, `--bps-cta-hover`, `--bps-ink`, `--bps-radius`). Laat `assets/css/patch-studio.css` (en de naamstrook- en cross-sell-CSS) daarop steunen: `--bps-blue: var(--bps-accent, #21A9E2)` in plaats van de sitespecifieke `var(--e-global-color-8bf8b31, …)`. Gebruik geen vaste merkkleuren buiten `:root`.
+- **productisering-6 (public config):** de server stuurt geen `_note`/`_openPoint`/`_doc`, geen `priceSource` en geen inhoud van uitgeschakelde blokken meer (`promises.testimonial` wordt `{enabled:false}`). Lees die velden in de UI niet.
+
+## Van auditor "concurrentie-features" (18-11-2026), zie docs/premium/audit-concurrentie-features.md
+- **concurrentie-features-1 (sjablonen/galerij):**
+  - De server krijgt `GET /templates?technique=&use=&shape=` met per item `{id, slug, label{nl,fr}, technique, use[], shape, previewUrl, photoUrl?, payload}`.
+  - De startgalerij leest deze lijst in plaats van de vaste `ui/samples.js`. Hou die als fallback als de route leeg is of faalt.
+  - Toon `photoUrl` met het label "Echte patch uit ons atelier" / "Vrai écusson de notre atelier".
+  - `config.page.template` (shortcode `sjabloon=`) laadt meteen dat sjabloon.
+- **concurrentie-features-6 (elementen):** `GET /elements` geeft borduurbare SVG-bouwstenen (lauwerkrans, sterren, lint, vlaggen, jaartalbadge) met `{id, label{nl,fr}, category, techniques[], svgUrl}`. De UI voegt ze toe als beeldlaag en toont alleen elementen waarvan de huidige techniek in `techniques` staat.
+- **concurrentie-features-7 (leverdatum):** `/quote` en `/cart` kunnen `estimate: {from, to}` (ISO-datums) of `null` teruggeven.
+  - Toon bij een waarde "Rond {from}–{to} in huis, vanaf je akkoord op de proef" / "Vers le {from}–{to}, à compter de votre accord sur l'épreuve".
+  - Bij `null`: de bestaande `leadTimeFallback`. Verzin nooit zelf een datum.
+- **concurrentie-features-9 (namen op het embleem):** een tekstlaag kan `variable: true` + `values: string[]` (max 500) krijgen.
+  - De invoer werkt zoals bij naamstroken (plakken, één naam per regel). Het voorbeeld toont de eerste naam, met een bladerknop.
+  - Het aantal volgt het aantal namen.
+  - Fout `bps_variant_invalid` heeft `data.lines[]` met de regelnummers.
+- **concurrentie-features-10 (presets):** `config.page` kan `techniques[]` (alleen deze tonen), `options[]` (voorgekozen), `fabric` en `action: 'quote'|'order'` krijgen. Bij `'quote'` verberg je "Bestellen" en blijft "Offerte aanvragen" zichtbaar.
+- **concurrentie-features-3 (atelier-modus):** met `config.atelier = {nonce, customerEmail?}` toont de studio een smalle balk "Atelier-modus".
+  - Velden: klant-e-mail, interne notitie en een prijsafwijking met reden.
+  - De knop "Bewaar en maak bestellink" roept `POST /atelier/designs` aan en toont de link om te kopiëren.
+  - Er gaan geen klant-analytics-events uit.
+
+## Van auditor "gdpr-juridisch" (18-11-2026), zie docs/premium/audit-gdpr-juridisch.md
+- **gdpr-juridisch-8 (rechtenverklaring uit één bron):** de server stuurt de tekst van de rechtenverklaring straks mee in `config.legal.rights.patch = {v, text}` (al in de taal van de bezoeker). Toon die tekst bij het vinkje in plaats van `ui.s5.rights` uit `messages.js`, en stuur `rightsConsent: {v: config.legal.rights.patch.v, accepted: true}`. Ontbreekt het veld, val dan terug op de huidige tekst. Zo is de sha1 die de server bewaart gegarandeerd die van de tekst die de klant zag.
+- **gdpr-juridisch-10 (offerte zonder verplicht privacyvinkje):** haal het verplichte vinkje "Bevestig dat we je gegevens mogen gebruiken…" weg uit het offerteformulier. Zet onder de knop een informatiezin met een link naar `config.contact.privacyUrl`: "We gebruiken je gegevens alleen om je aanvraag te beantwoorden. Meer in ons privacybeleid." / "Nous utilisons vos données uniquement pour répondre à votre demande. Plus d'infos dans notre politique de confidentialité." De server eist `consent` dan niet meer.
+- **gdpr-juridisch-11 (cookieloos tot de eerste AI-actie):** vraag `GET /ai/status` pas op als de klant de AI-sectie echt opent, niet bij het laden van de studio. Bewaar het wegklikken van een dienstaanbod ("Nee, bedankt") in `sessionStorage` (`bps:svc:dismissed`, try/catch) en niet via een serveroproep die een cookie zet.
+- **gdpr-juridisch-12 (uitleg bij upload concreet):** vervang in `ui.empty.privacy` de zin "We bewaren het niet langer dan nodig." door de echte termijn uit `config.retention.orphanDays` (komt mee in de public config): "Bestel je niet, dan wissen we het na {days} dagen." / "Sans commande, nous le supprimons après {days} jours." De link naar het privacybeleid blijft.
+- **gdpr-juridisch-14 (elke cookietool):** `ctx.track` controleert eerst `window.wp_has_consent?.('statistics')` (WP Consent API) of `config.consent.statistics === true`, en pas daarna `getCkyConsent`. Zonder een van beide wordt er niets gepusht.

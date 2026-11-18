@@ -151,6 +151,8 @@ export function sanitizeState(raw, config) {
     angleDeg: clamp(num(l && l.angleDeg, 0), -180, 180),
     insetMm: clamp(num(l && l.insetMm, 0), -5, 60),
     letterSpacing: clamp(num(l && l.letterSpacing, 0.05), -0.05, 0.5),
+    outline: ['auto', 'on', 'none'].includes(l && l.outline) ? l.outline : 'auto',
+    autoFit: !!(l && l.autoFit),
   }));
   // View on a garment (UI only; the stage checks the id against the garments render can draw).
   s.mockup = typeof raw.mockup === 'string' && /^[a-z][a-z_]{1,29}$/.test(raw.mockup) ? raw.mockup : 'none';

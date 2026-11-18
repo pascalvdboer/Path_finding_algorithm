@@ -143,11 +143,19 @@ final class Products {
 	 * Cheap check on init: create products once the module is switched on.
 	 */
 	public static function maybe_ensure(): void {
-		if ( ! class_exists( 'WC_Product_Simple' ) || 'off' === Config::mode() ) {
+		if ( ! class_exists( 'WC_Product_Simple' ) ) {
 			return;
 		}
-		$map = self::map();
-		if ( count( $map ) >= count( self::wanted() ) ) {
+		$map     = self::map();
+		$missing = false;
+		foreach ( self::wanted() as $w ) {
+			// Packs only once the AI studio is switched on; services as soon as they are enabled.
+			if ( $w['enabled'] && ( 'service' === $w['type'] || 'off' !== Config::mode() ) && empty( $map[ self::key( $w['type'], $w['id'] ) ] ) ) {
+				$missing = true;
+				break;
+			}
+		}
+		if ( ! $missing ) {
 			return;
 		}
 		if ( ! add_option( 'bps_svc_products_lock', time(), '', false ) ) {

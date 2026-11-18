@@ -11,10 +11,14 @@ $plugin = dirname( __DIR__, 2 ) . '/plugin/borduur-patch-studio';
 require_once $plugin . '/includes/nametape/class-fit.php';
 require_once $plugin . '/includes/nametape/class-pricing.php';
 require_once $plugin . '/includes/nametape/class-validator.php';
+require_once $plugin . '/includes/nametape/class-production.php';
+require_once $plugin . '/includes/nametape/class-settings-schema.php';
 
 use BorduurPatchStudio\Nametape\Fit;
 use BorduurPatchStudio\Nametape\Pricing;
 use BorduurPatchStudio\Nametape\Validator;
+use BorduurPatchStudio\Nametape\Production;
+use BorduurPatchStudio\Nametape\Settings_Schema;
 
 /**
  * JSON file as array.
@@ -205,6 +209,98 @@ $check( 134.61 === $q['totalIncl'] && 122.51 === $q['lineIncl'], 'pricing: §1.7
 // Uppercase parity for ß / accents (mb_strtoupper must match JS toUpperCase for the cases we use).
 $check( 'STRASSER' === Fit::apply_case( 'straßer', true, null ), 'apply_case: ß → SS', Fit::apply_case( 'straßer', true, null ) );
 $check( 'ÉLODIE' === Fit::apply_case( 'élodie', true, null ), 'apply_case: accents kept' );
+
+
+// ---------------------------------------------------------------- Production (CSV + productielijst)
+$snap = array(
+	'v'         => 1,
+	'locale'    => 'nl-BE',
+	'format'    => '10x2.5',
+	'fabric'    => 'black',
+	'letter'    => 'white',
+	'border'    => 'satin_letter',
+	'font'      => 'block',
+	'uppercase' => true,
+	'backing'   => 'hook',
+	'loop'      => true,
+	'bloodMode' => 'separate',
+	'rows'      => array(
+		array( 'n' => 'Peeters J.', 'l2' => '', 'b' => 'O+', 'q' => 2 ),
+		array( 'n' => '=HYPERLINK("http://x")', 'l2' => '', 'b' => '', 'q' => 1 ),
+		array( 'n' => '-Maes; "L"', 'l2' => '', 'b' => '', 'q' => 1 ),
+		array( 'n' => 'Vandenbroucke-Desmedt Alex.', 'l2' => '', 'b' => '', 'q' => 1 ),
+	),
+);
+$pb   = Production::batch_from_data( $snap );
+$check( array( 'group' => 'O', 'rh' => '+' ) === $pb['rows'][0]['blood'] && 2 === $pb['rows'][0]['qty'] && 'separate' === $pb['bloodMode'], 'production: snapshot → batch', $pb['rows'][0] );
+$pr = Production::rows( $pb, $cfg, $metrics );
+$check( 'PEETERS J.' === $pr[0]['name'] && 'ok' === $pr[0]['status'] && $pr[0]['capMm'] > 6 && 'O POS' === $pr[0]['bloodTape']['text'], 'production: rows with letter height + blood tape', $pr[0] );
+$check( 'error' === $pr[3]['status'] && array( 'too_long' ) === $pr[3]['codes'], 'production: too long flagged for the workshop', $pr[3]['codes'] );
+$tot = Production::totals( $pb );
+$check( array( 'persons' => 4, 'main' => 5, 'blood' => 2 ) === $tot, 'production: totals', $tot );
+$st = Production::style( $pb, $cfg, 'nl' );
+$check( '10 × 2,5 cm' === $st['format'] && 'Zwart' === $st['fabric'] && false !== strpos( $st['backing'], 'tegenstuk' ), 'production: style summary', $st );
+$check( "'=SUM(A1)" === Production::csv_cell( '=SUM(A1)' ) && "'+1" === Production::csv_cell( '+1' ) && "'-x" === Production::csv_cell( '-x' ) && "'@a" === Production::csv_cell( '@a' ) && 'O-' === Production::csv_cell( 'O-' ), 'production: CSV injection neutralised' );
+$csv   = Production::csv( $snap, $cfg, $metrics, 'nl' );
+$lines = explode( "\r\n", trim( $csv ) );
+$check( 0 === strpos( $csv, "\xEF\xBB\xBF" ) && 5 === count( $lines ), 'production: CSV has BOM + header + 4 rows', count( $lines ) );
+$check( false !== strpos( $lines[2], "\"'=HYPERLINK(\"\"HTTP://X\"\")\"" ), 'production: formula cell quoted and prefixed', $lines[2] );
+$check( false !== strpos( $lines[3], "\"'-MAES; \"\"L\"\"\"" ), 'production: separator + quotes escaped', $lines[3] );
+$check( 0 === strpos( $lines[1], '1;PEETERS J.;;O POS;2;12,2;O POS (9,7 mm);OK;' ) && false !== strpos( $lines[1], 'O POS (' ), 'production: first data line', $lines[1] );
+$check( false !== strpos( Production::csv( $snap, $cfg, $metrics, 'fr' ), 'Groupe sanguin' ), 'production: CSV in French' );
+
+// ---------------------------------------------------------------- Settings_Schema (beheerpagina)
+$form = array(
+	'enabled'  => '1',
+	'maxRows'  => '9999',
+	'text'     => array( 'uppercaseDefault' => '1' ),
+	'formats'  => array( '10x2.5' => array( 'enabled' => '1', 'priceExcl' => '4,50' ), '12x3' => array( 'enabled' => '1', 'priceExcl' => '5.00' ), '8x5' => array( 'enabled' => '1', 'priceExcl' => '5.80' ), '5x2.5' => array( 'enabled' => '1', 'priceExcl' => '3' ) ),
+	'tiers'    => array( 'pooledWithPatches' => '1' ),
+	'customSize' => array( 'enabled' => '1' ),
+	'loopCounterpart' => array( 'enabled' => '1', 'priceExcl' => '1,00' ),
+	'smallOrderFee'   => array( 'belowQty' => '5', 'amountExcl' => '7,50' ),
+	'blood'    => array( 'notation' => 'O POS' ),
+	'reviewWords' => implode( "\n", $cfg['reviewWords'] ),
+	'woo'      => array( 'shippingClassSlug' => '' ),
+);
+foreach ( array( 'fabrics' => 'inStock', 'letterColors' => 'enabled', 'fonts' => 'enabled', 'borders' => 'enabled', 'backings' => 'enabled' ) as $list => $tog ) {
+	foreach ( $cfg[ $list ] as $e ) {
+		if ( false !== ( $e[ $tog ] ?? true ) ) {
+			$form[ $list ][ $e['id'] ][ $tog ] = '1';
+		}
+		foreach ( array( 'surchargeExcl', 'deltaExcl', 'threadCode' ) as $f ) {
+			if ( isset( $e[ $f ] ) ) {
+				$form[ $list ][ $e['id'] ][ $f ] = (string) $e[ $f ];
+			}
+		}
+	}
+}
+$res  = Settings_Schema::sanitize( $form, $cfg, $cfg );
+$diff = Settings_Schema::diff( $res['config'], $cfg );
+$check( array( 'maxRows' => 500 ) === $diff, 'settings: unchanged form stores only the clamped maxRows', $diff );
+
+$f2                                   = $form;
+$f2['formats']['10x2.5']['priceExcl'] = '4,95';
+$f2['fabrics']['camo']['inStock']     = '1';
+$f2['reviewWords']                    = "politie\n politie \n<b>douane</b>, VIGILIS";
+$f2['promises']                       = array( 'proof' => '1', 'leadTime' => array( 'nl' => 'Klaar binnen 5 werkdagen', 'fr' => '' ) );
+$f2['woo']['shippingClassSlug']       = 'evil';
+$f2['maxRows']                        = '250';
+$res  = Settings_Schema::sanitize( $f2, $cfg, $cfg, array( 'brievenbus' ) );
+$diff = Settings_Schema::diff( $res['config'], $cfg );
+$check( 4.95 === $diff['formats'][0]['priceExcl'] && 4 === count( $diff['formats'] ), 'settings: price change stores the whole formats list', $diff['formats'][0] ?? null );
+$camo = array_values( array_filter( $diff['fabrics'], static fn( $f ) => 'camo' === $f['id'] ) )[0];
+$check( true === $camo['inStock'], 'settings: fabric switched on' );
+$check( array( 'POLITIE', 'DOUANE', 'VIGILIS' ) === $diff['reviewWords'], 'settings: review words cleaned, unique, uppercased', $diff['reviewWords'] );
+$check( true === $diff['promises']['proof'] && array( 'nl' => 'Klaar binnen 5 werkdagen', 'fr' => 'Klaar binnen 5 werkdagen' ) === $diff['promises']['leadTime'], 'settings: promises', $diff['promises'] );
+$check( ! isset( $diff['woo'] ), 'settings: unknown shipping class refused', $diff['woo'] ?? null );
+
+$f3 = $form;
+unset( $f3['fonts'] );
+$res = Settings_Schema::sanitize( $f3, $cfg, $cfg );
+$on  = array_values( array_filter( $res['config']['fonts'], static fn( $f ) => false !== ( $f['enabled'] ?? true ) ) );
+$check( 1 === count( $on ) && 'block' === $on[0]['id'] && array( 'fonts' ) === $res['notices'], 'settings: all fonts off → default font kept on', $res['notices'] );
+$check( 0.0 === Settings_Schema::money( 'abc', 0, 10, 0.0 ) && 10.0 === Settings_Schema::money( '99', 0, 10, 0 ) && 1.25 === Settings_Schema::money( '€ 1,25', 0, 10, 0 ), 'settings: money parsing' );
 
 echo "nametape PHP: $pass ok, $fail fout\n";
 exit( $fail ? 1 : 0 );

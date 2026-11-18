@@ -128,8 +128,13 @@ final class Messages {
 	 * @param array  $vars {placeholder => value}.
 	 */
 	public static function text( string $code, array $vars = array() ): string {
-		$lang = 'fr' === self::$locale ? 'fr' : 'nl';
-		$msg  = self::TEXT[ $code ][ $lang ] ?? ( self::TEXT['provider_error'][ $lang ] );
+		$lang  = 'fr' === self::$locale ? 'fr' : 'nl';
+		$msg   = self::TEXT[ $code ][ $lang ] ?? ( self::TEXT['provider_error'][ $lang ] );
+		$legal = array( 'bps_ai_paused' => 'legal.ai.abuse_pause' ); // Legal wording wins (config/ai-legal.json).
+		if ( isset( $legal[ $code ] ) && class_exists( __NAMESPACE__ . '\\Module', false ) ) {
+			$l   = Module::legal();
+			$msg = (string) ( $l['strings'][ $legal[ $code ] ][ $lang ] ?? $msg );
+		}
 		foreach ( $vars as $k => $v ) {
 			$msg = str_replace( '{' . $k . '}', (string) $v, $msg );
 		}

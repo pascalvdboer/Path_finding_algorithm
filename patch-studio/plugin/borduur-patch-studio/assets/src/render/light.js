@@ -115,7 +115,9 @@ export function shadeGeo(g, light, out, o = {}) {
     let ndl = nx * lx + ny * ly + nz * lz;
     if (ndl < 0) ndl = 0;
     const cav = ao[i] * 0.003921569;
-    const dif = (amb + kd * ndl) * cav;
+    let dif = (amb + kd * ndl) * cav;
+    // facets turned to the light may brighten a colour only a little: grey thread stays grey, never paper white
+    if (dif > 1) dif = 1 + (dif - 1) * 0.35;
     let sp = 0;
     const ks = spec[i];
     if (ks) {

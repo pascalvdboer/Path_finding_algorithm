@@ -87,7 +87,19 @@ export function createStage(ctx) {
     zbtn('fit', t('ui.zoom.fit'), () => { setZoom(1); center = null; }));
   const viewName = ctx.uidBase + '-view';
   const views = h('div.bps-views', { role: 'radiogroup', 'aria-label': t('ui.view.label') });
-  const el = h('figure.bps-stage.bps-preview', { 'aria-label': t('ui.preview.label') }, views, wrap, zoomBar, chip);
+  // On a garment: framed on the patch by default (it stays readable), one tap shows the whole piece (critique-1 #10).
+  const wholeBtn = h('button.bps-wholebtn', { type: 'button', hidden: true, 'aria-pressed': 'false', onclick: () => { ctx.ui.wholeGarment = !ctx.ui.wholeGarment; setZoom(1); center = null; syncWhole(); } });
+  const garmentHint = h('p.bps-garmenthint', { hidden: true });
+  function syncWhole() {
+    const g = garmentOf();
+    wholeBtn.hidden = !g;
+    wholeBtn.setAttribute('aria-pressed', String(!!ctx.ui.wholeGarment));
+    text(wholeBtn, ctx.ui.wholeGarment ? t('ui.view.zoomPatch') : t('ui.view.whole'));
+    const hint = g ? t('ui.view.hint.' + g) : '';
+    garmentHint.hidden = !g || hint === 'ui.view.hint.' + g || !state || state.sizeCm >= 15;
+    text(garmentHint, hint);
+  }
+  const el = h('figure.bps-stage.bps-preview', { 'aria-label': t('ui.preview.label') }, views, wrap, zoomBar, chip, wholeBtn, garmentHint);
   el.addEventListener('pointerdown', () => { el.classList.add('is-touched'); });
 
   let renderer = null, broken = false, lastResult = null, queued = false, quality = 'high', hiTimer = 0;
@@ -131,6 +143,7 @@ export function createStage(ctx) {
     const o = renderOptions(state, d, art(), {
       view: g ? 'garment' : 'patch',
       garment: g || undefined,
+      frame: g && !ctx.ui.wholeGarment ? 'patch' : 'garment',
       garmentHex: g && config.mockups && config.mockups[g] ? config.mockups[g].garmentHex : undefined,
       quality,
       pxSize: Math.max(canvas.width, canvas.height),
@@ -359,11 +372,11 @@ export function createStage(ctx) {
       ctxbar.replaceChildren(
         tbtn('type', t('ui.ctx.editText'), () => startEdit(l.id), { txt: t('ui.ctx.edit') }),
         h('span.bps-ctxbar__sep', { 'aria-hidden': 'true' }),
-        tbtn('minus', t('ui.ctx.smaller'), () => setLayer(l.id, { heightMm: clamp(l.heightMm - 0.5, T.minHeightMm || 3, T.maxHeightMm || 40) })),
+        tbtn('minus', t('ui.ctx.smaller'), () => setLayer(l.id, { autoFit: false, heightMm: clamp(l.heightMm - 0.5, T.minHeightMm || 3, T.maxHeightMm || 40) })),
         h('span.bps-ctxbar__val', { 'aria-hidden': 'true' }, ctx.n(l.heightMm) + ' mm'),
-        tbtn('plus', t('ui.ctx.bigger'), () => setLayer(l.id, { heightMm: clamp(l.heightMm + 0.5, T.minHeightMm || 3, T.maxHeightMm || 40) })),
+        tbtn('plus', t('ui.ctx.bigger'), () => setLayer(l.id, { autoFit: false, heightMm: clamp(l.heightMm + 0.5, T.minHeightMm || 3, T.maxHeightMm || 40) })),
         h('span.bps-ctxbar__sep', { 'aria-hidden': 'true' }),
-        tbtn(l.path === 'straight' ? 'arc' : 'type', t('ui.ctx.path', { path: t('ui.text.path.' + next) }), () => setLayer(l.id, { path: next, angleDeg: 0, insetMm: 0, offsetMm: { x: 0, y: 0 } })),
+        tbtn(l.path === 'straight' ? 'arc' : 'type', t('ui.ctx.path', { path: t('ui.text.path.' + next) }), () => setLayer(l.id, { autoPlace: false, path: next, angleDeg: 0, insetMm: 0, offsetMm: { x: 0, y: 0 } })),
         tbtn('trash', t('ui.text.remove', { text: l.text || '…' }), () => ctx.removeText(l.id)));
     } else if (tgt === 'art') {
       const sc = (state.art && state.art.scale) || 1;
@@ -397,7 +410,7 @@ export function createStage(ctx) {
       style: { left: c.x + 'px', top: c.y + 'px', fontSize: clamp(l.heightMm * ppm * 1.25, 14, 64) + 'px', minWidth: Math.max(120, b.w * ppm + 24) + 'px', transform: `translate(-50%,-50%) rotate(${b.rot}deg)` },
     });
     const done = () => { if (editing === inp) stopEdit(); };
-    inp.addEventListener('input', () => setLayer(id, { text: inp.value.slice(0, T.maxChars || 60) }));
+    inp.addEventListener('input', () => (ctx.setLayerText ? ctx.setLayerText(id, inp.value) : setLayer(id, { text: inp.value.slice(0, T.maxChars || 60) })));
     inp.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); done(); canvas.focus({ preventScroll: true }); } });
     inp.addEventListener('blur', done);
     editing = inp;
@@ -426,6 +439,7 @@ export function createStage(ctx) {
     }
     const texts = s.texts.map((l) => {
       if (l.id !== target) return l;
+      l = { ...l, autoPlace: false };
       if (l.path === 'straight') {
         const base = start ? start.offsetMm : l.offsetMm;
         return { ...l, offsetMm: { x: clamp(base.x + dxMm, -L.patchWmm / 2, L.patchWmm / 2), y: clamp(base.y + dyMm, -L.patchHmm / 2, L.patchHmm / 2) } };
@@ -458,7 +472,7 @@ export function createStage(ctx) {
       store.set({ art: { ...store.get().art, scale: clamp(Math.round(drag.scale * k * 100) / 100, L.artScaleMin || 0.2, L.artScaleMax || 2) } });
     } else {
       const T = config.text || {};
-      setLayer(drag.target, { heightMm: clamp(Math.round(drag.heightMm * k * 2) / 2, T.minHeightMm || 3, T.maxHeightMm || 40) });
+      setLayer(drag.target, { autoFit: false, heightMm: clamp(Math.round(drag.heightMm * k * 2) / 2, T.minHeightMm || 3, T.maxHeightMm || 40) });
     }
   }
 
@@ -526,10 +540,27 @@ export function createStage(ctx) {
     drag.moved = drag.moved || Math.hypot(p.x - drag.p0.x, p.y - drag.p0.y) > 0.4;
     moveTarget(drag.target, p.x - drag.p0.x, p.y - drag.p0.y, drag.start, p);
   });
+  /** Palette index of the design colour under a point (mm from the patch centre), or -1. */
+  function labelAt(p) {
+    const a = d && d.analysis, r = d && d.layout && d.layout.artRectMm;
+    if (!a || !a.labels || !a.preview || !r) return -1;
+    const L = d.layout;
+    const x = p.x + L.patchWmm / 2, y = p.y + L.patchHmm / 2;
+    const u = Math.floor(((x - r.x) / r.w) * a.preview.width), v = Math.floor(((y - r.y) / r.h) * a.preview.height);
+    if (u < 0 || v < 0 || u >= a.preview.width || v >= a.preview.height) return -1;
+    const l = a.labels[v * a.preview.width + u];
+    return l === 255 ? -1 : l;
+  }
   const end = (ev) => {
     pointers.delete(ev.pointerId);
     if (pointers.size < 2) pinch = null;
     if (!drag || ev.pointerId !== drag.id) return;
+    // A click (no drag) on the design while the colours panel is open: change the thread of that colour area.
+    const colorsOpen = ctx.isMobile && ctx.isMobile() ? ctx.ui.mob === 'colors' && !ctx.ui.sheetMin : ctx.ui.dock === 'colors';
+    if (drag.mode === 'move' && !drag.moved && drag.target === 'art' && colorsOpen && ctx.openThreadFor) {
+      const pi = labelAt(toMm(ev));
+      if (pi >= 0) { drag = null; el.classList.remove('is-dragging'); ctx.openThreadFor(pi, canvas); return; }
+    }
     drag = null;
     el.classList.remove('is-dragging');
     quality = 'high';
@@ -604,6 +635,7 @@ export function createStage(ctx) {
       const cur = s.mockup && viewIds(config).includes(s.mockup) ? s.mockup : 'none';
       views.querySelectorAll('input').forEach((i) => { i.checked = i.value === cur; i.parentNode.classList.toggle('is-on', i.value === cur); });
       zoomBar.hidden = false;
+      syncWhole();
       buildBar();
       text(chip, chipText());
       chip.hidden = !chip.textContent;

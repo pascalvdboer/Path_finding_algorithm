@@ -67,6 +67,7 @@ put('/*__FONTFACES__*/', fontFaces);
 put('/*__CSS__*/', read(resolve(plugin, 'assets/css/patch-studio.css')).replace(/<\/style/gi, '<\\/style'));
 put('/*__DEFAULTS__*/', jsonSafe(defaults));
 put('/*__PALETTE__*/', jsonSafe(palette));
+put('/*__POLYNEON__*/', jsonSafe(JSON.parse(read(resolve(plugin, 'assets/data/polyneon.json')))));
 put('/*__FONTS__*/', jsonSafe(fonts));
 put('/*__SAMPLES__*/', jsonSafe(samples));
 put('/*__WORKER__*/', scriptSafe(read(resolve(plugin, 'assets/dist/patch-studio-worker.js'))));

@@ -7,10 +7,12 @@ import { optionsFor } from '../shared/config.js';
 import { optionEffect, savingHint } from '../pricing/index.js';
 import { threadLabel, qualityLabel, colorDisclaimer, describeMerges, describeFabric } from '../colors/index.js';
 import { h, text, keyed, icon, uid } from './dom.js';
-import { SAMPLES, sampleFile, sampleThumb } from './samples.js';
+import { SAMPLES, sampleFile } from './samples.js';
+import { createGallery } from './templates.js';
 import { reconcileOptions, normalizeQty } from './state.js';
 import { textWidthMm } from './stage.js';
 import { thumb } from './assistant.js';
+import { swatchButton } from './colorpicker.js';
 
 export const ACCEPT = 'image/png,image/jpeg,image/webp,image/gif,image/svg+xml,application/pdf,.ai,.eps,.psd';
 const USE_CASES = ['uniform', 'club', 'airsoft', 'fashion', 'bag'];
@@ -45,8 +47,15 @@ export function emptyState(ctx) {
     h('span.bps-drop__main', h('strong', t('ui.empty.drop')), ' ', t('ui.empty.or'), ' ', h('span.bps-drop__link', t('ui.empty.choose'))),
     h('span.bps-drop__hint', t('ui.empty.hint', { mb })),
   ]));
-  const showcase = h('div.bps-hero__show', { 'aria-hidden': 'true' },
-    SAMPLES.map((s, i) => h('span.bps-hero__patch.bps-hero__patch--' + (i + 1), h('img', { src: sampleThumb(s), alt: '', width: 160, height: 160 }))));
+  // Hero: real patches rendered by our own renderer (no flat logos on white), each one a clickable template.
+  const heroTpl = ['emblem', 'vintage', 'puff', 'leather'];
+  const heroGal = createGallery(ctx, { hero: true, onPick: (tpl) => ctx.startTemplate(tpl) });
+  heroGal.el.querySelectorAll('.bps-gal__item').forEach((li) => { const id = li.querySelector('[data-tpl]').dataset.tpl; const i = heroTpl.indexOf(id); if (i < 0) li.remove(); else li.classList.add('bps-hero__patch', 'bps-hero__patch--' + (i + 1)); });
+  const showcase = h('div.bps-hero__show', heroGal.el);
+  const gallery = createGallery(ctx, { onPick: (tpl) => ctx.startTemplate(tpl) });
+  // extra example files (e.g. the demo page): same flow as an upload
+  const extra = ((config.page && config.page.samples) || []).filter((x) => x && x.data && x.file);
+  const loadExtra = (x) => fetch(x.data).then((r) => r.blob()).then((b) => ctx.handleFile(new File([b], x.file, { type: x.type || b.type }), { sample: true })).catch(() => {});
   const el = h('section.bps-empty.bps-hero',
     h('div.bps-hero__copy',
       h('p.bps-hero__kicker', icon('spark'), t('ui.empty.kicker')),
@@ -61,11 +70,13 @@ export function emptyState(ctx) {
           type: 'button',
           'aria-label': t('ui.empty.sample', { name: t('ui.sample.' + (i + 1)) }),
           onclick: () => ctx.handleFile(sampleFile(s), { sample: true }),
-        }, h('img', { src: sampleThumb(s), alt: '', width: 48, height: 48, loading: 'lazy' }), h('span', t('ui.sample.' + (i + 1)))))))),
+        }, icon('image'), h('span', t('ui.sample.' + (i + 1)))))),
+        extra.map((x) => h('li', h('button.bps-sample', { type: 'button', 'data-demo-sample': x.file, title: x.hint || '', onclick: () => loadExtra(x) }, icon('upload'), h('span', x.label || x.file)))))),
       h('ul.bps-promises', [t('ui.empty.promise1'), t('ui.empty.promise2'), t('ui.empty.promise3', { city: c.city || 'Kalmthout' })].map((s) => h('li', icon('ok', 'bps-ico--ok'), s))),
       h('p.bps-privacy', t('ui.empty.privacy'), ' ', c.privacyUrl ? h('a', { href: c.privacyUrl }, t('ui.empty.privacyLink')) : null)),
     showcase);
-  return { el, update() {} };
+  const wrap = h('div.bps-empty-wrap', el, gallery.el);
+  return { el: wrap, update() {} };
 }
 
 /* ------------------------------ helpers ------------------------------ */
@@ -73,12 +84,14 @@ export function emptyState(ctx) {
 function panel(ctx, id, title, body, nextKey) {
   const { t } = ctx;
   const NEXT = { advice: 'ui.s1.next', size: 'ui.s2.next', edge: 'ui.s3.next', checkout: 'ui.s4.next' };
-  const nav = nextKey ? h('div.bps-step__nav',
-    h('button.bps-btn.bps-btn--primary.bps-btn--block', { type: 'button', onclick: () => ctx.openPanel(nextKey, { focus: true }) }, t(NEXT[nextKey]), icon('arrow'))) : null;
+  // Studio, not a wizard: the "next" hint is a quiet link at the end of the panel; the only primary action on
+  // screen is "Bestellen" in the action bar (critique-1 #8).
+  const nav = nextKey ? h('p.bps-nextlink',
+    h('button.bps-btn.bps-btn--link', { type: 'button', onclick: () => ctx.openPanel(nextKey, { focus: true }) }, t(NEXT[nextKey]), icon('arrow'))) : null;
   const el = h('section.bps-panel.bps-step', { dataset: { panel: id }, 'aria-labelledby': ctx.uidBase + '-p-' + id, hidden: true },
     h('header.bps-panel__head', h('h2.bps-panel__title', { id: ctx.uidBase + '-p-' + id, tabindex: '-1' }, title),
       h('button.bps-ibtn.bps-panel__close', { type: 'button', 'aria-label': t('ui.panel.close'), onclick: () => ctx.closePanel(id) }, icon('bad'))),
-    h('div.bps-panel__body', body), nav);
+    h('div.bps-panel__body', body, nav));
   return el;
 }
 
@@ -215,7 +228,7 @@ export function createPanels(ctx) {
         h('legend.bps-legend', t('ui.text.layer', { n: i + 1 })),
         h('div.bps-layer__top',
           h('label.bps-sr', { for: id('text') }, t('ui.text.value')),
-          h('input.bps-input.bps-layer__input', { id: id('text'), 'data-fk': id('text'), type: 'text', maxlength: T.maxChars || 60, value: l.text, autocomplete: 'off', oninput: (e) => set({ text: e.target.value.slice(0, T.maxChars || 60) }) }),
+          h('input.bps-input.bps-layer__input', { id: id('text'), 'data-fk': id('text'), type: 'text', maxlength: T.maxChars || 60, value: l.text, autocomplete: 'off', oninput: (e) => ctx.setLayerText(l.id, e.target.value) }),
           h('button.bps-ibtn', { type: 'button', 'aria-label': t('ui.text.remove', { text: l.text || '…' }), title: t('ui.text.removeShort'), onclick: () => ctx.removeText(l.id) }, icon('trash'))),
         h('fieldset.bps-fieldset.bps-fieldset--inline', h('legend.bps-legend.bps-legend--small', t('ui.text.font')),
           h('div.bps-fonts', fonts.map((f) => h('label.bps-font' + (f.id === l.font ? '.is-on' : ''),
@@ -224,18 +237,21 @@ export function createPanels(ctx) {
             h('span.bps-font__name', (L(f.label) || f.id).replace(/\s*\(.*\)$/, '')))))),
         h('div.bps-field-row',
           field(t('ui.text.height'), id('height'), h('input.bps-input', { id: id('height'), 'data-fk': id('height'), type: 'number', inputmode: 'decimal', min: T.minHeightMm || 3, max: T.maxHeightMm || 40, step: 0.5, value: l.heightMm,
-            onchange: (e) => { const v = Math.min(T.maxHeightMm || 40, Math.max(T.minHeightMm || 3, Number(String(e.target.value).replace(',', '.')) || 6)); e.target.value = v; set({ heightMm: v }); } })),
-          field(t('ui.text.color'), id('color'), h('select.bps-select', { id: id('color'), 'data-fk': id('color'), onchange: (e) => set({ threadCode: e.target.value }) },
-            h('option', { value: 'auto', selected: l.threadCode === 'auto' }, t('ui.text.auto')),
-            threads.map((th) => h('option', { value: th.code, selected: th.code === l.threadCode }, `${L(th.name)} (${th.code})`))))),
+            onchange: (e) => { const v = Math.min(T.maxHeightMm || 40, Math.max(T.minHeightMm || 3, Number(String(e.target.value).replace(',', '.')) || 6)); e.target.value = v; set({ heightMm: v, autoFit: false, fitFrom: 0 }); } })),
+          h('div.bps-field', h('span.bps-field__lbl', { id: id('color') + '-l' }, t('ui.text.color')),
+            h('div.bps-layer__color', { 'aria-labelledby': id('color') + '-l' }))),
         h('fieldset.bps-fieldset.bps-fieldset--inline', h('legend.bps-legend.bps-legend--small', t('ui.text.path')),
           h('div.bps-seg', ['straight', 'arc_top', 'arc_bottom'].map((p) => h('label.bps-seg__opt' + (l.path === p ? '.is-on' : ''),
-            h('input', { type: 'radio', name: id('path'), value: p, checked: l.path === p, 'data-fk': id('p-' + p), onchange: () => set({ path: p, angleDeg: 0, insetMm: 0, offsetMm: { x: 0, y: 0 } }) }),
+            h('input', { type: 'radio', name: id('path'), value: p, checked: l.path === p, 'data-fk': id('p-' + p), onchange: () => set({ path: p, autoPlace: false, angleDeg: 0, insetMm: 0, offsetMm: { x: 0, y: 0 } }) }),
             h('span', t('ui.text.path.' + p)))))),
+        h('fieldset.bps-fieldset.bps-fieldset--inline', h('legend.bps-legend.bps-legend--small', t('ui.text.outline')),
+          h('div.bps-seg', ['auto', 'on', 'none'].map((o) => h('label.bps-seg__opt' + ((l.outline || 'auto') === o ? '.is-on' : ''),
+            h('input', { type: 'radio', name: id('outline'), value: o, checked: (l.outline || 'auto') === o, 'data-fk': id('o-' + o), onchange: () => set({ outline: o }) }),
+            h('span', t('ui.text.outline.' + o)))))),
         arc ? h('div.bps-range-row', h('label', { for: id('angle') }, t('ui.text.angle')),
-          h('input.bps-range', { id: id('angle'), 'data-fk': id('angle'), type: 'range', min: -180, max: 180, step: 1, value: l.angleDeg, 'aria-valuetext': `${l.angleDeg}°`, oninput: (e) => set({ angleDeg: Number(e.target.value) }) })) : null,
+          h('input.bps-range', { id: id('angle'), 'data-fk': id('angle'), type: 'range', min: -180, max: 180, step: 1, value: l.angleDeg, 'aria-valuetext': `${l.angleDeg}°`, oninput: (e) => set({ autoPlace: false, angleDeg: Number(e.target.value) }) })) : null,
         arc ? h('div.bps-range-row', h('label', { for: id('inset') }, t('ui.text.inset')),
-          h('input.bps-range', { id: id('inset'), 'data-fk': id('inset'), type: 'range', min: 0, max: 30, step: 0.5, value: l.insetMm, 'aria-valuetext': `${String(l.insetMm).replace('.', ',')} mm`, oninput: (e) => set({ insetMm: Number(e.target.value) }) })) : null,
+          h('input.bps-range', { id: id('inset'), 'data-fk': id('inset'), type: 'range', min: 0, max: 30, step: 0.5, value: l.insetMm, 'aria-valuetext': `${String(l.insetMm).replace('.', ',')} mm`, oninput: (e) => set({ autoPlace: false, insetMm: Number(e.target.value) }) })) : null,
         h('p.bps-help.bps-layer__fit', { role: 'status', hidden: true }));
     }
 
@@ -243,7 +259,14 @@ export function createPanels(ctx) {
       el,
       update(s, d) {
         const n = (config.text && config.text.maxLayers) || 10;
-        keyed(list, s.texts.map((l) => l.id + l.path + l.font).join('|'), () => (s.texts.length ? s.texts.map((l, i) => layer(l, i)) : h('p.bps-empty-note', t('ui.text.none'))));
+        const ae = document.activeElement, aeId = ae && list.contains(ae) ? ae.id : null;
+        const sel = aeId && ae.selectionStart != null ? [ae.selectionStart, ae.selectionEnd] : null;
+        keyed(list, s.texts.map((l) => l.id + l.path + l.font + (l.outline || '')).join('|'), () => (s.texts.length ? s.texts.map((l, i) => layer(l, i)) : h('p.bps-empty-note', t('ui.text.none'))));
+        if (aeId && document.activeElement !== ae) {
+          // the layer was rebuilt (e.g. the text moved to a better spot while typing): keep typing where you were
+          const again = document.getElementById(aeId);
+          if (again) { again.focus({ preventScroll: true }); if (sel && again.setSelectionRange) try { again.setSelectionRange(sel[0], sel[1]); } catch (e) { /* ignore */ } }
+        }
         for (const l of s.texts) {
           const box = list.querySelector(`[data-layer="${l.id}"]`);
           if (!box) continue;
@@ -256,6 +279,16 @@ export function createPanels(ctx) {
           const ins = box.querySelector('input[id$="-inset"]');
           if (ins && document.activeElement !== ins) { ins.value = l.insetMm; ins.setAttribute('aria-valuetext', `${String(l.insetMm).replace('.', ',')} mm`); }
           box.classList.toggle('is-active', ctx.dragTarget === l.id);
+          const cbox = box.querySelector('.bps-layer__color');
+          const thc = l.threadCode !== 'auto' ? (config.threads || []).find((x) => x.code === l.threadCode) : null;
+          const autoCode = d.textAutoCode && d.textAutoCode[l.id];
+          const lbl = thc ? `${thc.code} · ${L(thc.name)}` : t('ui.text.autoColor', { code: autoCode || '' });
+          keyed(cbox, [l.threadCode, d.textHex[l.id], lbl].join('|'), () => swatchButton(ctx, {
+            hex: d.textHex[l.id], label: lbl, fk: 'tc-' + l.id,
+            onClick: (e) => ctx.picker.open({ title: t('ui.cp.textTitle'), current: l.threadCode !== 'auto' ? l.threadCode : autoCode, returnFocus: e.currentTarget,
+              onPick: (th) => store.set({ texts: store.get().texts.map((x) => (x.id === l.id ? { ...x, threadCode: th.code } : x)) }),
+              onAuto: () => store.set({ texts: store.get().texts.map((x) => (x.id === l.id ? { ...x, threadCode: 'auto' } : x)) }), autoLabel: t('ui.cp.autoText') }),
+          }));
           // Eigenaar: alles blijft binnen de rand. Te lange tekst: eerlijk zeggen in plaats van stil bij te snijden.
           const f = box.querySelector('.bps-layer__fit');
           const tl = fit(l, d.layout);
@@ -316,8 +349,8 @@ export function createPanels(ctx) {
   {
     const groups = h('div');
     const edgeId = uid('bps-edge');
-    const edgeSel = h('select.bps-select', { id: edgeId, onchange: (e) => store.set({ edgeColor: e.target.value }) });
-    const edgeField = field(t('ui.s4.edgeColor'), edgeId, h('div.bps-colorpick', h('span.bps-colorpick__chip', { 'aria-hidden': 'true' }), edgeSel));
+    const edgeBox = h('div.bps-colorpick', { id: edgeId });
+    const edgeField = h('div.bps-field', h('span.bps-field__lbl', t('ui.s4.edgeColor')), edgeBox);
     const el = panel(ctx, 'edge', t('ui.panel.edge'), [groups, edgeField], 'checkout');
     P.edge = {
       el,
@@ -325,11 +358,13 @@ export function createPanels(ctx) {
         keyed(groups, JSON.stringify([s.technique, s.options, ctx.ui.exclVat]), () => (group('edge', config.optionGroups.edge, s, { legend: false }) || h('p.bps-help', t('ui.edge.none'))));
         const style = d.layout.edge && d.layout.edge.style;
         edgeField.hidden = !(style === 'satin' || style === 'merrow');
-        keyed(edgeSel, JSON.stringify([s.edgeColor, d.autoEdge && d.autoEdge.code]), () => [
-          h('option', { value: 'auto', selected: s.edgeColor === 'auto' }, t('ui.s4.edgeAuto', { name: d.autoEdge ? L(d.autoEdge.name).toLowerCase() : '' })),
-          (config.threads || []).map((th) => h('option', { value: th.code, selected: th.code === s.edgeColor }, `${L(th.name)} (${th.code})`)),
-        ]);
-        edgeField.querySelector('.bps-colorpick__chip').style.background = d.edgeHex;
+        const et = d.edgeThread;
+        const elbl = s.edgeColor === 'auto' ? t('ui.s4.edgeAuto', { name: d.autoEdge ? `${d.autoEdge.code} · ${L(d.autoEdge.name).toLowerCase()}` : '' }) : et ? `${et.code} · ${L(et.name)}` : s.edgeColor;
+        keyed(edgeBox, JSON.stringify([s.edgeColor, d.edgeHex, elbl]), () => swatchButton(ctx, {
+          hex: d.edgeHex, label: elbl, fk: 'edge-color',
+          onClick: (e) => ctx.picker.open({ title: t('ui.cp.edgeTitle'), current: et && et.code, returnFocus: e.currentTarget,
+            onPick: (th) => store.set({ edgeColor: th.code }), onAuto: () => store.set({ edgeColor: 'auto' }), autoLabel: t('ui.cp.autoEdge') }),
+        }));
       },
     };
   }
@@ -360,14 +395,17 @@ export function createPanels(ctx) {
   {
     const swatches = h('ul.bps-swatches');
     const countOut = h('output.bps-range__out');
-    const choices = (config.advice && config.advice.threadColorChoices) || [6, 8, 10, 12];
+    const base = ((config.advice && config.advice.threadColorChoices) || [6, 8, 10, 12]).slice().sort((a, b) => a - b);
+    // The advised number (e.g. 4) is always a stop on the slider, also when it is below the configured choices:
+    // the advice text, the "simplify" button and this slider show one and the same number (critique-1 #12).
+    let choices = base;
     const count = h('input.bps-range', { type: 'range', min: 0, max: choices.length - 1, step: 1, id: uid('bps-count'), oninput: (e) => store.set({ maxThreadColors: choices[Number(e.target.value)] }) });
-    const countRow = h('div', h('div.bps-range-row', h('label', { for: count.id }, t('ui.s2.threadCount')), count, countOut),
-      h('div.bps-ticks', { 'aria-hidden': 'true' }, choices.map((c) => h('span', String(c)))));
+    const ticks = h('div.bps-ticks', { 'aria-hidden': 'true' });
+    const countRow = h('div', h('div.bps-range-row', h('label', { for: count.id }, t('ui.s2.threadCount')), count, countOut), ticks);
     const few = h('p.bps-help', { hidden: true });
     const changesBox = h('div.bps-changes', { hidden: true });
     const changesBtn = h('button.bps-btn.bps-btn--small.bps-btn--ghost', { type: 'button', 'aria-expanded': 'false', onclick: () => { ctx.ui.showChanges = !ctx.ui.showChanges; ctx.refresh(); } }, t('ui.s2.showChanges'));
-    const threads = h('section.bps-threads.bps-group', h('h3.bps-h3', t('ui.s2.threads')), countRow, few, swatches, changesBtn, changesBox,
+    const threads = h('section.bps-threads.bps-group', h('h3.bps-h3', t('ui.s2.threads')), h('p.bps-help.bps-threads__tip', icon('spark'), t('ui.s2.clickTip')), countRow, few, swatches, changesBtn, changesBox,
       h('p.bps-help', colorDisclaimer({ config, locale: ctx.locale })));
     const printNote = h('p.bps-notice.bps-notice--info', { hidden: true }, icon('info'), h('span', t('ui.colors.print')));
     const fabricBox = h('div');
@@ -383,28 +421,37 @@ export function createPanels(ctx) {
         threads.hidden = !show;
         printNote.hidden = !(hasA && !d.useThreads);
         if (show) {
+          const adv = d.advice.colors && d.advice.colors.reason && Number(d.advice.colors.reason.params && d.advice.colors.reason.params.k);
+          const extra = [adv, s.maxThreadColors].filter((x) => Number.isFinite(x) && x >= 2 && !base.includes(x));
+          choices = [...new Set([...base, ...extra])].sort((a, b) => a - b);
+          count.max = choices.length - 1;
+          keyed(ticks, choices.join(), () => choices.map((c) => h('span' + (c === adv ? '.is-advice' : ''), String(c))));
           const idx = Math.max(0, choices.indexOf(s.maxThreadColors));
           if (document.activeElement !== count) count.value = idx;
           const k = d.reduced.k;
-          const isFew = (ctx.analysis.palette || []).length <= Math.min(...choices);
+          const isFew = (ctx.analysis.palette || []).length <= Math.min(...base);
           countRow.hidden = isFew;
           few.hidden = !isFew;
           if (isFew) text(few, t('ui.s2.threadsFew', { n: k }));
           count.setAttribute('aria-valuetext', t('ui.s2.threadCountValue', { n: s.maxThreadColors }));
           text(countOut, t('ui.s2.threadCountValue', { n: k }));
-          keyed(swatches, JSON.stringify([d.reducedColors.map((c) => (d.threadOf(c) || {}).code), s.threadOverrides]), () => d.reducedColors.map((c, i) => {
+          keyed(swatches, JSON.stringify([d.reducedColors.map((c) => (d.threadOf(c) || {}).code), s.threadOverrides, ctx.ui.hiPi]), () => d.reducedColors.map((c, i) => {
             const th = d.threadOf(c);
             if (!th) return null;
             const alts = [c.thread && c.thread.thread, ...((c.thread && c.thread.alternatives) || [])].filter(Boolean);
             const selId = uid('bps-alt');
             const pi = (c.sources || [i])[0];
-            return h('li.bps-swatch',
-              h('span.bps-swatch__chip', { style: { background: th.hex }, 'aria-hidden': 'true' }),
-              h('span.bps-swatch__txt', h('span.bps-swatch__name', threadLabel(th, { config, locale: ctx.locale })),
+            const src = (ctx.analysis.palette || [])[pi];
+            return h('li.bps-swatch' + (ctx.ui.hiPi === pi ? '.is-hi' : ''), { dataset: { pi } },
+              h('span.bps-swatch__map', { 'aria-hidden': 'true' }, src ? h('span.bps-swatch__src', { style: { background: src.hex } }) : null, h('span.bps-swatch__arrow', '→'),
+                h('span.bps-swatch__chip', { style: { background: th.hex } })),
+              h('span.bps-swatch__txt', h('span.bps-swatch__name', h('strong', th.code), ' ', L(th.name)),
                 h('span.bps-swatch__q', c.override ? '' : qualityLabel(c.thread && c.thread.quality, { config, locale: ctx.locale }))),
-              alts.length > 1 ? h('span.bps-swatch__alt', h('label.bps-sr', { for: selId }, t('ui.s2.threadPick', { name: L(th.name) })),
-                h('select.bps-select.bps-select--small', { id: selId, 'data-fk': 'alt-' + pi, onchange: (e) => store.set({ threadOverrides: { ...store.get().threadOverrides, [pi]: e.target.value } }) },
-                  alts.map((a) => h('option', { value: a.code, selected: a.code === th.code }, `${L(a.name)} (${a.code})`)))) : null);
+              h('span.bps-swatch__alts', alts.filter((a) => a.code !== th.code).slice(0, 3).map((a) => h('button.bps-swatch__mini', {
+                type: 'button', title: `${a.code} · ${L(a.name)}`, 'aria-label': t('ui.s2.threadUse', { code: a.code, name: L(a.name) }),
+                style: { background: a.hex }, onclick: () => store.set({ threadOverrides: { ...store.get().threadOverrides, [pi]: a.code } }) }))),
+              h('button.bps-btn.bps-btn--small.bps-btn--ghost.bps-swatch__pick', { type: 'button', id: selId, 'data-fk': 'alt-' + pi, 'aria-haspopup': 'dialog',
+                'aria-label': t('ui.s2.threadPick', { name: L(th.name) }), onclick: (e) => ctx.openThreadFor(pi, e.currentTarget) }, t('ui.s2.change')));
           }));
           changesBtn.setAttribute('aria-expanded', String(!!ctx.ui.showChanges));
           changesBox.hidden = !ctx.ui.showChanges;

@@ -112,11 +112,13 @@ function embroidery(ctx) {
   const satPitch = Math.max(1.3, 0.4 * ppm), invSat = 1 / satPitch;
   const rowPitch = Math.max(1.6, 0.42 * ppm), invRow = 1 / rowPitch;
   const stitchInv = 1 / Math.max(5, 2.8 * ppm);
-  const fade = smooth((0.4 * ppm - 1.3) / 2.2); // thread ripples only where they can be resolved
+  // Thread lines only where the screen can resolve them (pitch ≥ ±3 px); below that they alias into moiré, so the
+  // threads blend into an even satin sheen, as the eye sees real embroidery from a distance (critique-1 #2).
+  const fade = smooth((0.4 * ppm - 2.4) / 2.6);
   const ripple = 0.075 * ppm * fade, rowRipple = 0.06 * ppm * fade;
   const glSatin = glossByte(4, true), glFill = glossByte(3, true);
   // far away (thumbnails, garments) the single threads blur together: less mirror-like sheen
-  const spS = Math.round(215 * (0.55 + 0.45 * fade)), spF = Math.round(150 * (0.6 + 0.4 * fade));
+  const spS = Math.round(160 * (0.55 + 0.45 * fade)), spF = Math.round(120 * (0.6 + 0.4 * fade));
   // per component dome height (thicker columns stand higher, like real satin) and half width
   const n = comps ? comps.n : 0;
   const domeH = new Float32Array(n), halfT = new Float32Array(n);
@@ -144,16 +146,19 @@ function embroidery(ctx) {
         const pr = P[(t * 256) | 0];
         h = h0 * smooth(d / 0.45) + rowRipple * pr - (tq < 0.06 ? rowRipple * 0.8 : 0);
         tx = cs; ty = sn;
-        f = 0.94 + 0.08 * pr + (hashI(rI, c) - 0.5) * 0.05;
-        cav = (0.84 + 0.16 * pr) * (tq < 0.06 ? 0.86 : 1);
+        f = 0.98 + fade * (0.08 * pr - 0.04 + (hashI(rI, c) - 0.5) * 0.05);
+        cav = (1 - fade * 0.16 * (1 - pr)) * (tq < 0.06 ? 1 - 0.14 * fade : 1);
         sp[i] = spF; gl[i] = glFill;
       } else {
-        let u;
+        let u, lf = 1;
         if (mode === 1 && c >= 0) {
           const ccx = comps.cx[c] * sxl, ccy = comps.cy[c] * syl;
           const rx = x - ccx, ry = y - ccy, rr = Math.hypot(rx, ry) || 1;
-          u = Math.atan2(ry, rx) * Math.max(4, comps.radius[c] * sxl) * invSat;
+          const R = Math.max(4, comps.radius[c] * sxl);
+          u = Math.atan2(ry, rx) * R * invSat;
           tx = rx / rr; ty = ry / rr;
+          // radial stitches converge towards the centre: there the lines get too dense to show (no moiré)
+          lf = smooth((satPitch * rr / R - 2.4) / 2.6);
         } else {
           u = (x * cs + y * sn) * invSat;
           tx = -sn; ty = cs;
@@ -161,9 +166,10 @@ function embroidery(ctx) {
         const ui = Math.floor(u), t = u - ui, pr = P[(t * 256) | 0];
         // satin column: round dome across the column
         const q = Math.min(1, d / ht), dome = Math.sqrt(Math.max(0, 1 - (1 - q) * (1 - q)));
-        h = h0 * dome + ripple * pr;
-        f = 0.95 + 0.07 * pr + (hashI(ui, c) - 0.5) * 0.09;
-        cav = 0.86 + 0.14 * pr;
+        const fl = fade * lf;
+        h = h0 * dome + ripple * lf * pr;
+        f = 0.985 + fl * (0.07 * pr - 0.035 + (hashI(ui, c) - 0.5) * 0.09);
+        cav = 1 - fl * 0.14 * (1 - pr);
         sp[i] = spS; gl[i] = glSatin;
       }
       // needle groove where two regions (or the ground) meet

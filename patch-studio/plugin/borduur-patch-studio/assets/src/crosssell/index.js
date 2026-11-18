@@ -13,7 +13,7 @@ import { priceItem, tierFor, patchOptions } from './pricing.js';
 import { buildOffers, cardPrice } from './offers.js';
 import { renderPanel } from './panel.js';
 import { createApi } from './api.js';
-import { loadImage, drawMockup } from './mockups.js';
+import { loadImage, drawMockup, monochrome } from './mockups.js';
 import { bindCartPrompts, isDeclined, setDeclined } from './cart-prompt.js';
 
 export const version = '1.0.0';
@@ -39,6 +39,17 @@ function markShown(id) {
 
 function withTimeout(p, ms) {
   return Promise.race([p, new Promise((resolve) => setTimeout(() => resolve(null), ms))]);
+}
+
+/** Gravure-versie (laser) vooraf berekenen, zodat elke kaart binnen het tekenbudget blijft. */
+function warm(offers, img) {
+  if (!img || !offers || !Array.isArray(offers.cards)) return img;
+  for (const c of offers.cards) {
+    if (c.mockup && c.mockup.mono) {
+      try { monochrome(img, c.mockup.engraveHex || '#5a3a22'); } catch (e) { /* tekent dan zonder voorberekening */ }
+    }
+  }
+  return img;
 }
 
 function refreshFragments() {
@@ -144,7 +155,7 @@ export async function open(opts = {}) {
     const offers = await withTimeout(getApi().offers({ designId: opts.designId, token: opts.token }, c.openTimeoutMs || 4000).catch(() => null), c.openTimeoutMs || 4000);
     if (!offers || !Array.isArray(offers.cards) || !offers.cards.length) return 'none';
     markShown(opts.designId);
-    const img = await withTimeout(loadImage(offers.previewUrl), 2500);
+    const img = warm(offers, await withTimeout(loadImage(offers.previewUrl), 2500));
     return await showDialog(offers, Object.assign(onlineEnv(offers, opts), { patchImg: img }), opts.opener || document.activeElement);
   } catch (e) {
     return 'none';
@@ -161,7 +172,7 @@ export async function openFromCart(opts = {}) {
     busy = true;
     const offers = await getApi().offers({ source: 'cart' }, c.openTimeoutMs || 4000).catch(() => null);
     if (!offers || !Array.isArray(offers.cards) || !offers.cards.length) return 'none';
-    const img = await withTimeout(loadImage(offers.previewUrl), 2500);
+    const img = warm(offers, await withTimeout(loadImage(offers.previewUrl), 2500));
     return await showDialog(offers, Object.assign(onlineEnv(offers, Object.assign({ source: 'cart' }, opts)), { patchImg: img }), opts.opener || document.activeElement);
   } catch (e) {
     return 'none';
@@ -180,7 +191,7 @@ export async function openFromCart(opts = {}) {
 export async function mount(el, ctx = {}) {
   const locale = ctx.locale || cfg().locale || 'nl-BE';
   const offers = ctx.offers || buildOffers(ctx.design, { cfg: ctx.cfg, main: ctx.main, catalog: ctx.catalog, cart: ctx.cart, patchUnit: ctx.patchUnit, locale, month: ctx.month, overrides: ctx.overrides });
-  const patchImg = ctx.patchImg !== undefined ? ctx.patchImg : await withTimeout(loadImage(offers.previewUrl || (ctx.design && ctx.design.previewUrl)), 2500);
+  const patchImg = warm(offers, ctx.patchImg !== undefined ? ctx.patchImg : await withTimeout(loadImage(offers.previewUrl || (ctx.design && ctx.design.previewUrl)), 2500));
   const env = {
     locale,
     overrides: ctx.overrides || {},

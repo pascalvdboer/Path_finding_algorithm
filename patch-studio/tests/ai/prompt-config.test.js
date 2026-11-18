@@ -82,8 +82,10 @@ test('regelblok bevat de kernregels en alle placeholders worden door de engine g
   for (const m of text.matchAll(/\{([a-z_]+)\}/g)) assert.ok(known.has(m[1]), `onbekende placeholder {${m[1]}}`);
 });
 
-test('20 voorbeeldvertalingen, NL en FR gemengd', () => {
-  assert.equal(vectors.translations.length, 20);
+test('30 klantvragen (20 + 10 extra FR), NL en FR gemengd, unieke id\'s', () => {
+  assert.equal(vectors.translations.length, 30);
+  assert.equal(new Set(vectors.translations.map((t) => t.id)).size, 30);
+  assert.ok(vectors.translations.filter((t) => t.input.lang === 'fr').length >= 15, 'minstens 15 Franse vragen');
   const langs = new Set(vectors.translations.map((t) => t.input.lang));
   assert.deepEqual([...langs].sort(), ['fr', 'nl']);
 });

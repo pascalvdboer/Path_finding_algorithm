@@ -710,13 +710,15 @@ final class Prompt_Engine {
 		$prev   = null;
 		foreach ( $parts as $p ) {
 			if ( is_string( $p ) ) {
-				$out[] = $p;
-				$prev  = $p;
+				if ( ! empty( $out ) ) { // A link after a leading group ("club ... with rackets") has nothing to attach to.
+					$out[] = $p;
+				}
+				$prev = $p;
 				continue;
 			}
 			$pre  = array_values( array_filter( $p['adj'], static fn( $a ) => 0 !== strpos( $a, 'with ' ) ) );
 			$post = array_values( array_filter( $p['adj'], static fn( $a ) => 0 === strpos( $a, 'with ' ) ) );
-			$phrase = ( $p['group'] && empty( $pre ) ? 'a ' : self::article( $pre[0] ?? $p['noun'], $p['noun'] ) )
+			$phrase = self::article( $pre[0] ?? $p['noun'], $p['noun'] )
 				. implode( ' ', array_merge( $pre, array( $p['noun'] ) ) ) . ( empty( $post ) ? '' : ' ' . implode( ' ', $post ) );
 			if ( $p['group'] && ! is_string( $prev ) ) {
 				$groups[] = $phrase; // "scouts: een vos..." -> "... for a scout group".

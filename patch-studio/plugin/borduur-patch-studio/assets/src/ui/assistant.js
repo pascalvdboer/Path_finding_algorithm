@@ -56,10 +56,11 @@ export function createAssistant(ctx) {
   const tips = h('div.bps-tips');
   const noAnalysis = h('p.bps-notice.bps-notice--info', { hidden: true }, icon('info'), h('span', t('ui.s2.noAnalysis')));
   const el = h('section.bps-panel.bps-step.bps-assist', { dataset: { panel: 'advice' }, 'aria-labelledby': ctx.uidBase + '-p-advice', hidden: true },
-    h('header.bps-panel__head', h('h2.bps-panel__title', { id: ctx.uidBase + '-p-advice', tabindex: '-1' }, icon('spark'), t('ui.panel.advice'))),
+    h('header.bps-panel__head', h('h2.bps-panel__title', { id: ctx.uidBase + '-p-advice', tabindex: '-1' }, icon('spark'), t('ui.panel.advice')),
+      h('button.bps-ibtn.bps-panel__fold', { type: 'button', 'aria-label': t('ui.side.fold'), title: t('ui.side.fold'), onclick: () => ctx.toggleSide(false) }, icon('chevron'))),
     h('div.bps-panel__body', noAnalysis, adviceBox, compare, h('section.bps-seen', h('h3.bps-h3', t('ui.assist.seen')), notes), tips,
-      h('p.bps-disclaimer', t('advice.disclaimer'), ' ', t('ui.s2.disclaimer'))),
-    h('div.bps-step__nav', h('button.bps-btn.bps-btn--primary.bps-btn--block', { type: 'button', onclick: () => ctx.openPanel('size', { focus: true }) }, t('ui.s2.next'), icon('arrow'))));
+      h('p.bps-disclaimer', t('advice.disclaimer'), ' ', t('ui.s2.disclaimer')),
+      h('p.bps-nextlink', h('button.bps-btn.bps-btn--link', { type: 'button', onclick: () => ctx.openPanel('size', { focus: true }) }, t('ui.s2.next'), icon('arrow')))));
 
   /* ---------------- thumbnails: rendered progressively in idle time ---------------- */
   const thumbs = new Map();
@@ -105,7 +106,7 @@ export function createAssistant(ctx) {
     const rec = d.advice.recommended === id;
     const inputId = `${ctx.uidBase}-tech-${id}`;
     const fix = (v.fixes || [])[0];
-    const lead = L(tech.leadTime) || t('ui.lead.proof');
+    const lead = L(tech.leadTime) || ''; // only a real lead time from the settings; no empty promise (critique-1 #12)
     const cached = thumbs.get(sig + id);
     const slot = h('span.bps-card__vis' + (cached ? '.is-ready' : ''), { dataset: { thumb: id } }, cached ? copy(cached) : h('span.bps-thumb.bps-thumb--empty', { 'aria-hidden': 'true' }));
     if (!cached && (ctx.analysis || s.texts.length)) queue.push({ sig, id, s, d });
@@ -117,7 +118,7 @@ export function createAssistant(ctx) {
           h('span.bps-card__top', h('span.bps-card__tech', L(tech.label)), rec ? h('span.bps-badge', t('advice.badge.recommended')) : null),
           h('span.bps-status.bps-status--' + v.status, icon(STATUS_ICON[v.status]), t('advice.status.' + v.status)),
           h('span.bps-card__head', v.headline && v.headline.text),
-          h('span.bps-card__meta', priceLine(id, d), h('span.bps-card__lead', icon('clock'), lead)))),
+          h('span.bps-card__meta', priceLine(id, d), lead ? h('span.bps-card__lead', icon('clock'), lead) : null))),
       fix || (v.reasons || []).length > 1 || (v.notes || []).length ? h('div.bps-card__actions',
         fix ? h('button.bps-btn.bps-btn--small.bps-btn--ghost', { type: 'button', 'data-fk': 'fix-' + id, onclick: () => ctx.applyFix(fix.action, id) }, fix.msg.text) : null,
         (v.reasons || []).length > 1 || (v.notes || []).length
@@ -141,11 +142,15 @@ export function createAssistant(ctx) {
         const unsure = (a.shape.confidence || 0) < ((config.analysis && config.analysis.shapeMinConfidence) || 0.75);
         out.push({ k: unsure ? 'warn' : 'ok', txt: (unsure ? t('ui.s1.shapeAsk') : t('ui.s1.shapeFound', { shape: shapeName })) + (warns.some((w) => /mockup/.test(w.key || '')) ? ' ' + t('ui.a.original') : ''), acts: [act(t('ui.s1.otherShape'), () => ctx.openPanel('shape', { focus: true })), ctx.file ? act(t('ui.s1.adjust'), () => ctx.openAdjust()) : null] });
       }
+      // A picture of a patch is never an error: one neutral note, never orange next to a green "cut out" (critique-1 #12).
+      const mockW = warns.find((w) => /mockup/.test(w.key || ''));
+      if (mockW && !a.isPatchPhoto && !(a.shape && a.shape.fillsPatch && a.shape.type && !s.shapePicked)) out.push({ k: 'info', txt: mockW.text });
       const bg = (d.analysis && d.analysis.background) || {};
       if (d.keepBg) out.push({ k: 'ok', txt: t('ui.s1.keepBg') });
       else if (bg.type === 'white' && !a.isPatchPhoto) out.push({ k: 'ok', txt: t('ui.s1.whiteBg', { fabric: L(d.fabric.label).toLowerCase() }), acts: [act(t('ui.s1.otherFabric'), () => ctx.openPanel('colors', { focus: true }))] });
       for (const w of warns) {
-        if (/patch_photo_cut|mockup/.test(w.key || '') && (a.isPatchPhoto || (a.shape && a.shape.fillsPatch && !s.shapePicked))) continue;
+        if (/mockup/.test(w.key || '')) continue;
+        if (/patch_photo_cut/.test(w.key || '') && a.isPatchPhoto) continue;
         if (/shape_uncertain/.test(w.key || '') && a.shape && a.shape.fillsPatch && !s.shapePicked) continue;
         out.push({ k: 'warn', txt: w.text });
       }
@@ -172,12 +177,14 @@ export function createAssistant(ctx) {
       notes.parentNode.hidden = !nl.length;
 
       const ranking = adv.ranking || [];
-      const top = ranking.slice(0, 4);
+      // Phone: one horizontal row with every technique (swipe); desktop: top 4 + "show all".
+      const mob = ctx.isMobile && ctx.isMobile();
+      const top = mob ? ranking.slice() : ranking.slice(0, 4);
       if (!top.includes(s.technique) && ranking.includes(s.technique)) top[3] = s.technique;
       const rest = ranking.filter((id) => !top.includes(id));
       const sig = thumbSig(s, d);
       if (sig !== sigNow) { sigNow = sig; queue = []; if (thumbs.size > 40) thumbs.clear(); }
-      const csig = JSON.stringify([sig, s.technique, ranking, ctx.ui.showAllTech, Object.values(adv.verdicts).map((v) => [v.status, v.headline && v.headline.text, (v.fixes[0] || {}).msg && v.fixes[0].msg.text]),
+      const csig = JSON.stringify([sig, mob, s.technique, ranking, ctx.ui.showAllTech, Object.values(adv.verdicts).map((v) => [v.status, v.headline && v.headline.text, (v.fixes[0] || {}).msg && v.fixes[0].msg.text]),
         Object.values(d.quotes).map((q) => q.totalIncl), ctx.ui.exclVat]);
       const before = queue.length;
       keyed(cards, csig, () => top.map((id) => card(id, s, d, sig)));
