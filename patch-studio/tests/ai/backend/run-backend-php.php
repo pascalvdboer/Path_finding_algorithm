@@ -1117,6 +1117,91 @@ t( 'orderkant: source.ai blijft in het payload (gevalideerd), fiche-sectie en na
 	ok( ! Order_Review::set_review( $plain, true, 7 ), 'gewone regel: niets' );
 } );
 
+/* ----------------------------------------------------- P03 privacy-retention */
+
+t( 'gdpr-7: eigenaarsrijen verlopen (365 d bekend, 30 d anoniem); saldo blijft, ledger houdt de sleutel zonder e-mail', function () {
+	list( $store, $c ) = fresh();
+	$ago  = static fn( int $d ) => gmdate( 'Y-m-d H:i:s', time() - $d * 86400 );
+	$row  = static function ( string $key, string $kind, ?string $email, int $days ) use ( $store, $ago ) {
+		$store->owner_upsert( array( 'owner_key' => $key, 'kind' => $kind, 'email' => $email, 'email_verified_at' => $email ? $ago( $days ) : null ) );
+		$store->owners[ $key ]['last_seen_at'] = $ago( $days );
+		$store->owners[ $key ]['created_at']   = $ago( $days );
+	};
+	$k    = static fn( string $p, string $ch ) => $p . ':' . str_repeat( $ch, 64 );
+	$gone = $k( 'e', '1' );
+	$lot  = $k( 'e', '2' );
+	$led  = $k( 'u', '3' );
+	$an31 = $k( 'a', '4' );
+	$an10 = $k( 'a', '5' );
+	$new  = $k( 'e', '6' );
+	$exp  = $k( 'e', '7' );
+	$open = $k( 'e', '8' );
+	$row( $gone, 'email', 'weg@example.test', 400 );
+	$row( $lot, 'email', 'saldo@example.test', 400 );
+	$row( $led, 'user', 'boek@example.test', 400 );
+	$row( $an31, 'anon', null, 31 );
+	$row( $an10, 'anon', null, 10 );
+	$row( $new, 'email', 'recent@example.test', 100 );
+	$row( $exp, 'email', 'vervallen@example.test', 400 );
+	$row( $open, 'email', 'bezig@example.test', 400 );
+	$store->lots[]   = array( 'owner_key' => $lot, 'status' => 'active', 'expires_at' => $ago( -200 ), 'rounds_used' => 2, 'rounds_total' => 10 );
+	$store->lots[]   = array( 'owner_key' => $exp, 'status' => 'active', 'expires_at' => $ago( 5 ), 'rounds_used' => 2, 'rounds_total' => 10 );
+	$store->ledger[] = array( 'owner_key' => $led, 'delta' => -1 );
+	$store->jobs['J0PEN000000000000000000000'] = array( 'id' => 'J0PEN000000000000000000000', 'owner_key' => $open, 'status' => 'running', 'created_at' => $ago( 400 ), 'keep_until' => $ago( -10 ), 'input' => '{}', 'result' => null, 'client_req' => null, 'kind' => 'generate', 'chosen_index' => null );
+	$res = Cleanup::run();
+	ok( ! isset( $store->owners[ $gone ] ), 'e-mail, 400 d, niets open: rij weg' );
+	eq( $store->owners[ $lot ]['email'], 'saldo@example.test', 'lot met saldo: ongemoeid' );
+	ok( isset( $store->owners[ $led ] ) && null === $store->owners[ $led ]['email'] && null === $store->owners[ $led ]['email_verified_at'], 'enkel ledger: sleutel blijft, e-mail NULL' );
+	ok( ! isset( $store->owners[ $an31 ] ), 'anoniem 31 d zonder jobs: weg' );
+	ok( isset( $store->owners[ $an10 ] ), 'anoniem 10 d: blijft' );
+	eq( $store->owners[ $new ]['email'], 'recent@example.test', '100 d: blijft' );
+	ok( isset( $store->owners[ $exp ] ) && null === $store->owners[ $exp ]['email'], 'vervallen lot: sleutel blijft (boekhouding), e-mail weg' );
+	eq( $store->owners[ $open ]['email'], 'bezig@example.test', 'open job: ongemoeid' );
+	ok( $res['owners'] >= 2 && $res['ownerEmails'] >= 2, 'tellers: ' . json_encode( $res ) );
+	update_option( AI_Settings::OPTION, AI_Settings::deep_merge( get_option( AI_Settings::OPTION ), array( 'retentionDays' => array( 'ownerRows' => 90 ) ) ) );
+	Module::flush();
+	Cleanup::run();
+	ok( ! isset( $store->owners[ $new ] ), 'instelbaar: ownerRows=90 wist de rij van 100 d' );
+} );
+
+t( 'gdpr-11: GET /ai/status zonder cookie maakt geen eigenaar en geen cookie; generate wel (met gratis ronde)', function () {
+	list( $store, $c ) = fresh();
+	$GLOBALS['bps_user'] = 0;
+	unset( $_COOKIE['bps_ai_sid'] );
+	$st = Rest::status( new WP_REST_Request( 'GET', '/patch-studio/v1/ai/status' ) );
+	eq( $st->get_status(), 200 );
+	eq( count( $store->owners ), 0, 'geen eigenaarsrij' );
+	eq( Identity::sid( false ), '', 'geen sessie-id, dus geen Set-Cookie' );
+	eq( $st->get_data()['balance']['free'], 1, 'toont de gratis ronde van de eerste actie' );
+	ok( ! empty( $st->get_data()['firstUse'] ) );
+	eq( count( $c->anon ), 0, 'nog niets toegekend' );
+	$g       = new WP_REST_Request( 'POST', '/patch-studio/v1/ai/generate' );
+	$g->json = body();
+	$res     = Rest::generate( $g );
+	eq( $res->get_status(), 202, 'generate lukt met de gratis ronde' );
+	ok( 1 === preg_match( '/^[0-9a-f]{32}$/', Identity::sid( false ) ), 'generate zet de cookie' );
+	eq( count( $store->owners ), 1, 'eigenaar pas bij generate' );
+	$st2 = Rest::status( new WP_REST_Request( 'GET', '' ) );
+	ok( empty( $st2->get_data()['firstUse'] ), 'met cookie: echte stand' );
+} );
+
+t( 'gdpr-12: AI-privacytekst in je-vorm, termijnen uit de instellingen, Recraft + VS, FR eerst bij fr_BE', function () {
+	fresh( 'test', array( 'retentionDays' => array( 'guestPromptsAndProposals' => 14 ) ) );
+	$nl = implode( ' ', Privacy::policy_paragraphs( 'nl' ) );
+	$fr = implode( ' ', Privacy::policy_paragraphs( 'fr' ) );
+	ok( false !== strpos( $nl, '14 dagen' ), 'NL 14 dagen' );
+	ok( false !== strpos( $fr, '14 jours' ), 'FR 14 jours' );
+	ok( ! preg_match( '/\b(u|uw|U|Uw)\b/u', $nl ), 'geen u/uw: ' . $nl );
+	foreach ( array( 'Recraft', 'Verenigde Staten', 'Data Privacy Framework', 'bps_ai_sid, 30 dagen', 'eerste AI-actie', '12 maanden na je laatste bezoek' ) as $w ) {
+		ok( false !== strpos( $nl, $w ), 'NL mist ' . $w );
+	}
+	ok( false !== strpos( $fr, 'États-Unis' ) && false !== strpos( $fr, 'Recraft' ) );
+	$html = Privacy::policy_html( 'fr_BE' );
+	ok( strpos( $html, 'lang="fr"' ) < strpos( $html, 'lang="nl"' ), 'fr_BE: Frans eerst' );
+	$html = Privacy::policy_html( 'nl_BE' );
+	ok( strpos( $html, 'lang="nl"' ) < strpos( $html, 'lang="fr"' ), 'nl_BE: Nederlands eerst' );
+} );
+
 // Cleanup temp files.
 $rm = function ( $dir ) use ( &$rm ) {
 	foreach ( glob( $dir . '/{,.}[!.,!..]*', GLOB_BRACE ) ?: array() as $f ) {
